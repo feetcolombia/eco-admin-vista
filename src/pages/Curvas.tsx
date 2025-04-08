@@ -1,17 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { NovaCurvaModal } from "@/components/curvas/NovaCurvaModal";
+import { DataTable } from "@/components/ui/data-table";
+import { useCurvasApi } from "@/hooks/useCurvasApi";
 
 interface Curva {
   curva_producto_id: string;
@@ -23,25 +17,45 @@ const Curvas = () => {
   const [curvas, setCurvas] = useState<Curva[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { loading, getCurvas } = useCurvasApi();
 
   useEffect(() => {
     fetchCurvas();
   }, []);
 
   const fetchCurvas = async () => {
-    try {
-      const response = await fetch("https://stg.feetcolombia.com/rest/V1/feetproductos-curva/getcurvas");
-      const data = await response.json();
-      setCurvas(data);
-    } catch (error) {
-      console.error("Erro ao buscar curvas:", error);
-    }
+    const data = await getCurvas();
+    setCurvas(data);
   };
 
   const filteredCurvas = curvas.filter((curva) =>
     curva.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     curva.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const columns = [
+    { header: "Nome", accessor: "nombre" as keyof Curva },
+    { header: "Descrição", accessor: "descripcion" as keyof Curva },
+  ];
+
+  const actions = [
+    {
+      icon: <Eye className="h-4 w-4" />,
+      onClick: (curva: Curva) => console.log("Ver", curva),
+      variant: "ghost" as const,
+    },
+    {
+      icon: <Pencil className="h-4 w-4" />,
+      onClick: (curva: Curva) => console.log("Editar", curva),
+      variant: "ghost" as const,
+    },
+    {
+      icon: <Trash2 className="h-4 w-4" />,
+      onClick: (curva: Curva) => console.log("Excluir", curva),
+      variant: "ghost" as const,
+      colorClass: "text-red-500 hover:text-red-600",
+    },
+  ];
 
   return (
     <div className="p-6">
@@ -65,36 +79,11 @@ const Curvas = () => {
               className="max-w-sm"
             />
           </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCurvas.map((curva) => (
-                <TableRow key={curva.curva_producto_id}>
-                  <TableCell>{curva.nombre}</TableCell>
-                  <TableCell>{curva.descripcion}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <DataTable
+            data={filteredCurvas}
+            columns={columns}
+            actions={actions}
+          />
         </CardContent>
       </Card>
 

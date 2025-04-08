@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useCurvasApi } from "@/hooks/useCurvasApi";
 
 interface NovaCurvaModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export const NovaCurvaModal = ({ isOpen, onClose, onSuccess }: NovaCurvaModalPro
   const [novoValor, setNovoValor] = useState("");
   const [tallas, setTallas] = useState<Talla[]>([]);
   const { toast } = useToast();
+  const { createCurva, loading } = useCurvasApi();
 
   const handleAddTalla = () => {
     const valor = parseInt(novoValor);
@@ -51,41 +53,19 @@ export const NovaCurvaModal = ({ isOpen, onClose, onSuccess }: NovaCurvaModalPro
       return;
     }
 
-    try {
-      const response = await fetch("https://stg.feetcolombia.com/rest/V1/feetproductos-curva/curva", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          data: {
-            nombre,
-            descripcion,
-            tallas,
-          },
-        }),
-      });
+    const success = await createCurva({
+      nombre,
+      descripcion,
+      tallas,
+    });
 
-      if (response.ok) {
-        toast({
-          title: "Sucesso",
-          description: "Curva criada com sucesso!",
-        });
-        onSuccess();
-        onClose();
-        // Limpar o formulário
-        setNombre("");
-        setDescripcion("");
-        setTallas([]);
-      } else {
-        throw new Error("Erro ao criar curva");
-      }
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao criar a curva. Tente novamente.",
-        variant: "destructive",
-      });
+    if (success) {
+      onSuccess();
+      onClose();
+      // Limpar o formulário
+      setNombre("");
+      setDescripcion("");
+      setTallas([]);
     }
   };
 
@@ -168,11 +148,11 @@ export const NovaCurvaModal = ({ isOpen, onClose, onSuccess }: NovaCurvaModalPro
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit}>
-            Guardar
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? "Salvando..." : "Guardar"}
           </Button>
         </DialogFooter>
       </DialogContent>
