@@ -15,9 +15,9 @@ interface Column<T> {
   align?: "left" | "center" | "right";
 }
 
-interface Action {
+interface Action<T> {
   icon: React.ReactNode;
-  onClick: (item: any) => void;
+  onClick: (item: T) => void;
   variant?: "default" | "ghost" | "outline";
   colorClass?: string;
 }
@@ -25,7 +25,7 @@ interface Action {
 interface DataTableProps<T> {
   data: T[];
   columns: Column<T>[];
-  actions?: Action[];
+  actions?: Action<T>[];
 }
 
 export function DataTable<T>({ data, columns, actions }: DataTableProps<T>) {

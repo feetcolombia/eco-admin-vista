@@ -1,18 +1,13 @@
-
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  Users,
   Package,
-  ShoppingCart,
   Settings,
-  BarChart2,
   HelpCircle,
   ChevronLeft,
   ChevronRight,
   Home,
-  Tag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +39,6 @@ const SidebarLink = ({ to, icon, label, isCollapsed }: SidebarLinkProps) => {
 
 const DashboardSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { user } = useAuth();
 
   return (
     <aside
@@ -74,37 +68,12 @@ const DashboardSidebar = () => {
             label="Dashboard"
             isCollapsed={isCollapsed}
           />
-          {/* <SidebarLink
-            to="/dashboard/orders"
-            icon={<ShoppingCart size={18} />}
-            label="Pedidos"
-            isCollapsed={isCollapsed}
-          /> */}
-          
-          {/* <SidebarLink
-            to="/dashboard/customers"
-            icon={<Users size={18} />}
-            label="Clientes"
-            isCollapsed={isCollapsed}
-          /> */}
-          {/* <SidebarLink
-            to="/dashboard/categories"
-            icon={<Tag size={18} />}
-            label="Categorias"
-            isCollapsed={isCollapsed}
-          /> */}
         </nav>
       </div>
 
       <div className="px-3 pt-4 pb-2">
         {!isCollapsed && <div className="text-xs text-gray-500 mb-2">PRODUTOS</div>}
         <nav className="space-y-1">
-          {/* <SidebarLink
-            to="/dashboard/reports"
-            icon={<BarChart2 size={18} />}
-            label="Relatórios"
-            isCollapsed={isCollapsed}
-          /> */}
           <SidebarLink
             to="/dashboard/products"
             icon={<Package size={18} />}
