@@ -74,12 +74,37 @@ const DashboardSidebar = () => {
             label="Dashboard"
             isCollapsed={isCollapsed}
           />
-          <SidebarLink
+          {/* <SidebarLink
             to="/dashboard/orders"
             icon={<ShoppingCart size={18} />}
             label="Pedidos"
             isCollapsed={isCollapsed}
-          />
+          /> */}
+          
+          {/* <SidebarLink
+            to="/dashboard/customers"
+            icon={<Users size={18} />}
+            label="Clientes"
+            isCollapsed={isCollapsed}
+          /> */}
+          {/* <SidebarLink
+            to="/dashboard/categories"
+            icon={<Tag size={18} />}
+            label="Categorias"
+            isCollapsed={isCollapsed}
+          /> */}
+        </nav>
+      </div>
+
+      <div className="px-3 pt-4 pb-2">
+        {!isCollapsed && <div className="text-xs text-gray-500 mb-2">PRODUTOS</div>}
+        <nav className="space-y-1">
+          {/* <SidebarLink
+            to="/dashboard/reports"
+            icon={<BarChart2 size={18} />}
+            label="Relatórios"
+            isCollapsed={isCollapsed}
+          /> */}
           <SidebarLink
             to="/dashboard/products"
             icon={<Package size={18} />}
@@ -87,27 +112,9 @@ const DashboardSidebar = () => {
             isCollapsed={isCollapsed}
           />
           <SidebarLink
-            to="/dashboard/customers"
-            icon={<Users size={18} />}
-            label="Clientes"
-            isCollapsed={isCollapsed}
-          />
-          <SidebarLink
-            to="/dashboard/categories"
-            icon={<Tag size={18} />}
-            label="Categorias"
-            isCollapsed={isCollapsed}
-          />
-        </nav>
-      </div>
-
-      <div className="px-3 pt-4 pb-2">
-        {!isCollapsed && <div className="text-xs text-gray-500 mb-2">RELATÓRIOS</div>}
-        <nav className="space-y-1">
-          <SidebarLink
-            to="/dashboard/reports"
-            icon={<BarChart2 size={18} />}
-            label="Relatórios"
+            to="/dashboard/curvas"
+            icon={<Package size={18} />}
+            label="Curvas"
             isCollapsed={isCollapsed}
           />
         </nav>

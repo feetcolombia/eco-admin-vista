@@ -1,4 +1,4 @@
-
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +10,7 @@ import DashboardLayout from "./components/DashboardLayout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
+import Curvas from "./pages/Curvas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
               <Route element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/dashboard/products" element={<Products />} />
+                <Route path="/dashboard/curvas" element={<Curvas />} />
                 {/* Outras rotas do dashboard serão adicionadas aqui */}
               </Route>
             </Route>
