@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -8,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -173,37 +175,39 @@ export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialo
 
           <div className="space-y-2">
             <label>Conteúdo da Caixa</label>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Tamanho</TableHead>
-                  <TableHead>Quantidade</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {childProducts.map((child) => {
-                  const talla = child.custom_attributes.find(attr => attr.attribute_code === 'talla')?.value;
-                  return (
-                    <TableRow key={child.id}>
-                      <TableCell>{child.sku}</TableCell>
-                      <TableCell>{child.name}</TableCell>
-                      <TableCell>{talla}</TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min="0"
-                          value={quantities[child.sku] || ''}
-                          onChange={(e) => handleQuantityChange(child.sku, e.target.value)}
-                          className="w-20"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <ScrollArea className="h-[300px] border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Tamanho</TableHead>
+                    <TableHead>Quantidade</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {childProducts.map((child) => {
+                    const talla = child.custom_attributes.find(attr => attr.attribute_code === 'talla')?.value;
+                    return (
+                      <TableRow key={child.id}>
+                        <TableCell>{child.sku}</TableCell>
+                        <TableCell>{child.name}</TableCell>
+                        <TableCell>{talla}</TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={quantities[child.sku] || ''}
+                            onChange={(e) => handleQuantityChange(child.sku, e.target.value)}
+                            className="w-20"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </ScrollArea>
           </div>
         </div>
 
@@ -218,4 +222,4 @@ export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialo
       </DialogContent>
     </Dialog>
   );
-} 
+}
