@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import React, { useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Package,
@@ -16,20 +16,23 @@ interface SidebarLinkProps {
   icon: React.ReactNode;
   label: string;
   isCollapsed: boolean;
+  exact?: boolean;
 }
 
-const SidebarLink = ({ to, icon, label, isCollapsed }: SidebarLinkProps) => {
+const SidebarLink = ({ to, icon, label, isCollapsed, exact = false }: SidebarLinkProps) => {
+  const location = useLocation();
+  const isActive = exact ? location.pathname === to : location.pathname.startsWith(to);
+
   return (
     <NavLink
       to={to}
-      className={({ isActive }) =>
-        cn(
-          "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all",
-          isActive
-            ? "bg-ecommerce-500 text-white"
-            : "text-gray-700 hover:bg-gray-100"
-        )
-      }
+      end={exact}
+      className={cn(
+        "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all",
+        isActive
+          ? "bg-ecommerce-500 text-white"
+          : "text-gray-700 hover:bg-gray-100"
+      )}
     >
       <div>{icon}</div>
       {!isCollapsed && <span>{label}</span>}
@@ -67,6 +70,7 @@ const DashboardSidebar = () => {
             icon={<Home size={18} />}
             label="Dashboard"
             isCollapsed={isCollapsed}
+            exact={true}
           />
         </nav>
       </div>
