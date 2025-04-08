@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -6,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Login = () => {
-  const [email, setEmail] = useState("admin@exemplo.com");
-  const [password, setPassword] = useState("senha123");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
 
@@ -15,7 +14,7 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await login({ email, password });
+      await login({ email: username, password });
     } catch (error) {
       console.error("Login error:", error);
     } finally {
@@ -39,21 +38,18 @@ const Login = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium">
-                  Email
+                <label htmlFor="username" className="text-sm font-medium">
+                  Usuário
                 </label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@exemplo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="username"
+                  type="text"
+                  placeholder="Digite seu usuário"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
                   className="w-full"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Use admin@exemplo.com para teste
-                </p>
               </div>
               
               <div className="space-y-2">
@@ -69,9 +65,6 @@ const Login = () => {
                   required
                   className="w-full"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Use senha123 para teste
-                </p>
               </div>
               
               <Button

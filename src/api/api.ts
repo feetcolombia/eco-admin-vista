@@ -1,5 +1,5 @@
-
 import { toast } from "@/hooks/use-toast";
+import axios from 'axios';
 
 // Tipos para a API
 export interface ApiResponse<T> {
@@ -77,7 +77,24 @@ export interface DashboardStats {
 }
 
 // Configuração base da API
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.example.com';
+const API_BASE_URL = 'https://stg.feetcolombia.com';
+
+// Configuração do axios
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  }
+});
+
+// Interceptor para adicionar o token em todas as requisições
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 // Função para lidar com erros de API de forma consistente
 const handleApiError = (error: any): ApiError => {
@@ -118,32 +135,23 @@ const mockDelay = () => new Promise(resolve => setTimeout(resolve, 500));
 
 // API de Autenticação
 export const authApi = {
-  login: async (credentials: LoginCredentials): Promise<ApiResponse<User>> => {
+  login: async (credentials: LoginCredentials): Promise<ApiResponse<string>> => {
     try {
-      // Simulação de chamada de API
-      await mockDelay();
+      const response = await api.post('/rest/V1/integration/admin/token', {
+        username: credentials.email,
+        password: credentials.password
+      });
+
+      const token = response.data;
       
-      if (credentials.email === "admin@exemplo.com" && credentials.password === "senha123") {
-        const user: User = {
-          id: "1",
-          name: "Admin",
-          email: "admin@exemplo.com",
-          role: "admin",
-          avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"
-        };
-        
-        // Salva o token no localStorage (isso seria feito com um token real JWT)
-        localStorage.setItem("auth_token", "mock_jwt_token");
-        localStorage.setItem("user", JSON.stringify(user));
-        
-        return {
-          success: true,
-          data: user,
-          message: "Login realizado com sucesso"
-        };
-      }
+      // Salva o token no localStorage
+      localStorage.setItem("auth_token", token);
       
-      throw new Error("Credenciais inválidas");
+      return {
+        success: true,
+        data: token,
+        message: "Login realizado com sucesso"
+      };
     } catch (error: any) {
       handleApiError(error);
       throw error;

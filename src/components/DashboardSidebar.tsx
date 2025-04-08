@@ -134,7 +134,7 @@ const DashboardSidebar = () => {
       <div className="mt-auto p-3">
         {!isCollapsed && (
           <div className="text-xs text-gray-500 mb-2">
-            {user?.name} ({user?.role})
+            Feet Colombia V1.0
           </div>
         )}
       </div>
