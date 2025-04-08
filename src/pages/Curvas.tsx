@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { NovaCurvaModal } from "@/components/curvas/NovaCurvaModal";
 import { DataTable } from "@/components/ui/data-table";
+import { NovaCurvaModal } from "@/components/curvas/NovaCurvaModal";
 import { useCurvasApi } from "@/hooks/useCurvasApi";
 
 interface Curva {
@@ -66,19 +66,24 @@ const Curvas = () => {
   }
 
   return (
-    <div className="p-6">
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Tipos de Curva</h1>
+          <p className="text-muted-foreground">
+            Gerencie os tipos de curva do sistema
+          </p>
+        </div>
+        <Button 
+          className="bg-ecommerce-500 hover:bg-ecommerce-600"
+          onClick={() => setIsModalOpen(true)}
+        >
+          <Plus size={16} className="mr-2" /> Novo Tipo de Curva
+        </Button>
+      </div>
+
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Tipos de Curva</CardTitle>
-          <Button 
-            className="bg-blue-600 hover:bg-blue-700"
-            onClick={() => setIsModalOpen(true)}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Tipo de Curva
-          </Button>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <div className="mb-4">
             <Input
               placeholder="Buscar..."

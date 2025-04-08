@@ -86,6 +86,12 @@ const DashboardSidebar = () => {
             label="Curvas"
             isCollapsed={isCollapsed}
           />
+          <SidebarLink
+            to="/dashboard/ingreso-mercancia"
+            icon={<Package size={18} />}
+            label="Ingreso Mercancia"
+            isCollapsed={isCollapsed}
+          />
         </nav>
       </div>
 

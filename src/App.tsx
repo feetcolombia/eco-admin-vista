@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Curvas from "./pages/Curvas";
+import IngresoMercancia from "./pages/IngresoMercancia";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/dashboard/products" element={<Products />} />
                 <Route path="/dashboard/curvas" element={<Curvas />} />
+                <Route path="/dashboard/ingreso-mercancia" element={<IngresoMercancia />} />
                 {/* Outras rotas do dashboard serão adicionadas aqui */}
               </Route>
             </Route>
