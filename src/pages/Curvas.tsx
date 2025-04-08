@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { NovaCurvaModal } from "@/components/curvas/NovaCurvaModal";
 
 interface Curva {
   curva_producto_id: string;
@@ -21,6 +22,7 @@ interface Curva {
 const Curvas = () => {
   const [curvas, setCurvas] = useState<Curva[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchCurvas();
@@ -46,7 +48,10 @@ const Curvas = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Tipos de Curva</CardTitle>
-          <Button className="bg-blue-600 hover:bg-blue-700">
+          <Button 
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={() => setIsModalOpen(true)}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Novo Tipo de Curva
           </Button>
@@ -92,6 +97,12 @@ const Curvas = () => {
           </Table>
         </CardContent>
       </Card>
+
+      <NovaCurvaModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchCurvas}
+      />
     </div>
   );
 };
