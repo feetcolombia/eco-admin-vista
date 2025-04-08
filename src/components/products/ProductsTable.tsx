@@ -74,8 +74,8 @@ export const ProductsTable = ({
           </TableHeader>
           <TableBody>
             {products.map((product) => (
-              <>
-                <TableRow key={`row-${product.id}`} className="hover:bg-gray-50">
+              <React.Fragment key={product.id}>
+                <TableRow className="hover:bg-gray-50">
                   <TableCell>
                     <Button
                       variant="ghost"
@@ -153,7 +153,7 @@ export const ProductsTable = ({
                     childProducts={childProducts[product.id]} 
                   />
                 )}
-              </>
+              </React.Fragment>
             ))}
           </TableBody>
         </Table>
@@ -166,14 +166,14 @@ export const ProductsTable = ({
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
           >
             Anterior
           </Button>
           <Button
             variant="outline"
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
           >
             Próxima
