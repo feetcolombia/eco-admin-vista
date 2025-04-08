@@ -69,7 +69,6 @@ export const ProductsTable = ({
               <TableHead>Material</TableHead>
               <TableHead>Marca</TableHead>
               <TableHead>Estilo</TableHead>
-              <TableHead>Tipo de Curva</TableHead>
               <TableHead>Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -131,14 +130,8 @@ export const ProductsTable = ({
                   <TableCell>{getAttributeValue(product, 'material')}</TableCell>
                   <TableCell>{getAttributeValue(product, 'marca')}</TableCell>
                   <TableCell>{getAttributeValue(product, 'estilo')}</TableCell>
-                  <TableCell></TableCell>
-                  <TableCell className="space-x-2">
-                    <Button variant="ghost" size="icon">
-                      <Search size={16} />
-                    </Button>
-                    <Button variant="ghost" size="icon">
-                      <Plus size={16} />
-                    </Button>
+                  <TableCell >
+
                     <Button
                       variant="ghost"
                       size="icon"
