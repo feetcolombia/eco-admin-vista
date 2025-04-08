@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, Plus, Search, Package } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Search, Package, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,8 +12,34 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import productApi, { Product } from "@/api/productApi";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import productApi, { Product, Website, Category } from "@/api/productApi";
 import { CreateBoxDialog } from "@/components/CreateBoxDialog";
+
+// Helper function to flatten the category tree for easier display
+const flattenCategories = (category: Category, categories: Category[] = []): Category[] => {
+  categories.push(category);
+  
+  if (category.children_data && category.children_data.length > 0) {
+    category.children_data.forEach(child => {
+      flattenCategories(child, categories);
+    });
+  }
+  
+  return categories;
+};
 
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -25,6 +52,12 @@ const Products = () => {
   const pageSize = 15;
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCreateBoxOpen, setIsCreateBoxOpen] = useState(false);
+  const [websites, setWebsites] = useState<Website[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
+  const [selectedWebsite, setSelectedWebsite] = useState<string>("");
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [websitesLoading, setWebsitesLoading] = useState(true);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -41,6 +74,35 @@ const Products = () => {
 
     fetchProducts();
   }, [currentPage]);
+
+  useEffect(() => {
+    const fetchWebsites = async () => {
+      try {
+        const data = await productApi.getWebsites();
+        setWebsites(data);
+      } catch (error) {
+        console.error("Falha ao buscar websites", error);
+      } finally {
+        setWebsitesLoading(false);
+      }
+    };
+
+    const fetchCategories = async () => {
+      try {
+        const data = await productApi.getCategories();
+        // Flatten the category tree for easier display in dropdown
+        const flatCategories = flattenCategories(data).filter(cat => cat.level > 1); // Skip root category
+        setCategories(flatCategories);
+      } catch (error) {
+        console.error("Falha ao buscar categorias", error);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    fetchWebsites();
+    fetchCategories();
+  }, []);
 
   const getAttributeValue = (product: Product, code: string) => {
     const attribute = product.custom_attributes.find(attr => attr.attribute_code === code);
@@ -66,6 +128,24 @@ const Products = () => {
         }
       }
     }
+  };
+
+  const handleCategorySelection = (categoryId: number) => {
+    setSelectedCategories(current =>
+      current.includes(categoryId)
+        ? current.filter(id => id !== categoryId)
+        : [...current, categoryId]
+    );
+  };
+
+  const getCategoryNameById = (categoryId: number): string => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? category.name : '';
+  };
+
+  const getWebsiteNameById = (websiteId: number): string => {
+    const website = websites.find(site => site.id === websiteId);
+    return website ? website.name : '';
   };
 
   const filteredProducts = products.filter((product) =>
@@ -96,7 +176,7 @@ const Products = () => {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="mb-6 flex justify-between items-center gap-4">
+          <div className="mb-6 flex justify-between items-center gap-4 flex-wrap">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
               <Input 
@@ -105,6 +185,59 @@ const Products = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+            </div>
+            <div className="flex gap-4 flex-wrap">
+              <div className="min-w-[220px]">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      {selectedCategories.length === 0 
+                        ? "Categorias" 
+                        : `${selectedCategories.length} selecionadas`}
+                      <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 bg-white">
+                    {categoriesLoading ? (
+                      <div className="flex items-center justify-center py-2">
+                        <div className="w-5 h-5 border-2 border-t-ecommerce-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+                      </div>
+                    ) : (
+                      categories.map((category) => (
+                        <DropdownMenuCheckboxItem
+                          key={category.id}
+                          checked={selectedCategories.includes(category.id)}
+                          onCheckedChange={() => handleCategorySelection(category.id)}
+                          className={`pl-${category.level * 2}`}
+                        >
+                          {category.name}
+                        </DropdownMenuCheckboxItem>
+                      ))
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              
+              <div className="min-w-[220px]">
+                <Select value={selectedWebsite} onValueChange={setSelectedWebsite}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Websites" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white">
+                    {websitesLoading ? (
+                      <div className="flex items-center justify-center py-2">
+                        <div className="w-5 h-5 border-2 border-t-ecommerce-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+                      </div>
+                    ) : (
+                      websites.map((website) => (
+                        <SelectItem key={website.id} value={website.id.toString()}>
+                          {website.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
@@ -152,8 +285,40 @@ const Products = () => {
                           <TableCell>{product.sku}</TableCell>
                           <TableCell>{product.name}</TableCell>
                           <TableCell>{product.price}</TableCell>
-                          <TableCell>{product.extension_attributes.category_links.length} selecionadas</TableCell>
-                          <TableCell>{product.extension_attributes.website_ids.length} selecionados</TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  {product.extension_attributes.category_links.length} categorias
+                                  <ChevronDown className="ml-1 h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className="w-56 bg-white">
+                                {product.extension_attributes.category_links.map((link) => (
+                                  <div key={link.category_id} className="px-2 py-1.5 text-sm">
+                                    {categories.find(cat => cat.id === parseInt(link.category_id))?.name || link.category_id}
+                                  </div>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  {product.extension_attributes.website_ids.length} websites
+                                  <ChevronDown className="ml-1 h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className="w-56 bg-white">
+                                {product.extension_attributes.website_ids.map((websiteId) => (
+                                  <div key={websiteId} className="px-2 py-1.5 text-sm">
+                                    {websites.find(site => site.id === websiteId)?.name || websiteId}
+                                  </div>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
                           <TableCell>{getAttributeValue(product, 'color')}</TableCell>
                           <TableCell>{getAttributeValue(product, 'material')}</TableCell>
                           <TableCell>{getAttributeValue(product, 'marca')}</TableCell>

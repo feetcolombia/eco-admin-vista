@@ -70,6 +70,24 @@ export interface BoxProduct {
   };
 }
 
+export interface Website {
+  id: number;
+  code: string;
+  name: string;
+  default_group_id: number;
+}
+
+export interface Category {
+  id: number;
+  parent_id: number;
+  name: string;
+  is_active: boolean;
+  position: number;
+  level: number;
+  product_count: number;
+  children_data: Category[];
+}
+
 const productApi = {
   getProducts: async (page: number = 1, pageSize: number = 15) => {
     const token = localStorage.getItem('auth_token');
@@ -206,7 +224,51 @@ const productApi = {
       console.error('Erro ao salvar detalhes da caixa:', error);
       throw error;
     }
+  },
+
+  getWebsites: async () => {
+    const token = localStorage.getItem('auth_token');
+    
+    if (!token) {
+      throw new Error('Token de autenticação não encontrado');
+    }
+
+    try {
+      const response = await axios.get<Website[]>(`${API_BASE_URL}/rest/V1/store/websites`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar websites:', error);
+      throw error;
+    }
+  },
+
+  getCategories: async () => {
+    const token = localStorage.getItem('auth_token');
+    
+    if (!token) {
+      throw new Error('Token de autenticação não encontrado');
+    }
+
+    try {
+      const response = await axios.get<Category>(`${API_BASE_URL}/rest/V1/categories/`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar categorias:', error);
+      throw error;
+    }
   }
 };
 
-export default productApi; 
+export default productApi;
