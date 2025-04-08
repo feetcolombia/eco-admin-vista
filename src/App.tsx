@@ -1,9 +1,15 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import DashboardLayout from "./components/DashboardLayout";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Products from "./pages/Products";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -11,15 +17,35 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            {/* Rotas públicas */}
+            <Route element={<ProtectedRoute requireAuth={false} />}>
+              <Route path="/login" element={<Login />} />
+            </Route>
+
+            {/* Redirecionar / para /dashboard se autenticado, caso contrário, para /login */}
+            <Route path="/" element={<ProtectedRoute requireAuth={false} />}>
+              <Route index element={<Login />} />
+            </Route>
+
+            {/* Rotas protegidas do dashboard */}
+            <Route element={<ProtectedRoute requireAuth={true} />}>
+              <Route element={<DashboardLayout />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard/products" element={<Products />} />
+                {/* Outras rotas do dashboard serão adicionadas aqui */}
+              </Route>
+            </Route>
+
+            {/* Rota 404 - não encontrado */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
