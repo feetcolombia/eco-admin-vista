@@ -6,8 +6,6 @@ import {
   PackageSearch,
   Settings,
   HelpCircle,
-  ChevronLeft,
-  ChevronRight,
   Home,
   PackagePlus,
   PackageMinus,
@@ -17,8 +15,8 @@ import { cn } from "@/lib/utils";
 import {
   Sidebar,
   SidebarContent,
-  SidebarHeader,
   SidebarFooter,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
@@ -62,9 +60,9 @@ const SidebarLink = ({
         isActive={isActive}
         tooltip={tooltip}
       >
-        <NavLink to={to} end={exact}>
+        <NavLink to={to} end={exact} className="flex items-center w-full">
           {icon}
-          <span>{label}</span>
+          <span className="ml-2">{label}</span>
         </NavLink>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -76,10 +74,10 @@ const DashboardSidebar = () => {
   const isCollapsed = state === "collapsed";
 
   return (
-    <Sidebar>
+    <Sidebar variant="sidebar" collapsible="icon">
       <SidebarHeader className="flex items-center justify-between p-4 border-b border-gray-200">
         {!isCollapsed && (
-          <span className="text-xl font-bold text-ecommerce-600">E-Admin</span>
+          <span className="text-xl font-bold text-primary">E-Admin</span>
         )}
       </SidebarHeader>
 

@@ -8,6 +8,7 @@ import {
   LogOut,
   Settings,
   ChevronDown,
+  PanelLeft,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -23,6 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const DashboardHeader = () => {
   const { logout } = useAuth();
@@ -35,6 +37,7 @@ const DashboardHeader = () => {
   return (
     <header className="bg-white border-b border-gray-200 py-2 px-4 flex justify-between items-center">
       <div className="flex items-center gap-4 w-full max-w-md">
+        <SidebarTrigger className="text-gray-500" />
         <div className="relative w-full">
           <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
           <Input
