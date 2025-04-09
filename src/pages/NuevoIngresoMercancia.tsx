@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,7 +52,7 @@ const NuevoIngresoMercancia = () => {
 
     const result = await createIngresoMercancia(data);
     if (result) {
-      navigate(`/ingreso-mercancia/${result.ingresomercancia_id}`);
+      navigate(`/dashboard/ingreso-mercancia/${result.ingresomercancia_id}`);
     }
   };
 
@@ -145,4 +146,4 @@ const NuevoIngresoMercancia = () => {
   );
 };
 
-export default NuevoIngresoMercancia; 
+export default NuevoIngresoMercancia;

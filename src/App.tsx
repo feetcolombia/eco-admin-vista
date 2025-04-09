@@ -1,9 +1,10 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./components/DashboardLayout";
@@ -27,33 +28,36 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Rotas públicas */}
+            {/* Public routes */}
             <Route element={<ProtectedRoute requireAuth={false} />}>
               <Route path="/login" element={<Login />} />
             </Route>
 
-            {/* Redirecionar / para /dashboard se autenticado, caso contrário, para /login */}
-            <Route path="/" element={<ProtectedRoute requireAuth={false} />}>
-              <Route index element={<Login />} />
-            </Route>
+            {/* Redirect / to /dashboard if authenticated, otherwise to /login */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-            {/* Rotas protegidas do dashboard */}
+            {/* Protected dashboard routes */}
             <Route element={<ProtectedRoute requireAuth={true} />}>
               <Route element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/dashboard/products" element={<Products />} />
                 <Route path="/dashboard/curvas" element={<Curvas />} />
                 <Route path="/dashboard/ingreso-mercancia" element={<IngresoMercancia />} />
-                <Route path="/ingreso-mercancia/nuevo" element={<NuevoIngresoMercancia />} />
-                <Route path="/ingreso-mercancia/:id" element={<IngresoMercanciaDetalle />} />
+                <Route path="/dashboard/ingreso-mercancia/nuevo" element={<NuevoIngresoMercancia />} />
+                <Route path="/dashboard/ingreso-mercancia/:id" element={<IngresoMercanciaDetalle />} />
                 <Route path="/dashboard/salida-mercancia" element={<SalidaMercancia />} />
-                <Route path="/salida-mercancia/nuevo" element={<NuevoSalidaMercancia />} />
-                <Route path="/salida-mercancia/:id" element={<SalidaMercanciaDetalle />} />
-                {/* Outras rotas do dashboard serão adicionadas aqui */}
+                <Route path="/dashboard/salida-mercancia/nuevo" element={<NuevoSalidaMercancia />} />
+                <Route path="/dashboard/salida-mercancia/:id" element={<SalidaMercanciaDetalle />} />
+                
+                {/* Legacy paths to maintain compatibility */}
+                <Route path="/ingreso-mercancia/nuevo" element={<Navigate to="/dashboard/ingreso-mercancia/nuevo" replace />} />
+                <Route path="/ingreso-mercancia/:id" element={<Navigate to="/dashboard/ingreso-mercancia/:id" replace />} />
+                <Route path="/salida-mercancia/nuevo" element={<Navigate to="/dashboard/salida-mercancia/nuevo" replace />} />
+                <Route path="/salida-mercancia/:id" element={<Navigate to="/dashboard/salida-mercancia/:id" replace />} />
               </Route>
             </Route>
 
-            {/* Rota 404 - não encontrado */}
+            {/* 404 route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

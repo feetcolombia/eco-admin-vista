@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,11 +34,11 @@ const IngresoMercancia = () => {
   };
 
   const handleRowClick = (id: number) => {
-    navigate(`/ingreso-mercancia/${id}`);
+    navigate(`/dashboard/ingreso-mercancia/${id}`);
   };
 
   const handleNewClick = () => {
-    navigate('/ingreso-mercancia/nuevo');
+    navigate('/dashboard/ingreso-mercancia/nuevo');
   };
 
   if (loading) {
@@ -117,7 +118,7 @@ const IngresoMercancia = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
+                  <TableCell colSpan={7} className="text-center py-4">
                     Nenhum ingresso encontrado
                   </TableCell>
                 </TableRow>
@@ -130,4 +131,4 @@ const IngresoMercancia = () => {
   );
 };
 
-export default IngresoMercancia; 
+export default IngresoMercancia;

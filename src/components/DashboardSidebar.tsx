@@ -1,13 +1,17 @@
+
 import React, { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  Package,
+  PackageSearch,
   Settings,
   HelpCircle,
   ChevronLeft,
   ChevronRight,
   Home,
+  PackagePlus,
+  PackageMinus,
+  LineChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +25,11 @@ interface SidebarLinkProps {
 
 const SidebarLink = ({ to, icon, label, isCollapsed, exact = false }: SidebarLinkProps) => {
   const location = useLocation();
-  const isActive = exact ? location.pathname === to : location.pathname.startsWith(to);
+  const isActive = exact 
+    ? location.pathname === to 
+    : location.pathname.startsWith(to) || 
+      (to.includes("ingreso-mercancia") && location.pathname.includes("ingreso-mercancia")) ||
+      (to.includes("salida-mercancia") && location.pathname.includes("salida-mercancia"));
 
   return (
     <NavLink
@@ -80,25 +88,25 @@ const DashboardSidebar = () => {
         <nav className="space-y-1">
           <SidebarLink
             to="/dashboard/products"
-            icon={<Package size={18} />}
+            icon={<PackageSearch size={18} />}
             label="Produtos"
             isCollapsed={isCollapsed}
           />
           <SidebarLink
             to="/dashboard/curvas"
-            icon={<Package size={18} />}
+            icon={<LineChart size={18} />}
             label="Curvas"
             isCollapsed={isCollapsed}
           />
           <SidebarLink
             to="/dashboard/ingreso-mercancia"
-            icon={<Package size={18} />}
+            icon={<PackagePlus size={18} />}
             label="Ingreso Mercancia"
             isCollapsed={isCollapsed}
           />
           <SidebarLink
             to="/dashboard/salida-mercancia"
-            icon={<Package size={18} />}
+            icon={<PackageMinus size={18} />}
             label="Salida Mercancia"
             isCollapsed={isCollapsed}
           />
