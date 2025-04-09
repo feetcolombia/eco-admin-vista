@@ -39,6 +39,10 @@ interface Category {
   children_data?: Category[];
 }
 
+interface TallaOption {
+  value_index: number;
+}
+
 const NewProduct = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -213,16 +217,36 @@ const NewProduct = () => {
         return;
       }
 
-      const productData = {
+      // 1. Cadastrar produto pai (configurable)
+      const parentProductData = {
         product: {
           sku: formData.sku,
           name: formData.name,
+          attribute_set_id: 4,
+          type_id: "configurable",
+          visibility: 4,
+          status: 1,
           price: parseFloat(formData.price),
-          status: 1, // Ativo
-          visibility: 4, // Catalog, Search
-          type_id: "simple",
-          attribute_set_id: 4, // Default
           weight: 1,
+          extension_attributes: {
+            website_ids: [parseInt(formData.website)],
+            category_links: [
+              {
+                position: 0,
+                category_id: formData.category
+              }
+            ],
+            configurable_product_options: [
+              {
+                attribute_id: "200", // ID do atributo talla
+                label: "Talla",
+                position: 0,
+                values: curvaDetalhe.tallas.map(talla => ({
+                  value_index: parseInt(talla.talla)
+                }))
+              }
+            ]
+          },
           custom_attributes: [
             {
               attribute_code: "color",
@@ -241,26 +265,55 @@ const NewProduct = () => {
               value: formData.style
             },
             {
-              attribute_code: "curva",
-              value: formData.curva
+              attribute_code: "tax_class_id",
+              value: "2"
+            },
+            {
+              attribute_code: "url_key",
+              value: formData.sku
             }
-          ],
-          extension_attributes: {
-            website_ids: [parseInt(formData.website)],
-            category_links: [
-              {
-                position: 0,
-                category_id: formData.category
-              }
-            ],
-            curva_detalhes: curvaDetalhe
-          }
+          ]
         }
       };
 
-      await apiClient.post('/rest/V1/products', productData, {
+      // Cadastra o produto pai
+      await apiClient.post('/rest/V1/products', parentProductData, {
         headers: getAuthHeaders()
       });
+
+      // 2. Cadastrar produtos filhos
+      for (const childSku of childSkus) {
+        const childProductData = {
+          product: {
+            sku: childSku.sku,
+            name: childSku.sku,
+            price: parseFloat(formData.price),
+            status: 1,
+            visibility: 1,
+            type_id: "simple",
+            attribute_set_id: 4,
+            weight: 1,
+            custom_attributes: [
+              {
+                attribute_code: "talla",
+                value: childSku.talla
+              }
+            ]
+          }
+        };
+
+        // Cadastra o produto filho
+        await apiClient.post('/rest/V1/products', childProductData, {
+          headers: getAuthHeaders()
+        });
+
+        // 3. Vincula o produto filho ao pai
+        await apiClient.post(
+          `/rest/V1/configurable-products/${formData.sku}/child`,
+          { childSku: childSku.sku },
+          { headers: getAuthHeaders() }
+        );
+      }
 
       toast.success("Produto cadastrado com sucesso!");
       navigate("/dashboard/products");
