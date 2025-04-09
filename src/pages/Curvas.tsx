@@ -5,19 +5,18 @@ import { Plus, Pencil, Trash2, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
 import { NovaCurvaModal } from "@/components/curvas/NovaCurvaModal";
+import { ConfirmDeleteModal } from "@/components/curvas/ConfirmDeleteModal";
 import { useCurvasApi } from "@/hooks/useCurvasApi";
-
-interface Curva {
-  curva_producto_id: string;
-  nombre: string;
-  descripcion: string;
-}
+import type { CurvaLista } from "@/hooks/useCurvasApi";
 
 const Curvas = () => {
-  const [curvas, setCurvas] = useState<Curva[]>([]);
+  const [curvas, setCurvas] = useState<CurvaLista[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { loading, getCurvas } = useCurvasApi();
+  const [selectedCurvaId, setSelectedCurvaId] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [curvaToDelete, setCurvaToDelete] = useState<CurvaLista | null>(null);
+  const { loading, getCurvas, deleteCurva } = useCurvasApi();
 
   useEffect(() => {
     fetchCurvas();
@@ -29,29 +28,45 @@ const Curvas = () => {
   };
 
   const filteredCurvas = curvas.filter((curva) =>
-    curva.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    curva.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
+    (curva?.nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (curva?.descripcion?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
+  const handleDelete = async (curva: CurvaLista) => {
+    setCurvaToDelete(curva);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (curvaToDelete) {
+      const success = await deleteCurva(curvaToDelete.curva_producto_id);
+      if (success) {
+        fetchCurvas();
+      }
+    }
+    setIsDeleteModalOpen(false);
+    setCurvaToDelete(null);
+  };
+
   const columns = [
-    { header: "Nome", accessor: "nombre" as keyof Curva },
-    { header: "Descrição", accessor: "descripcion" as keyof Curva },
+    { header: "Nome", accessor: "nombre" as keyof CurvaLista },
+    { header: "Descrição", accessor: "descripcion" as keyof CurvaLista },
   ];
 
   const actions = [
     {
       icon: <Eye className="h-4 w-4" />,
-      onClick: (curva: Curva) => console.log("Ver", curva),
+      onClick: (curva: CurvaLista) => setSelectedCurvaId(curva.curva_producto_id),
       variant: "ghost" as const,
     },
     {
       icon: <Pencil className="h-4 w-4" />,
-      onClick: (curva: Curva) => console.log("Editar", curva),
+      onClick: (curva: CurvaLista) => setSelectedCurvaId(curva.curva_producto_id),
       variant: "ghost" as const,
     },
     {
       icon: <Trash2 className="h-4 w-4" />,
-      onClick: (curva: Curva) => console.log("Excluir", curva),
+      onClick: (curva: CurvaLista) => handleDelete(curva),
       variant: "ghost" as const,
       colorClass: "text-red-500 hover:text-red-600",
     },
@@ -76,7 +91,10 @@ const Curvas = () => {
         </div>
         <Button 
           className="bg-ecommerce-500 hover:bg-ecommerce-600"
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setSelectedCurvaId(null);
+            setIsModalOpen(true);
+          }}
         >
           <Plus size={16} className="mr-2" /> Novo Tipo de Curva
         </Button>
@@ -101,9 +119,23 @@ const Curvas = () => {
       </Card>
 
       <NovaCurvaModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isModalOpen || !!selectedCurvaId}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedCurvaId(null);
+        }}
         onSuccess={fetchCurvas}
+        curvaId={selectedCurvaId}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setCurvaToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        itemName={curvaToDelete?.nombre || ""}
       />
     </div>
   );

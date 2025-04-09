@@ -1,23 +1,15 @@
 import React, { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Trash2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { useCurvasApi } from "@/hooks/useCurvasApi";
 
-interface NovaCurvaModalProps {
+interface VisualizarCurvaModalProps {
   isOpen: boolean;
   onClose: () => void;
+  curvaId: string | null;
   onSuccess: () => void;
-  curvaId?: string | null;
 }
 
 interface Talla {
@@ -26,24 +18,22 @@ interface Talla {
   talla: string;
 }
 
-export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
+export const VisualizarCurvaModal: React.FC<VisualizarCurvaModalProps> = ({
   isOpen,
   onClose,
-  onSuccess,
   curvaId,
+  onSuccess,
 }) => {
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [tallas, setTallas] = useState<Talla[]>([]);
   const [novaTalla, setNovaTalla] = useState("");
-  const { toast } = useToast();
-  const { createCurva, updateCurva, getCurva } = useCurvasApi();
+  const [isEditing, setIsEditing] = useState(false);
+  const { getCurva, updateCurva } = useCurvasApi();
 
   useEffect(() => {
     if (curvaId && isOpen) {
       fetchCurva();
-    } else {
-      resetForm();
     }
   }, [curvaId, isOpen]);
 
@@ -55,13 +45,6 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
       setDescripcion(data.descripcion);
       setTallas(data.tallas);
     }
-  };
-
-  const resetForm = () => {
-    setNombre("");
-    setDescripcion("");
-    setTallas([]);
-    setNovaTalla("");
   };
 
   const handleAddTalla = () => {
@@ -76,26 +59,18 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
   };
 
   const handleSubmit = async () => {
-    if (curvaId) {
-      const data = {
-        data: {
-          curva_producto_id: parseInt(curvaId),
-          nombre,
-          descripcion,
-          tallas: tallas.map(t => ({ talla: parseInt(t.talla) }))
-        }
-      };
-      await updateCurva(data);
-    } else {
-      const data = {
-        data: {
-          nombre,
-          descripcion,
-          tallas: tallas.map(t => ({ talla: parseInt(t.talla) }))
-        }
-      };
-      await createCurva(data);
-    }
+    if (!curvaId) return;
+    
+    const data = {
+      data: {
+        curva_producto_id: parseInt(curvaId),
+        nombre,
+        descripcion,
+        tallas: tallas.map(t => ({ talla: parseInt(t.talla) }))
+      }
+    };
+
+    await updateCurva(data);
     onSuccess();
     onClose();
   };
@@ -105,7 +80,7 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            {curvaId ? "Editar Curva" : "Nova Curva"}
+            {isEditing ? "Editar Curva" : "Visualizar Curva"}
           </DialogTitle>
         </DialogHeader>
 
@@ -115,7 +90,7 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
             <Input
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              placeholder="Digite o nome da curva"
+              disabled={!isEditing}
             />
           </div>
 
@@ -124,7 +99,7 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
             <Input
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
-              placeholder="Digite a descrição da curva"
+              disabled={!isEditing}
             />
           </div>
 
@@ -134,23 +109,28 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
               <Input
                 value={novaTalla}
                 onChange={(e) => setNovaTalla(e.target.value)}
+                disabled={!isEditing}
                 placeholder="Adicionar tamanho"
               />
-              <Button onClick={handleAddTalla} type="button">
-                Adicionar
-              </Button>
+              {isEditing && (
+                <Button onClick={handleAddTalla} type="button">
+                  Adicionar
+                </Button>
+              )}
             </div>
             <div className="mt-2 space-y-2">
               {tallas.map((talla, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <Input value={talla.talla} disabled />
-                  <Button
-                    variant="destructive"
-                    onClick={() => handleRemoveTalla(index)}
-                    type="button"
-                  >
-                    Remover
-                  </Button>
+                  {isEditing && (
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleRemoveTalla(index)}
+                      type="button"
+                    >
+                      Remover
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
@@ -158,12 +138,16 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
         </div>
 
         <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSubmit}>
-            {curvaId ? "Salvar" : "Criar"}
-          </Button>
+          {!isEditing ? (
+            <Button onClick={() => setIsEditing(true)}>Editar</Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => setIsEditing(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSubmit}>Salvar</Button>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
