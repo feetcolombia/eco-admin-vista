@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,8 +7,10 @@ import { ProductFilters } from "@/components/products/ProductFilters";
 import { ProductsTable } from "@/components/products/ProductsTable";
 import { CreateBoxDialog } from "@/components/CreateBoxDialog";
 import { flattenCategories } from "@/utils/categoryUtils";
+import { useNavigate } from "react-router-dom";
 
 const Products = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -122,7 +123,10 @@ const Products = () => {
             Gerencie os produtos da sua loja
           </p>
         </div>
-        <Button className="bg-ecommerce-500 hover:bg-ecommerce-600">
+        <Button 
+          className="bg-ecommerce-500 hover:bg-ecommerce-600"
+          onClick={() => navigate("/dashboard/products/new")}
+        >
           <Plus size={16} className="mr-2" /> Novo Produto
         </Button>
       </div>

@@ -10,6 +10,7 @@ import DashboardLayout from "./components/DashboardLayout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
+import NewProduct from "./pages/NewProduct";
 import Curvas from "./pages/Curvas";
 import IngresoMercancia from "./pages/IngresoMercancia";
 import IngresoMercanciaDetalle from "@/pages/IngresoMercanciaDetalle";
@@ -40,6 +41,7 @@ const App = () => (
               <Route element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/dashboard/products" element={<Products />} />
+                <Route path="/dashboard/products/new" element={<NewProduct />} />
                 <Route path="/dashboard/curvas" element={<Curvas />} />
                 <Route path="/dashboard/ingreso-mercancia" element={<IngresoMercancia />} />
                 <Route path="/dashboard/ingreso-mercancia/nuevo" element={<NuevoIngresoMercancia />} />
