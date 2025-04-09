@@ -8,6 +8,8 @@ import { ProductsTable } from "@/components/products/ProductsTable";
 import { CreateBoxDialog } from "@/components/CreateBoxDialog";
 import { flattenCategories } from "@/utils/categoryUtils";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { apiClient, getAuthHeaders } from "@/api/apiConfig";
 
 const Products = () => {
   const navigate = useNavigate();
@@ -28,20 +30,60 @@ const Products = () => {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [websitesLoading, setWebsitesLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await productApi.getProducts(currentPage, pageSize);
-        setProducts(response.items);
-        setTotalCount(response.total_count);
-      } catch (error) {
-        console.error("Falha ao buscar produtos", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const handleSearch = async () => {
+    try {
+      setLoading(true);
+      
+      const searchCriteria: Record<string, string> = {
+        'searchCriteria[filter_groups][0][filters][0][field]': 'type_id',
+        'searchCriteria[filter_groups][0][filters][0][value]': 'configurable',
+        'searchCriteria[filter_groups][0][filters][0][condition_type]': 'eq',
+        'searchCriteria[currentPage]': currentPage.toString(),
+        'searchCriteria[pageSize]': pageSize.toString()
+      };
 
-    fetchProducts();
+      let filterGroupIndex = 1;
+
+      // Adiciona filtro de SKU se houver
+      if (searchQuery) {
+        searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][0][field]`] = 'sku';
+        searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][0][value]`] = searchQuery;
+        searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][0][condition_type]`] = 'eq';
+        filterGroupIndex++;
+      }
+
+      // Adiciona filtro de website se selecionado
+      if (selectedWebsite && selectedWebsite !== 'all') {
+        searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][0][field]`] = 'website_id';
+        searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][0][value]`] = selectedWebsite;
+        searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][0][condition_type]`] = 'eq';
+        filterGroupIndex++;
+      }
+
+      // Adiciona filtro de categoria se selecionada
+      if (selectedCategories.length > 0 && selectedCategories[0] !== 0) {
+        searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][0][field]`] = 'category_id';
+        searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][0][value]`] = selectedCategories[0].toString();
+        searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][0][condition_type]`] = 'eq';
+      }
+
+      const response = await apiClient.get('/rest/V1/products', {
+        params: searchCriteria,
+        headers: getAuthHeaders()
+      });
+
+      setProducts(response.data.items);
+      setTotalCount(response.data.total_count);
+    } catch (error) {
+      console.error("Falha ao buscar produtos", error);
+      toast.error("Erro ao buscar produtos. Por favor, tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    handleSearch();
   }, [currentPage]);
 
   useEffect(() => {
@@ -107,11 +149,6 @@ const Products = () => {
     setIsCreateBoxOpen(true);
   };
 
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
@@ -144,6 +181,7 @@ const Products = () => {
             setSelectedWebsite={setSelectedWebsite}
             websites={websites}
             websitesLoading={websitesLoading}
+            onSearch={handleSearch}
           />
 
           {loading ? (
@@ -152,7 +190,7 @@ const Products = () => {
             </div>
           ) : (
             <ProductsTable 
-              products={filteredProducts}
+              products={products}
               expandedRows={expandedRows}
               toggleRow={toggleRow}
               childProducts={childProducts}
