@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +11,9 @@ import {
   PackagePlus,
   PackageMinus,
   LineChart,
+  MoveHorizontal,
+  Building2,
+  Network,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -114,18 +116,18 @@ const DashboardSidebar = () => {
       </div>
 
       <div className="px-3 pt-4 pb-2">
-        {!isCollapsed && <div className="text-xs text-gray-500 mb-2">SISTEMA</div>}
+        {!isCollapsed && <div className="text-xs text-gray-500 mb-2">Transferencia</div>}
         <nav className="space-y-1">
           <SidebarLink
-            to="/dashboard/settings"
-            icon={<Settings size={18} />}
-            label="Configurações"
+            to="/dashboard/transferencia-mercancia"
+            icon={<Building2 size={18} />}
+            label="Entre Bodegas"
             isCollapsed={isCollapsed}
           />
           <SidebarLink
-            to="/dashboard/help"
-            icon={<HelpCircle size={18} />}
-            label="Ajuda"
+            to="/dashboard/transferencia-sources"
+            icon={<Network size={18} />}
+            label="Entre Sources"
             isCollapsed={isCollapsed}
           />
         </nav>
