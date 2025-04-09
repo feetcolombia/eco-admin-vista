@@ -96,6 +96,12 @@ const DashboardSidebar = () => {
             label="Ingreso Mercancia"
             isCollapsed={isCollapsed}
           />
+          <SidebarLink
+            to="/dashboard/salida-mercancia"
+            icon={<Package size={18} />}
+            label="Salida Mercancia"
+            isCollapsed={isCollapsed}
+          />
         </nav>
       </div>
 

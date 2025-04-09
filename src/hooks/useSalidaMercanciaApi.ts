@@ -2,19 +2,19 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
-interface IngresoMercancia {
-  ingresomercancia_id: number;
+interface SalidaMercancia {
+  salidamercancia_id: number;
   source: string;
   creador: number;
   fecha: string;
   consecutivo: string;
   estado: string;
-  nombre_responsable: string;
   descripcion: string;
+  nombre_responsable: string;
 }
 
 interface SearchResponse {
-  items: IngresoMercancia[];
+  items: SalidaMercancia[];
   total_count: number;
 }
 
@@ -46,7 +46,7 @@ interface Bodega {
 
 const BASE_URL = 'https://stg.feetcolombia.com/rest/V1';
 
-export const useIngresoMercanciaApi = () => {
+export const useSalidaMercanciaApi = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { token } = useAuth();
@@ -80,33 +80,33 @@ export const useIngresoMercanciaApi = () => {
     }
   };
 
-  const createIngresoMercancia = async (data: {
+  const createSalidaMercancia = async (data: {
     source: string;
     creador: number;
     fecha: string;
     nombre_responsable: string;
     descripcion: string;
-  }): Promise<IngresoMercancia | null> => {
+  }): Promise<SalidaMercancia | null> => {
     setLoading(true);
     try {
       const response = await fetch(
-        `${BASE_URL}/feetmercancia-ingreso/ingresomercancia`,
+        `${BASE_URL}/feetmercancia-salida/salidamercancia`,
         {
           method: 'POST',
           headers,
           body: JSON.stringify({
-            ingresoMercancia: data
+            salidaMercancia: data
           })
         }
       );
       
-      if (!response.ok) throw new Error('Erro ao criar ingresso');
+      if (!response.ok) throw new Error('Erro ao criar saída');
       
       return await response.json();
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Erro ao criar o ingresso. Tente novamente.",
+        description: "Erro ao criar a saída. Tente novamente.",
         variant: "destructive",
       });
       return null;
@@ -115,15 +115,15 @@ export const useIngresoMercanciaApi = () => {
     }
   };
 
-  const getIngresoMercancia = async (page: number, pageSize: number): Promise<SearchResponse> => {
+  const getSalidaMercancia = async (page: number, pageSize: number): Promise<SearchResponse> => {
     setLoading(true);
     try {
       const response = await fetch(
-        `${BASE_URL}/feetmercancia-ingreso/ingresomercancia/search?searchCriteria[currentPage]=${page}&searchCriteria[pageSize]=${pageSize}`,
+        `${BASE_URL}/feetmercancia-salida/salidamercancia/search?searchCriteria[currentPage]=${page}&searchCriteria[pageSize]=${pageSize}`,
         { headers }
       );
       
-      if (!response.ok) throw new Error('Erro ao buscar ingressos');
+      if (!response.ok) throw new Error('Erro ao buscar saídas');
       
       const data = await response.json();
       return {
@@ -133,7 +133,7 @@ export const useIngresoMercanciaApi = () => {
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Erro ao buscar os ingressos. Tente novamente.",
+        description: "Erro ao buscar as saídas. Tente novamente.",
         variant: "destructive",
       });
       return { items: [], total_count: 0 };
@@ -142,22 +142,21 @@ export const useIngresoMercanciaApi = () => {
     }
   };
 
-  const getIngresoById = async (id: number): Promise<IngresoMercancia | null> => {
+  const getSalidaById = async (id: number): Promise<SalidaMercancia | null> => {
     setLoading(true);
     try {
       const response = await fetch(
-        `${BASE_URL}/feetmercancia-ingreso/ingresomercancia/search?searchCriteria[filter_groups][0][filters][0][field]=ingresomercancia_id&searchCriteria[filter_groups][0][filters][0][value]=${id}`,
+        `${BASE_URL}/feetmercancia-salida/salidamercancia/${id}`,
         { headers }
       );
       
-      if (!response.ok) throw new Error('Erro ao buscar ingresso');
+      if (!response.ok) throw new Error('Erro ao buscar saída');
       
-      const data = await response.json();
-      return data.items?.[0] || null;
+      return await response.json();
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Erro ao buscar o ingresso. Tente novamente.",
+        description: "Erro ao buscar a saída. Tente novamente.",
         variant: "destructive",
       });
       return null;
@@ -192,9 +191,9 @@ export const useIngresoMercanciaApi = () => {
   return {
     loading,
     getSources,
-    createIngresoMercancia,
-    getIngresoMercancia,
-    getIngresoById,
+    createSalidaMercancia,
+    getSalidaMercancia,
+    getSalidaById,
     getBodegas,
   };
 }; 
