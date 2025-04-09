@@ -50,9 +50,13 @@ const NuevoSalidaMercancia = () => {
       descripcion: descripcion,
     };
 
-    const result = await createSalidaMercancia(data);
-    if (result) {
-      navigate(`/salida-mercancia/${result.salidamercancia_id}`);
+    const resultId = await createSalidaMercancia(data);
+    console.log('ID retornado:', resultId);
+    
+    if (resultId && !isNaN(resultId)) {
+      navigate(`/dashboard/salida-mercancia/${resultId}`);
+    } else {
+      console.error('ID inválido recebido da API:', resultId);
     }
   };
 

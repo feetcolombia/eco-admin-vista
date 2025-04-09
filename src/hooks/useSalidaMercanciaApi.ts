@@ -86,7 +86,7 @@ export const useSalidaMercanciaApi = () => {
     fecha: string;
     nombre_responsable: string;
     descripcion: string;
-  }): Promise<SalidaMercancia | null> => {
+  }): Promise<number | null> => {
     setLoading(true);
     try {
       const response = await fetch(
@@ -102,7 +102,9 @@ export const useSalidaMercanciaApi = () => {
       
       if (!response.ok) throw new Error('Erro ao criar saída');
       
-      return await response.json();
+      const result = await response.json();
+      console.log('API Response:', result);
+      return result?.salidamercancia_id || null;
     } catch (error) {
       toast({
         title: "Erro",
@@ -143,8 +145,19 @@ export const useSalidaMercanciaApi = () => {
   };
 
   const getSalidaById = async (id: number): Promise<SalidaMercancia | null> => {
+    if (!id || isNaN(id)) {
+      console.error('ID inválido fornecido para getSalidaById:', id);
+      toast({
+        title: "Erro",
+        description: "ID de saída inválido.",
+        variant: "destructive",
+      });
+      return null;
+    }
+    
     setLoading(true);
     try {
+      console.log('Buscando saída com ID:', id);
       const response = await fetch(
         `${BASE_URL}/feetmercancia-salida/salidamercancia/${id}`,
         { headers }

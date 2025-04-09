@@ -33,11 +33,11 @@ const SalidaMercancia = () => {
   };
 
   const handleRowClick = (id: number) => {
-    navigate(`/salida-mercancia/${id}`);
+    navigate(`/dashboard/salida-mercancia/${id}`);
   };
 
   const handleNewClick = () => {
-    navigate('/salida-mercancia/nuevo');
+    navigate('/dashboard/salida-mercancia/nuevo');
   };
 
   if (loading) {

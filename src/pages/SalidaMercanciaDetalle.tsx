@@ -49,6 +49,7 @@ const SalidaMercanciaDetalle = () => {
 
   useEffect(() => {
     if (id) {
+      console.log('ID recebido na página de detalhes:', id);
       fetchSalida();
     }
   }, [id]);
@@ -60,7 +61,17 @@ const SalidaMercanciaDetalle = () => {
   }, [salida?.source]);
 
   const fetchSalida = async () => {
-    const data = await getSalidaById(Number(id));
+    if (!id || isNaN(Number(id))) {
+      console.error('ID inválido na URL:', id);
+      return;
+    }
+    
+    const numericId = Number(id);
+    console.log('Convertendo ID para número:', numericId);
+    
+    const data = await getSalidaById(numericId);
+    console.log('Dados recebidos da API:', data);
+    
     if (data) {
       setSalida(data);
     }

@@ -1,10 +1,9 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./components/DashboardLayout";
@@ -51,9 +50,9 @@ const App = () => (
                 
                 {/* Legacy paths to maintain compatibility */}
                 <Route path="/ingreso-mercancia/nuevo" element={<Navigate to="/dashboard/ingreso-mercancia/nuevo" replace />} />
-                <Route path="/ingreso-mercancia/:id" element={<Navigate to="/dashboard/ingreso-mercancia/:id" replace />} />
+                <Route path="/ingreso-mercancia/:id" element={<IngresoMercanciaRedirect />} />
                 <Route path="/salida-mercancia/nuevo" element={<Navigate to="/dashboard/salida-mercancia/nuevo" replace />} />
-                <Route path="/salida-mercancia/:id" element={<Navigate to="/dashboard/salida-mercancia/:id" replace />} />
+                <Route path="/salida-mercancia/:id" element={<SalidaMercanciaRedirect />} />
               </Route>
             </Route>
 
@@ -67,5 +66,15 @@ const App = () => (
     </TooltipProvider>
   </QueryClientProvider>
 );
+
+const IngresoMercanciaRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={`/dashboard/ingreso-mercancia/${id}`} replace />;
+};
+
+const SalidaMercanciaRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={`/dashboard/salida-mercancia/${id}`} replace />;
+};
 
 export default App;
