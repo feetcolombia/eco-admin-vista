@@ -21,23 +21,33 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { Bodega } from '@/api/types/transferTypes';
 
 const NovaTransferenciaBodega = () => {
   const navigate = useNavigate();
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [origens, setOrigens] = useState<any[]>([]);
+  const [bodegas, setBodegas] = useState<Bodega[]>([]);
   const [date, setDate] = useState<Date>(new Date());
   const [formData, setFormData] = useState({
     origem: '',
     descricao: '',
     cargaMasiva: 'nao',
     arquivo: null as File | null,
+    bodegaOrigem: '',
+    bodegaDestino: '',
   });
 
   useEffect(() => {
     fetchOrigens();
   }, []);
+
+  useEffect(() => {
+    if (formData.origem && formData.cargaMasiva === 'nao') {
+      fetchBodegas();
+    }
+  }, [formData.origem, formData.cargaMasiva]);
 
   const fetchOrigens = async () => {
     try {
@@ -54,6 +64,24 @@ const NovaTransferenciaBodega = () => {
       setOrigens(data.items || []);
     } catch (error) {
       console.error('Erro ao buscar origens:', error);
+    }
+  };
+
+  const fetchBodegas = async () => {
+    try {
+      const response = await fetch(
+        `https://stg.feetcolombia.com/rest/V1/feetbodega-mercancia/bodega/${formData.origem}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      const data = await response.json();
+      setBodegas(data);
+    } catch (error) {
+      console.error('Erro ao buscar bodegas:', error);
     }
   };
 
@@ -99,7 +127,12 @@ const NovaTransferenciaBodega = () => {
             </label>
             <Select
               value={formData.origem}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, origem: value }))}
+              onValueChange={(value) => setFormData(prev => ({ 
+                ...prev, 
+                origem: value,
+                bodegaOrigem: '',
+                bodegaDestino: '',
+              }))}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecionar origen" />
@@ -160,7 +193,12 @@ const NovaTransferenciaBodega = () => {
             </label>
             <Select
               value={formData.cargaMasiva}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, cargaMasiva: value }))}
+              onValueChange={(value) => setFormData(prev => ({ 
+                ...prev, 
+                cargaMasiva: value,
+                bodegaOrigem: '',
+                bodegaDestino: '',
+              }))}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Seleccione una opción" />
@@ -171,6 +209,54 @@ const NovaTransferenciaBodega = () => {
               </SelectContent>
             </Select>
           </div>
+
+          {formData.cargaMasiva === 'nao' && formData.origem && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Bodega origen<span className="text-red-500">*</span>
+                </label>
+                <Select
+                  value={formData.bodegaOrigem}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, bodegaOrigem: value }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecionar bodega origen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bodegas.map((bodega) => (
+                      <SelectItem key={bodega.bodega_id} value={String(bodega.bodega_id)}>
+                        {bodega.bodega_nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Bodega destino<span className="text-red-500">*</span>
+                </label>
+                <Select
+                  value={formData.bodegaDestino}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, bodegaDestino: value }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecionar bodega destino" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bodegas
+                      .filter(bodega => String(bodega.bodega_id) !== formData.bodegaOrigem)
+                      .map((bodega) => (
+                        <SelectItem key={bodega.bodega_id} value={String(bodega.bodega_id)}>
+                          {bodega.bodega_nombre}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
 
           {formData.cargaMasiva === 'sim' && (
             <div>

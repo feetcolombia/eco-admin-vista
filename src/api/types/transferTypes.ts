@@ -52,4 +52,14 @@ export interface SourcesResponse {
     filter_groups: any[];
   };
   total_count: number;
+}
+
+export interface Bodega {
+  bodega_id: number;
+  bodega_source: string;
+  bodega_nombre: string;
+  bodega_altura: number;
+  bodega_largo: number;
+  bodega_profundidad: number;
+  bodega_limite: number;
 } 
