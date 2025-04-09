@@ -1,7 +1,14 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LoginCredentials, authApi } from "../api/api";
 import { useToast } from "@/hooks/use-toast";
+
+interface User {
+  name: string;
+  role: string;
+  avatar?: string;
+}
 
 interface AuthContextType {
   token: string | null;
@@ -9,6 +16,7 @@ interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
+  currentUser: User | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,6 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -25,6 +34,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const storedToken = localStorage.getItem('auth_token');
         if (storedToken) {
           setToken(storedToken);
+          // Mock user data - in a real app, this would come from an API call
+          setCurrentUser({
+            name: "Carolina Silva",
+            role: "Administrador",
+            avatar: "https://i.pravatar.cc/150?img=57",
+          });
         }
       } catch (error) {
         console.error("Failed to initialize authentication", error);
@@ -42,6 +57,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await authApi.login(credentials);
       if (response.success && response.data) {
         setToken(response.data);
+        // Mock user data - in a real app, this would come from an API call
+        setCurrentUser({
+          name: "Carolina Silva",
+          role: "Administrador",
+          avatar: "https://i.pravatar.cc/150?img=57",
+        });
         navigate("/dashboard");
         toast({
           title: "Login bem-sucedido",
@@ -64,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.removeItem('auth_token');
       setToken(null);
+      setCurrentUser(null);
       navigate("/login");
       toast({
         title: "Logout",
@@ -82,6 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         logout,
         isAuthenticated: !!token,
+        currentUser,
       }}
     >
       {children}
