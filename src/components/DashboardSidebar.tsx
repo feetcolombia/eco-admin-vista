@@ -116,7 +116,7 @@ const DashboardSidebar = () => {
       </div>
 
       <div className="px-3 pt-4 pb-2">
-        {!isCollapsed && <div className="text-xs text-gray-500 mb-2">Transferencia</div>}
+        {!isCollapsed && <div className="text-xs text-gray-500 mb-2">TRANSFERENCIAS</div>}
         <nav className="space-y-1">
           <SidebarLink
             to="/dashboard/transferencia-mercancia"

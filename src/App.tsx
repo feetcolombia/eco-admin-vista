@@ -21,6 +21,7 @@ import NuevoSalidaMercancia from "@/pages/NuevoSalidaMercancia";
 import TransferenciaBodegas from "@/pages/TransferenciaBodegas";
 import TransferenciaSources from "@/pages/TransferenciaSources";
 import NovaTransferenciaBodega from "@/pages/NovaTransferenciaBodega";
+import ExecutarTransferencia from "@/pages/ExecutarTransferencia";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ const App = () => (
                 <Route path="/dashboard/salida-mercancia/:id" element={<SalidaMercanciaDetalle />} />
                 <Route path="/dashboard/transferencia-mercancia" element={<TransferenciaBodegas />} />
                 <Route path="/dashboard/transferencia-mercancia/novo" element={<NovaTransferenciaBodega />} />
+                <Route path="/dashboard/transferencia-mercancia/:id" element={<ExecutarTransferencia />} />
                 <Route path="/dashboard/transferencia-sources" element={<TransferenciaSources />} />
                 
                 {/* Legacy paths to maintain compatibility */}

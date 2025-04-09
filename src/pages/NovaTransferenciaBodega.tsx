@@ -22,10 +22,26 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Bodega } from '@/api/types/transferTypes';
+import { useToast } from '@/components/ui/use-toast';
+
+interface TransferenciaResponse {
+  source: string;
+  fecha: string;
+  nombre_responsable: string;
+  estado: string;
+  consecutivo: string;
+  codigo: string;
+  transferenciamercancia_id: string;
+  transferencia_id: string;
+  descripcion: string;
+  nombre_bodega_origen: string;
+  nombre_bodega_destino: string;
+}
 
 const NovaTransferenciaBodega = () => {
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [origens, setOrigens] = useState<any[]>([]);
   const [bodegas, setBodegas] = useState<Bodega[]>([]);
@@ -93,8 +109,53 @@ const NovaTransferenciaBodega = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Implementar a lógica de envio aqui
-    setLoading(false);
+
+    try {
+      const payload = {
+        data: {
+          source: formData.origem,
+          responsable: "1",
+          nombre_responsable: "admin",
+          id_bodega_origen: formData.cargaMasiva === 'nao' ? parseInt(formData.bodegaOrigem) : 0,
+          id_bodega_destino: formData.cargaMasiva === 'nao' ? parseInt(formData.bodegaDestino) : 0,
+          descripcion: formData.descricao,
+          estado: "n",
+          transferencia_total: 0
+        }
+      };
+
+      const response = await fetch(
+        'https://stg.feetcolombia.com/rest/V1/transferenciabodegas',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const responseData = await response.json();
+      
+      if (response.ok && Array.isArray(responseData) && responseData.length > 0) {
+        const transferencia = responseData[0] as TransferenciaResponse;
+        if (transferencia.transferencia_id) {
+          navigate(`/dashboard/transferencia-mercancia/${transferencia.transferencia_id}`);
+          return;
+        }
+      }
+      throw new Error('Erro ao criar transferência');
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível criar a transferência. Tente novamente.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
