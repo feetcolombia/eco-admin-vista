@@ -8,7 +8,6 @@ import {
   LogOut,
   Settings,
   ChevronDown,
-  PanelLeft,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -24,10 +23,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const DashboardHeader = () => {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [notifications] = useState([
     { id: 1, text: "Novo pedido recebido", time: "2 minutos atrás" },
     { id: 2, text: "Produto com estoque baixo", time: "1 hora atrás" },
@@ -37,7 +35,6 @@ const DashboardHeader = () => {
   return (
     <header className="bg-white border-b border-gray-200 py-2 px-4 flex justify-between items-center">
       <div className="flex items-center gap-4 w-full max-w-md">
-        <SidebarTrigger className="text-gray-500" />
         <div className="relative w-full">
           <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
           <Input
@@ -85,11 +82,15 @@ const DashboardHeader = () => {
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 hover:bg-gray-50 p-1 px-2 rounded-md">
               <div className="w-8 h-8 bg-gray-300 rounded-full overflow-hidden flex items-center justify-center">
-                <User size={16} className="text-gray-600" />
+                {user?.avatar ? (
+                  <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                ) : (
+                  <User size={16} className="text-gray-600" />
+                )}
               </div>
               <div className="hidden md:block text-left">
-                <div className="text-sm font-medium">Admin User</div>
-                <div className="text-xs text-gray-500">Administrator</div>
+                <div className="text-sm font-medium">{user?.name}</div>
+                <div className="text-xs text-gray-500">{user?.role}</div>
               </div>
               <ChevronDown size={16} className="text-gray-500" />
             </button>
