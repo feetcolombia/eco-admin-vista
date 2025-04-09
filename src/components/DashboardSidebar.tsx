@@ -60,9 +60,9 @@ const DashboardSidebar = () => {
         isCollapsed ? "w-16" : "w-64"
       )}
     >
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 h-12">
         {!isCollapsed && (
-          <span className="text-xl font-bold text-ecommerce-600">E-Admin</span>
+          <span className="text-xl font-bold text-ecommerce-600">Feet Colombia</span>
         )}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
