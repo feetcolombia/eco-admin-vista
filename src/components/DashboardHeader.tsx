@@ -8,7 +8,6 @@ import {
   LogOut,
   Settings,
   ChevronDown,
-  HelpCircle,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -26,7 +25,7 @@ import {
 } from "@/components/ui/popover";
 
 const DashboardHeader = () => {
-  const { currentUser, logout } = useAuth();
+  const { user, logout } = useAuth();
   const [notifications] = useState([
     { id: 1, text: "Novo pedido recebido", time: "2 minutos atrás" },
     { id: 2, text: "Produto com estoque baixo", time: "1 hora atrás" },
@@ -34,35 +33,35 @@ const DashboardHeader = () => {
   ]);
 
   return (
-    <header className="bg-white py-3 px-6 flex justify-between items-center border-b border-gray-100">
+    <header className="bg-white border-b border-gray-200 py-2 px-4 flex justify-between items-center">
       <div className="flex items-center gap-4 w-full max-w-md">
         <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
           <Input
             type="text"
             placeholder="Buscar..."
-            className="pl-10 w-full bg-gray-50 border-gray-100 rounded-full"
+            className="pl-8 w-full bg-gray-50 border-gray-200"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <Popover>
           <PopoverTrigger asChild>
-            <button className="p-2 rounded-full hover:bg-gray-50 relative">
+            <button className="p-2 rounded-full hover:bg-gray-100 relative">
               <Bell size={20} className="text-gray-600" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
           </PopoverTrigger>
-          <PopoverContent className="w-80 p-0 rounded-xl shadow-lg border border-gray-100">
-            <div className="p-3 border-b border-gray-100">
+          <PopoverContent className="w-80 p-0">
+            <div className="p-3 border-b border-gray-200">
               <h3 className="font-medium">Notificações</h3>
             </div>
             <div className="max-h-72 overflow-y-auto">
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className="p-3 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors"
+                  className="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
                 >
                   <div className="text-sm">{notification.text}</div>
                   <div className="text-xs text-gray-500 mt-1">
@@ -71,48 +70,44 @@ const DashboardHeader = () => {
                 </div>
               ))}
             </div>
-            <div className="p-2 border-t border-gray-100">
-              <button className="text-sm text-center w-full text-primary hover:underline py-1">
+            <div className="p-2 border-t border-gray-200">
+              <button className="text-sm text-center w-full text-blue-500 hover:underline">
                 Ver todas as notificações
               </button>
             </div>
           </PopoverContent>
         </Popover>
 
-        <button className="p-2 rounded-full hover:bg-gray-50 text-gray-600">
-          <HelpCircle size={20} />
-        </button>
-
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 hover:bg-gray-50 p-1.5 px-3 rounded-full border border-gray-100">
-              <div className="w-8 h-8 bg-primary/10 rounded-full overflow-hidden flex items-center justify-center">
-                {currentUser?.avatar ? (
-                  <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
+            <button className="flex items-center gap-2 hover:bg-gray-50 p-1 px-2 rounded-md">
+              <div className="w-8 h-8 bg-gray-300 rounded-full overflow-hidden flex items-center justify-center">
+                {user?.avatar ? (
+                  <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
                 ) : (
-                  <User size={16} className="text-primary" />
+                  <User size={16} className="text-gray-600" />
                 )}
               </div>
               <div className="hidden md:block text-left">
-                <div className="text-sm font-medium">{currentUser?.name || "Usuário"}</div>
-                <div className="text-xs text-gray-500">{currentUser?.role || "Admin"}</div>
+                <div className="text-sm font-medium">{user?.name}</div>
+                <div className="text-xs text-gray-500">{user?.role}</div>
               </div>
               <ChevronDown size={16} className="text-gray-500" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-lg border border-gray-100">
+          <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer focus:bg-primary/5">
+            <DropdownMenuItem className="cursor-pointer">
               <User size={16} className="mr-2" />
               Perfil
             </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer focus:bg-primary/5">
+            <DropdownMenuItem className="cursor-pointer">
               <Settings size={16} className="mr-2" />
               Configurações
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer focus:bg-primary/5" onClick={() => logout()}>
+            <DropdownMenuItem className="cursor-pointer" onClick={() => logout()}>
               <LogOut size={16} className="mr-2" />
               Sair
             </DropdownMenuItem>

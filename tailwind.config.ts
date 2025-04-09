@@ -26,7 +26,7 @@ export default {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				primary: {
-					DEFAULT: 'rgb(var(--primary))',
+					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))'
 				},
 				secondary: {
@@ -69,11 +69,11 @@ export default {
 					200: "#99c2ff",
 					300: "#66a3ff",
 					400: "#3385ff",
-					500: "#FF5A5F", // Airbnb primary red
-					600: "#E41D2D", // Darker red
-					700: "#C4122F", // Even darker red
-					800: "#AA1E38",
-					900: "#8A1D30",
+					500: "#0066ff",
+					600: "#0052cc",
+					700: "#003d99",
+					800: "#002966",
+					900: "#001433",
 				}
 			},
 			borderRadius: {
