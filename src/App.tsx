@@ -14,6 +14,7 @@ import NewProduct from "./pages/NewProduct";
 import Curvas from "./pages/Curvas";
 import IngresoMercancia from "./pages/IngresoMercancia";
 import IngresoMercanciaDetalle from "@/pages/IngresoMercanciaDetalle";
+import IngresoMercanciaVerificacion from "@/pages/IngresoMercanciaVerificacion";
 import NuevoIngresoMercancia from "@/pages/NuevoIngresoMercancia";
 import SalidaMercancia from "@/pages/SalidaMercancia";
 import SalidaMercanciaDetalle from "@/pages/SalidaMercanciaDetalle";
@@ -50,6 +51,7 @@ const App = () => (
                 <Route path="/dashboard/ingreso-mercancia" element={<IngresoMercancia />} />
                 <Route path="/dashboard/ingreso-mercancia/nuevo" element={<NuevoIngresoMercancia />} />
                 <Route path="/dashboard/ingreso-mercancia/:id" element={<IngresoMercanciaDetalle />} />
+                <Route path="/dashboard/ingreso-mercancia/:id/verificacion" element={<IngresoMercanciaVerificacion />} />
                 <Route path="/dashboard/salida-mercancia" element={<SalidaMercancia />} />
                 <Route path="/dashboard/salida-mercancia/nuevo" element={<NuevoSalidaMercancia />} />
                 <Route path="/dashboard/salida-mercancia/:id" element={<SalidaMercanciaDetalle />} />

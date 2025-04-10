@@ -3,14 +3,14 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface IngresoMercancia {
-  ingresomercancia_id: number;
+  ingresomercancia_id: string;
   source: string;
-  creador: number;
+  creador: string;
   fecha: string;
   consecutivo: string;
   estado: string;
   nombre_responsable: string;
-  descripcion: string;
+  productos: IngresoMercanciaProducto[];
 }
 
 interface SearchResponse {
@@ -42,6 +42,58 @@ interface Bodega {
   bodega_largo: number;
   bodega_profundidad: number;
   bodega_limite: number;
+}
+
+interface BarcodeResponse {
+  id: string;
+  barcode: string;
+  qty: string;
+  product_id: string;
+  product_sku: string;
+  supplier_id: string;
+  supplier_code: string | null;
+  purchased_id: string;
+  purchased_time: string | null;
+  history_id: string;
+  created_at: string;
+  product_image: string;
+  product_name: string;
+  product_price: string;
+  product_weight: string;
+  product_color: string;
+  product_stock: string;
+  product_status: string;
+}
+
+interface IngresoMercanciaProducto {
+  ingreso_mercancia_producto_id: string;
+  ingreso_mercancia_id: string;
+  producto: string;
+  sku: string;
+  cantidad: string;
+  bodega_id: string;
+  bodega_nombre: string;
+}
+
+interface IngresoMercanciaResponse {
+  items: IngresoMercancia[];
+  search_criteria: {
+    filter_groups: Array<{
+      filters: Array<{
+        field: string;
+        value: string;
+        condition_type: string;
+      }>;
+    }>;
+  };
+  total_count: number;
+}
+
+interface IngresoMercanciaProductoPayload {
+  ingreso_mercancia_id: string;
+  sku: string;
+  cantidad: number;
+  bodega_id: string;
 }
 
 const BASE_URL = 'https://stg.feetcolombia.com/rest/V1';
@@ -85,7 +137,6 @@ export const useIngresoMercanciaApi = () => {
     creador: number;
     fecha: string;
     nombre_responsable: string;
-    descripcion: string;
   }): Promise<IngresoMercancia | null> => {
     setLoading(true);
     try {
@@ -95,7 +146,12 @@ export const useIngresoMercanciaApi = () => {
           method: 'POST',
           headers,
           body: JSON.stringify({
-            ingresoMercancia: data
+            ingresoMercancia: {
+              source: data.source,
+              creador: data.creador,
+              fecha: data.fecha,
+              nombre_responsable: data.nombre_responsable
+            }
           })
         }
       );
@@ -142,7 +198,7 @@ export const useIngresoMercanciaApi = () => {
     }
   };
 
-  const getIngresoById = async (id: number): Promise<IngresoMercancia | null> => {
+  const getIngresoById = async (id: number): Promise<IngresoMercanciaResponse | null> => {
     setLoading(true);
     try {
       const response = await fetch(
@@ -152,8 +208,7 @@ export const useIngresoMercanciaApi = () => {
       
       if (!response.ok) throw new Error('Erro ao buscar ingresso');
       
-      const data = await response.json();
-      return data.items?.[0] || null;
+      return await response.json();
     } catch (error) {
       toast({
         title: "Erro",
@@ -189,6 +244,104 @@ export const useIngresoMercanciaApi = () => {
     }
   };
 
+  const getBarcodeData = async (barcode: string): Promise<BarcodeResponse | null> => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${BASE_URL}/barcodesuccess/getdata?barcode=${barcode}`,
+        { headers }
+      );
+      
+      if (!response.ok) throw new Error('Erro ao buscar dados do código de barras');
+      
+      const [data] = await response.json();
+      return data || null;
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar dados do código de barras. Tente novamente.",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveIngresoMercanciaProductos = async (productos: IngresoMercanciaProductoPayload[]): Promise<boolean> => {
+    setLoading(true);
+    try {
+      const payload = {
+        ingresoMercanciaProductos: productos
+      };
+      console.log('Payload enviado:', JSON.stringify(payload, null, 2));
+      
+      const response = await fetch(
+        `${BASE_URL}/feetmercancia-ingreso/ingresomercancia/producto`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload)
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Erro da API:', errorData);
+        throw new Error('Erro ao salvar produtos');
+      }
+      
+      return true;
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar os produtos. Tente novamente.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmarIngresoMercancia = async (ingresoMercanciaId: string | number, sourceCode: string): Promise<boolean> => {
+    setLoading(true);
+    try {
+      const payload = {
+        ingresoMercanciaId: Number(ingresoMercanciaId),
+        sourceCode
+      };
+      
+      console.log('Payload enviado:', JSON.stringify(payload, null, 2));
+      
+      const response = await fetch(
+        `${BASE_URL}/feetmercancia-ingreso/ingresomercancia/productos/inventory`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload)
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Erro da API:', errorData);
+        throw new Error('Erro ao confirmar ingresso');
+      }
+      
+      return true;
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao confirmar o ingresso. Tente novamente.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     getSources,
@@ -196,5 +349,8 @@ export const useIngresoMercanciaApi = () => {
     getIngresoMercancia,
     getIngresoById,
     getBodegas,
+    getBarcodeData,
+    saveIngresoMercanciaProductos,
+    confirmarIngresoMercancia,
   };
 }; 
