@@ -200,12 +200,29 @@ const IngresoMercanciaDetalle = () => {
     }
   };
 
-  const handleCompletar = () => {
+  const handleCompletar = async () => {
     if (scannedItems.length === 0) return;
     
-    navigate(`/dashboard/ingreso-mercancia/${id}/verificacion`, {
-      state: { scannedItems }
+    if (!ingreso) return;
+
+    const productos: IngresoMercanciaProductoPayload[] = scannedItems.map(item => {
+      const bodega = bodegas.find(b => b.bodega_nombre === item.position);
+      if (!bodega) throw new Error(`Bodega não encontrada: ${item.position}`);
+
+      return {
+        ingreso_mercancia_id: ingreso.ingresomercancia_id,
+        sku: item.sku,
+        cantidad: item.quantity,
+        bodega_id: bodega.bodega_id.toString()
+      };
     });
+
+    const success = await saveIngresoMercanciaProductos(productos);
+    if (success) {
+      navigate(`/dashboard/ingreso-mercancia/${id}/verificacion`, {
+        state: { scannedItems }
+      });
+    }
   };
 
   if (loading || !ingreso) {
