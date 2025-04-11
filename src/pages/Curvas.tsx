@@ -49,8 +49,8 @@ const Curvas = () => {
   };
 
   const columns = [
-    { header: "Nome", accessor: "nombre" as keyof CurvaLista },
-    { header: "Descrição", accessor: "descripcion" as keyof CurvaLista },
+    { header: "Nombre", accessor: "nombre" as keyof CurvaLista },
+    { header: "Descripción", accessor: "descripcion" as keyof CurvaLista },
   ];
 
   const actions = [
@@ -86,7 +86,7 @@ const Curvas = () => {
         <div>
           <h1 className="text-2xl font-bold">Tipos de Curva</h1>
           <p className="text-muted-foreground">
-            Gerencie os tipos de curva do sistema
+            Administre los tipos de curva del sistema
           </p>
         </div>
         <Button 
@@ -96,7 +96,7 @@ const Curvas = () => {
             setIsModalOpen(true);
           }}
         >
-          <Plus size={16} className="mr-2" /> Novo Tipo de Curva
+          <Plus size={16} className="mr-2" /> Nuevo Tipo de Curva
         </Button>
       </div>
 

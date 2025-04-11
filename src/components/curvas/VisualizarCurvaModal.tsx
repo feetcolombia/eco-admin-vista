@@ -80,13 +80,13 @@ export const VisualizarCurvaModal: React.FC<VisualizarCurvaModalProps> = ({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "Editar Curva" : "Visualizar Curva"}
+            {isEditing ? "Editar Curva" : "Ver Curva"}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div>
-            <Label>Nome</Label>
+            <Label>Nombre</Label>
             <Input
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
@@ -95,7 +95,7 @@ export const VisualizarCurvaModal: React.FC<VisualizarCurvaModalProps> = ({
           </div>
 
           <div>
-            <Label>Descrição</Label>
+            <Label>Descripción</Label>
             <Input
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
@@ -104,17 +104,17 @@ export const VisualizarCurvaModal: React.FC<VisualizarCurvaModalProps> = ({
           </div>
 
           <div>
-            <Label>Tamanhos</Label>
+            <Label>Tallas</Label>
             <div className="flex gap-2">
               <Input
                 value={novaTalla}
                 onChange={(e) => setNovaTalla(e.target.value)}
                 disabled={!isEditing}
-                placeholder="Adicionar tamanho"
+                placeholder="Agregar talla"
               />
               {isEditing && (
                 <Button onClick={handleAddTalla} type="button">
-                  Adicionar
+                  Agregar
                 </Button>
               )}
             </div>
@@ -128,7 +128,7 @@ export const VisualizarCurvaModal: React.FC<VisualizarCurvaModalProps> = ({
                       onClick={() => handleRemoveTalla(index)}
                       type="button"
                     >
-                      Remover
+                      Eliminar
                     </Button>
                   )}
                 </div>
@@ -145,7 +145,7 @@ export const VisualizarCurvaModal: React.FC<VisualizarCurvaModalProps> = ({
               <Button variant="outline" onClick={() => setIsEditing(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleSubmit}>Salvar</Button>
+              <Button onClick={handleSubmit}>Guardar</Button>
             </>
           )}
         </div>

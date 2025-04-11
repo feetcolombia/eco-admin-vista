@@ -25,9 +25,9 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Confirmar Exclusão</DialogTitle>
+          <DialogTitle>Confirmar Eliminación</DialogTitle>
           <DialogDescription>
-            Tem certeza que deseja excluir "{itemName}"? Esta ação não pode ser desfeita.
+            ¿Está seguro que desea eliminar "{itemName}"? Esta acción no se puede deshacer.
           </DialogDescription>
         </DialogHeader>
 
@@ -36,7 +36,7 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
             Cancelar
           </Button>
           <Button variant="destructive" onClick={onConfirm}>
-            Excluir
+            Eliminar
           </Button>
         </div>
       </DialogContent>

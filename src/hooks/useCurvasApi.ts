@@ -99,15 +99,15 @@ export const useCurvasApi = () => {
     try {
       await api.post("/feetproductos-curva/curva", data);
       toast({
-        title: "Sucesso",
-        description: "Curva criada com sucesso!",
+        title: "Éxito",
+        description: "¡Curva creada exitosamente!",
       });
       return true;
     } catch (error) {
-      console.error("Erro ao criar curva:", error);
+      console.error("Error al crear curva:", error);
       toast({
-        title: "Erro",
-        description: "Erro ao criar a curva. Tente novamente.",
+        title: "Error",
+        description: "Error al crear la curva. Intente nuevamente.",
         variant: "destructive",
       });
       return false;
@@ -122,17 +122,17 @@ export const useCurvasApi = () => {
       const response = await api.put("/feetproductos-curva/curva", data);
       if (response.status === 200) {
         toast({
-          title: "Sucesso",
-          description: "Curva atualizada com sucesso!",
+          title: "Éxito",
+          description: "¡Curva actualizada exitosamente!",
         });
         return true;
       }
-      throw new Error("Erro ao atualizar curva");
+      throw new Error("Error al actualizar curva");
     } catch (error) {
-      console.error("Erro ao atualizar curva:", error);
+      console.error("Error al actualizar curva:", error);
       toast({
-        title: "Erro",
-        description: "Erro ao atualizar a curva. Tente novamente.",
+        title: "Error",
+        description: "Error al actualizar la curva. Intente nuevamente.",
         variant: "destructive",
       });
       return false;
@@ -147,17 +147,17 @@ export const useCurvasApi = () => {
       const response = await api.delete(`/feetproductos-curva/curva/${id}`);
       if (response.status === 200) {
         toast({
-          title: "Sucesso",
-          description: "Curva excluída com sucesso!",
+          title: "Éxito",
+          description: "¡Curva eliminada exitosamente!",
         });
         return true;
       }
-      throw new Error("Erro ao excluir curva");
+      throw new Error("Error al eliminar curva");
     } catch (error) {
-      console.error("Erro ao excluir curva:", error);
+      console.error("Error al eliminar curva:", error);
       toast({
-        title: "Erro",
-        description: "Erro ao excluir a curva. Tente novamente.",
+        title: "Error",
+        description: "Error al eliminar la curva. Intente nuevamente.",
         variant: "destructive",
       });
       return false;

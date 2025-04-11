@@ -105,39 +105,39 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            {curvaId ? "Editar Curva" : "Nova Curva"}
+            {curvaId ? "Editar Curva" : "Nueva Curva"}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div>
-            <Label>Nome</Label>
+            <Label>Nombre</Label>
             <Input
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              placeholder="Digite o nome da curva"
+              placeholder="Ingrese el nombre de la curva"
             />
           </div>
 
           <div>
-            <Label>Descrição</Label>
+            <Label>Descripción</Label>
             <Input
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
-              placeholder="Digite a descrição da curva"
+              placeholder="Ingrese la descripción de la curva"
             />
           </div>
 
           <div>
-            <Label>Tamanhos</Label>
+            <Label>Tallas</Label>
             <div className="flex gap-2">
               <Input
                 value={novaTalla}
                 onChange={(e) => setNovaTalla(e.target.value)}
-                placeholder="Adicionar tamanho"
+                placeholder="Agregar talla"
               />
               <Button onClick={handleAddTalla} type="button">
-                Adicionar
+                Agregar
               </Button>
             </div>
             <div className="mt-2 space-y-2">
@@ -149,7 +149,7 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
                     onClick={() => handleRemoveTalla(index)}
                     type="button"
                   >
-                    Remover
+                    Eliminar
                   </Button>
                 </div>
               ))}
@@ -157,14 +157,14 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 mt-4">
+        <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
           <Button onClick={handleSubmit}>
-            {curvaId ? "Salvar" : "Criar"}
+            {curvaId ? "Guardar" : "Crear"}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
