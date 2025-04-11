@@ -41,6 +41,14 @@ const TransferenciaBodegas = () => {
   const [selectedStatus, setSelectedStatus] = useState('all');
 
   useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
+  useEffect(() => {
     fetchTransferencias();
   }, [currentPage, searchTerm, selectedStatus]);
 
@@ -168,7 +176,7 @@ const TransferenciaBodegas = () => {
   };
 
   return (
-    <div className="">
+    <div className="overflow-hidden">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Transferência entre Bodegas</h1>
         <Button 
@@ -202,7 +210,7 @@ const TransferenciaBodegas = () => {
         </Select>
       </div>
 
-      <div className="bg-white rounded-lg shadow">
+      <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
         <Table>
           <TableHeader>
             <TableRow>
