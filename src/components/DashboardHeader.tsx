@@ -36,17 +36,17 @@ const DashboardHeader = () => {
     <header className="bg-white border-b border-gray-200 py-2 px-4 flex justify-between items-center h-12">
       <div className="flex items-center gap-4 w-full max-w-md">
         <div className="relative w-full">
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          {/* <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
           <Input
             type="text"
             placeholder="Buscar..."
             className="pl-8 w-full bg-gray-50 border-gray-200"
-          />
+          /> */}
         </div>
       </div>
 
       <div className="flex items-center gap-2">
-        <Popover>
+        {/* <Popover>
           <PopoverTrigger asChild>
             <button className="p-2 rounded-full hover:bg-gray-100 relative">
               <Bell size={20} className="text-gray-600" />
@@ -76,7 +76,7 @@ const DashboardHeader = () => {
               </button>
             </div>
           </PopoverContent>
-        </Popover>
+        </Popover> */}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -97,15 +97,15 @@ const DashboardHeader = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer">
+            {/* <DropdownMenuSeparator /> */}
+            {/* <DropdownMenuItem className="cursor-pointer">
               <User size={16} className="mr-2" />
               Perfil
             </DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer">
               <Settings size={16} className="mr-2" />
               Configurações
-            </DropdownMenuItem>
+            </DropdownMenuItem> */}
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer" onClick={() => logout()}>
               <LogOut size={16} className="mr-2" />
