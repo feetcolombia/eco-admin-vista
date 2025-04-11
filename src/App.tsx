@@ -18,12 +18,14 @@ import IngresoMercanciaVerificacion from "@/pages/IngresoMercanciaVerificacion";
 import NuevoIngresoMercancia from "@/pages/NuevoIngresoMercancia";
 import SalidaMercancia from "@/pages/SalidaMercancia";
 import SalidaMercanciaDetalle from "@/pages/SalidaMercanciaDetalle";
+import SalidaMercanciaConfirmar from "@/pages/SalidaMercanciaConfirmar";
 import NuevoSalidaMercancia from "@/pages/NuevoSalidaMercancia";
 import TransferenciaBodegas from "@/pages/TransferenciaBodegas";
 import TransferenciaSources from "@/pages/TransferenciaSources";
 import NovaTransferenciaBodega from "@/pages/NovaTransferenciaBodega";
 import ExecutarTransferencia from "@/pages/ExecutarTransferencia";
 import NotFound from "./pages/NotFound";
+import SalidaMercanciaForm from './pages/SalidaMercanciaForm';
 
 const queryClient = new QueryClient();
 
@@ -55,6 +57,7 @@ const App = () => (
                 <Route path="/dashboard/salida-mercancia" element={<SalidaMercancia />} />
                 <Route path="/dashboard/salida-mercancia/nuevo" element={<NuevoSalidaMercancia />} />
                 <Route path="/dashboard/salida-mercancia/:id" element={<SalidaMercanciaDetalle />} />
+                <Route path="/dashboard/salida-mercancia/:id/confirmar" element={<SalidaMercanciaConfirmar />} />
                 <Route path="/dashboard/transferencia-mercancia" element={<TransferenciaBodegas />} />
                 <Route path="/dashboard/transferencia-mercancia/novo" element={<NovaTransferenciaBodega />} />
                 <Route path="/dashboard/transferencia-mercancia/:id" element={<ExecutarTransferencia />} />

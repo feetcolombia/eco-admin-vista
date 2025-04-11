@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { useSalidaMercanciaApi } from "@/hooks/useSalidaMercanciaApi";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface Source {
   source_code: string;
@@ -37,26 +38,30 @@ const NuevoSalidaMercancia = () => {
     setSources(data);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
     if (!selectedSource || !responsable || !descripcion) {
+      toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
-    const data = {
-      source: selectedSource,
-      creador: 1, // TODO: Pegar o ID do usuário logado
-      fecha: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
-      nombre_responsable: responsable,
-      descripcion: descripcion,
-    };
+    try {
+      const payload = {
+        salidaMercancia: {
+          source: selectedSource,
+          creador: 1,
+          fecha: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
+          nombre_responsable: responsable,
+          descripcion: descripcion
+        }
+      };
 
-    const resultId = await createSalidaMercancia(data);
-    console.log('ID retornado:', resultId);
-    
-    if (resultId && !isNaN(resultId)) {
-      navigate(`/dashboard/salida-mercancia/${resultId}`);
-    } else {
-      console.error('ID inválido recebido da API:', resultId);
+      const response = await createSalidaMercancia(payload);
+      toast.success("Saída de mercadoria criada com sucesso");
+      navigate(`/dashboard/salida-mercancia/${response.salidamercancia_id}`);
+    } catch (error) {
+      // O toast de erro já é mostrado no hook
     }
   };
 
@@ -78,13 +83,13 @@ const NuevoSalidaMercancia = () => {
             className="bg-gray-100"
             onClick={() => navigate(-1)}
           >
-            Voltar
+            Regresar
           </Button>
           <Button
             className="bg-ecommerce-500 hover:bg-ecommerce-600"
             onClick={handleSubmit}
           >
-            Salvar
+            Guardar
           </Button>
         </div>
       </div>

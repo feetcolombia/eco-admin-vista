@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import axios from 'axios';
+import { toast } from 'sonner';
 
 interface SalidaMercancia {
   salidamercancia_id: number;
@@ -11,6 +13,15 @@ interface SalidaMercancia {
   estado: string;
   descripcion: string;
   nombre_responsable: string;
+  productos?: {
+    salida_mercancia_producto_id: string;
+    salida_mercancia_id: string;
+    producto: string;
+    sku: string;
+    cantidad: string;
+    bodega_id: string;
+    bodega_nombre: string;
+  }[];
 }
 
 interface SearchResponse {
@@ -44,12 +55,47 @@ interface Bodega {
   bodega_limite: number;
 }
 
+interface ProductQuantityResponse {
+  inventory_quantity: number;
+  product_sku: string;
+  sku: string;
+  transferencia_quantity: number;
+  product_id: string | null;
+  bodega_nombre: string;
+  barcode: string;
+}
+
 const BASE_URL = 'https://stg.feetcolombia.com/rest/V1';
+
+interface CreateSalidaMercanciaPayload {
+  salidaMercancia: {
+    source: string;
+    creador: number;
+    fecha: string;
+    nombre_responsable: string;
+    descripcion: string;
+  };
+}
+
+interface SaveProductsPayload {
+  salidaMercanciaProductos: Array<{
+    salida_mercancia_id: number;
+    sku: string;
+    cantidad: number;
+    bodega_id: number;
+  }>;
+}
+
+interface CompletarSalidaPayload {
+  salidaMercanciaId: number;
+  sourceCode: string;
+}
 
 export const useSalidaMercanciaApi = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { token } = useAuth();
+  const [error, setError] = useState<string | null>(null);
 
   const headers = {
     'Authorization': `Bearer ${token}`,
@@ -59,59 +105,48 @@ export const useSalidaMercanciaApi = () => {
   const getSources = async (): Promise<Source[]> => {
     setLoading(true);
     try {
-      const response = await fetch(
+      const response = await axios.get(
         'https://stg.feetcolombia.com/rest/all/V1/inventory/sources',
         { headers }
       );
-      
-      if (!response.ok) throw new Error('Erro ao buscar origens');
-      
-      const data: SourcesResponse = await response.json();
-      return data.items || [];
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao buscar as origens. Tente novamente.",
-        variant: "destructive",
-      });
+      return response.data.items || [];
+    } catch (err) {
+      setError('Erro ao buscar origens');
       return [];
     } finally {
       setLoading(false);
     }
   };
 
-  const createSalidaMercancia = async (data: {
-    source: string;
-    creador: number;
-    fecha: string;
-    nombre_responsable: string;
-    descripcion: string;
-  }): Promise<number | null> => {
+  const createSalidaMercancia = async (payload: CreateSalidaMercanciaPayload) => {
     setLoading(true);
+    setError("");
+
     try {
       const response = await fetch(
         `${BASE_URL}/feetmercancia-salida/salidamercancia`,
         {
-          method: 'POST',
+          method: "POST",
           headers,
-          body: JSON.stringify({
-            salidaMercancia: data
-          })
+          body: JSON.stringify(payload),
         }
       );
-      
-      if (!response.ok) throw new Error('Erro ao criar saída');
-      
-      const result = await response.json();
-      console.log('API Response:', result);
-      return result?.salidamercancia_id || null;
+
+      if (!response.ok) {
+        throw new Error("Erro ao criar saída de mercadoria");
+      }
+
+      const data = await response.json();
+      return data;
     } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao criar saída de mercadoria";
+      setError(message);
       toast({
         title: "Erro",
-        description: "Erro ao criar a saída. Tente novamente.",
+        description: message,
         variant: "destructive",
       });
-      return null;
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -201,12 +236,120 @@ export const useSalidaMercanciaApi = () => {
     }
   };
 
+  const getProductQuantity = async (barcode: string, bodegaId: number, source: string): Promise<ProductQuantityResponse> => {
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/feetmercancia-salida/productquantity`,
+        {
+          headers,
+          params: {
+            source,
+            bodegaId,
+            barcode
+          }
+        }
+      );
+      
+      const data = JSON.parse(response.data); // A resposta vem como string JSON
+      
+      // Se transferencia_quantity for 0, significa que o produto não está na posição
+      if (data.transferencia_quantity === 0) {
+        toast({
+          title: "Atenção",
+          description: `Produto não encontrado na posição ${data.bodega_nombre}`,
+          variant: "destructive",
+        });
+        throw new Error('Produto não encontrado na posição');
+      }
+      
+      return data;
+    } catch (err) {
+      if (err.message === 'Produto não encontrado na posição') {
+        throw err;
+      }
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar produto",
+        variant: "destructive",
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveProducts = async (payload: SaveProductsPayload) => {
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/feetmercancia-salida/salidamercancia/producto`,
+        payload,
+        { headers }
+      );
+      
+      toast({
+        title: "Sucesso",
+        description: "Produtos salvos com sucesso",
+      });
+      
+      return response.data;
+    } catch (err) {
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar os produtos",
+        variant: "destructive",
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const completarSalida = async (payload: CompletarSalidaPayload) => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        `${BASE_URL}/feetmercancia-salida/salidamercancia/productos/inventory`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Erro ao completar saída de mercadoria");
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao completar saída de mercadoria";
+      setError(message);
+      toast({
+        title: "Erro",
+        description: message,
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
+    error,
     getSources,
     createSalidaMercancia,
     getSalidaMercancia,
     getSalidaById,
     getBodegas,
+    getProductQuantity,
+    saveProducts,
+    completarSalida,
   };
 }; 

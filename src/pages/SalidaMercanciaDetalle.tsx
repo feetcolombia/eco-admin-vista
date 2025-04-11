@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 interface SalidaMercancia {
   salidamercancia_id: number;
@@ -24,6 +25,15 @@ interface SalidaMercancia {
   estado: string;
   descripcion: string;
   nombre_responsable: string;
+  productos?: {
+    salida_mercancia_producto_id: string;
+    salida_mercancia_id: string;
+    producto: string;
+    sku: string;
+    cantidad: string;
+    bodega_id: string;
+    bodega_nombre: string;
+  }[];
 }
 
 interface Bodega {
@@ -36,20 +46,30 @@ interface Bodega {
   bodega_limite: number;
 }
 
+interface ProductItem {
+  barcode: string;
+  sku: string;
+  bodega_nombre: string;
+  inventory_quantity: number;
+  quantity: number;
+}
+
 const SalidaMercanciaDetalle = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [salida, setSalida] = useState<SalidaMercancia | null>(null);
   const [bodegas, setBodegas] = useState<Bodega[]>([]);
   const [selectedBodega, setSelectedBodega] = useState<string>("");
+  const [selectedBodegaId, setSelectedBodegaId] = useState<number>(0);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [barcode, setBarcode] = useState("");
   const [totalScanned, setTotalScanned] = useState(0);
+  const [products, setProducts] = useState<ProductItem[]>([]);
 
-  const { loading, getSalidaById, getBodegas } = useSalidaMercanciaApi();
+  const { loading, getSalidaById, getBodegas, getProductQuantity, saveProducts } = useSalidaMercanciaApi();
 
   useEffect(() => {
     if (id) {
-      console.log('ID recebido na página de detalhes:', id);
       fetchSalida();
     }
   }, [id]);
@@ -61,19 +81,21 @@ const SalidaMercanciaDetalle = () => {
   }, [salida?.source]);
 
   const fetchSalida = async () => {
-    if (!id || isNaN(Number(id))) {
-      console.error('ID inválido na URL:', id);
-      return;
-    }
-    
-    const numericId = Number(id);
-    console.log('Convertendo ID para número:', numericId);
-    
-    const data = await getSalidaById(numericId);
-    console.log('Dados recebidos da API:', data);
-    
+    if (!id || isNaN(Number(id))) return;
+    const data = await getSalidaById(Number(id));
     if (data) {
       setSalida(data);
+      if (data.productos && data.productos.length > 0) {
+        const existingProducts = data.productos.map(product => ({
+          barcode: product.sku,
+          sku: product.sku,
+          bodega_nombre: product.bodega_nombre,
+          inventory_quantity: parseInt(product.cantidad),
+          quantity: parseInt(product.cantidad)
+        }));
+        setProducts(existingProducts);
+        setTotalScanned(existingProducts.length);
+      }
     }
   };
 
@@ -83,16 +105,89 @@ const SalidaMercanciaDetalle = () => {
       setBodegas(data);
       if (data.length > 0) {
         setSelectedBodega(data[0].bodega_nombre);
+        setSelectedBodegaId(data[0].bodega_id);
       }
     }
   };
 
-  const handleBarcodeSubmit = (e: React.FormEvent) => {
+  const handleBodegaChange = (bodegaNombre: string) => {
+    setSelectedBodega(bodegaNombre);
+    const bodega = bodegas.find(b => b.bodega_nombre === bodegaNombre);
+    if (bodega) {
+      setSelectedBodegaId(bodega.bodega_id);
+    }
+  };
+
+  const handleBarcodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (barcode) {
-      // TODO: Implementar lógica de escaneamento
+    if (!barcode.trim() || !selectedBodegaId) return;
+
+    try {
+      const response = await getProductQuantity(barcode, selectedBodegaId, salida?.source || 'default');
+      
+      const newProduct: ProductItem = {
+        barcode: response.barcode,
+        sku: response.sku,
+        bodega_nombre: response.bodega_nombre,
+        inventory_quantity: response.transferencia_quantity,
+        quantity: 1
+      };
+
+      setProducts(prev => [...prev, newProduct]);
+      setBarcode('');
       setTotalScanned(prev => prev + 1);
-      setBarcode("");
+    } catch (error) {
+      // O toast de erro já é mostrado no hook
+    }
+  };
+
+  const handleSaveProducts = async () => {
+    if (!id || products.length === 0) {
+      toast.error('Adicione produtos antes de salvar');
+      return;
+    }
+
+    try {
+      const payload = {
+        salidaMercanciaProductos: products.map(product => ({
+          salida_mercancia_id: Number(id),
+          sku: product.sku,
+          cantidad: product.quantity,
+          bodega_id: selectedBodegaId
+        }))
+      };
+
+      await saveProducts(payload);
+      // Limpa a lista de produtos após salvar com sucesso
+      setProducts([]);
+      setTotalScanned(0);
+    } catch (error) {
+      // O toast de erro já é mostrado no hook
+    }
+  };
+
+  const handleCompletarSalida = async () => {
+    if (!id || products.length === 0) {
+      toast.error('Adicione produtos antes de completar');
+      return;
+    }
+
+    try {
+      // Primeiro salvamos os produtos
+      const payload = {
+        salidaMercanciaProductos: products.map(product => ({
+          salida_mercancia_id: Number(id),
+          sku: product.sku,
+          cantidad: product.quantity,
+          bodega_id: selectedBodegaId
+        }))
+      };
+
+      await saveProducts(payload);
+      // Após salvar com sucesso, navegamos para a página de confirmação
+      navigate(`/dashboard/salida-mercancia/${id}/confirmar`);
+    } catch (error) {
+      // O toast de erro já é mostrado no hook
     }
   };
 
@@ -114,10 +209,19 @@ const SalidaMercanciaDetalle = () => {
           <Button variant="outline" className="bg-gray-100">
             Voltar
           </Button>
-          <Button variant="outline" className="bg-gray-100">
-            Salvar
+          <Button 
+            variant="outline" 
+            className="bg-gray-100"
+            onClick={handleSaveProducts}
+            disabled={loading || products.length === 0}
+          >
+            Guardar
           </Button>
-          <Button className="bg-ecommerce-500 hover:bg-ecommerce-600">
+          <Button 
+            className="bg-ecommerce-500 hover:bg-ecommerce-600"
+            onClick={handleCompletarSalida}
+            disabled={loading || products.length === 0}
+          >
             Completar
           </Button>
         </div>
@@ -171,7 +275,7 @@ const SalidaMercanciaDetalle = () => {
                 />
               </div>
               <div className="w-48">
-                <Select value={selectedBodega} onValueChange={setSelectedBodega}>
+                <Select value={selectedBodega} onValueChange={handleBodegaChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a posição" />
                   </SelectTrigger>
@@ -195,6 +299,11 @@ const SalidaMercanciaDetalle = () => {
               placeholder="Escanear ou digitar código de barras"
               value={barcode}
               onChange={(e) => setBarcode(e.target.value)}
+              onKeyDown={async (e: React.KeyboardEvent<HTMLInputElement>) => {
+                if (e.key === 'Enter') {
+                  await handleBarcodeSubmit(e);
+                }
+              }}
               className="w-full"
               autoFocus
             />
@@ -206,12 +315,79 @@ const SalidaMercanciaDetalle = () => {
                 <tr className="border-b">
                   <th className="text-left py-2">SKU</th>
                   <th className="text-left py-2">Posição</th>
+                  <th className="text-left py-2">Disponível</th>
                   <th className="text-left py-2">Quantidade</th>
                   <th className="text-left py-2">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {/* Items escaneados serão exibidos aqui */}
+                {products.map((product, index) => (
+                  <tr key={index} className="border-b">
+                    <td className="py-2">{product.sku}</td>
+                    <td className="py-2">{product.bodega_nombre}</td>
+                    <td className="py-2">{product.inventory_quantity}</td>
+                    <td className="py-2">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const newQuantity = Math.max(1, product.quantity - 1);
+                            setProducts(prev => prev.map((p, i) => 
+                              i === index ? { ...p, quantity: newQuantity } : p
+                            ));
+                          }}
+                          disabled={product.quantity <= 1}
+                        >
+                          -
+                        </Button>
+                        <Input
+                          type="number"
+                          value={product.quantity}
+                          onChange={(e) => {
+                            const newQuantity = Math.min(
+                              Math.max(1, parseInt(e.target.value) || 0),
+                              product.inventory_quantity
+                            );
+                            setProducts(prev => prev.map((p, i) => 
+                              i === index ? { ...p, quantity: newQuantity } : p
+                            ));
+                          }}
+                          className="w-20 text-center"
+                          min={1}
+                          max={product.inventory_quantity}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const newQuantity = Math.min(product.inventory_quantity, product.quantity + 1);
+                            setProducts(prev => prev.map((p, i) => 
+                              i === index ? { ...p, quantity: newQuantity } : p
+                            ));
+                          }}
+                          disabled={product.quantity >= product.inventory_quantity}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </td>
+                    <td className="py-2">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          setProducts(prev => prev.filter((_, i) => i !== index));
+                          setTotalScanned(prev => prev - 1);
+                        }}
+                      >
+                        Remover
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
