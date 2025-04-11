@@ -38,25 +38,25 @@ const Login = () => {
       <div className="w-full md:w-1/2 flex items-center justify-center px-4 py-12">
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-ecommerce-600">E-Commerce Admin</h1>
-            <p className="text-gray-600 mt-2">Gerencie sua loja online</p>
+            <h1 className="text-3xl font-bold text-ecommerce-600">Administrador de E-Commerce</h1>
+            <p className="text-gray-600 mt-2">Gestiona tu tienda en línea</p>
           </div>
           
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="text-2xl">Login</CardTitle>
-              <CardDescription>Entre com suas credenciais para acessar o painel</CardDescription>
+              <CardTitle className="text-2xl">Iniciar Sesión</CardTitle>
+              <CardDescription>Ingresa con tus credenciales para acceder al panel</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <label htmlFor="username" className="text-sm font-medium">
-                    Usuário
+                    Usuario
                   </label>
                   <Input
                     id="username"
                     type="text"
-                    placeholder="Digite seu usuário"
+                    placeholder="Ingresa tu usuario"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
@@ -66,7 +66,7 @@ const Login = () => {
                 
                 <div className="space-y-2">
                   <label htmlFor="password" className="text-sm font-medium">
-                    Senha
+                    Contraseña
                   </label>
                   <Input
                     id="password"
@@ -87,16 +87,16 @@ const Login = () => {
                   {isLoading ? (
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-                      <span>Entrando...</span>
+                      <span>Ingresando...</span>
                     </div>
                   ) : (
-                    "Entrar"
+                    "Ingresar"
                   )}
                 </Button>
               </form>
             </CardContent>
             <CardFooter className="flex justify-center text-sm text-gray-500">
-              Sistema administrativo de e-commerce
+              Sistema administrativo de comercio electrónico
             </CardFooter>
           </Card>
         </div>
