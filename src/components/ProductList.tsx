@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-interface Product {
+export interface Product {
   id: string;
   sku: string;
   barcode: string;
@@ -19,7 +19,7 @@ interface Product {
   bodega_nombre?: string;
 }
 
-interface ProductListProps {
+export interface ProductListProps {
   products: Product[];
   onQuantityChange: (id: string, quantity: number) => void;
   onRemove: (id: string) => void;

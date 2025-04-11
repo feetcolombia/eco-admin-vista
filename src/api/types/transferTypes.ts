@@ -1,3 +1,18 @@
+export enum TransferenciaEstado {
+  PENDIENTE = 'pendiente',
+  EN_PROCESO = 'en_proceso',
+  COMPLETADA = 'completada',
+  CANCELADA = 'cancelada',
+}
+
+export interface FilterGroup {
+  filters: Array<{
+    field: string;
+    value: string;
+    condition_type: string;
+  }>;
+}
+
 export interface TransferenciaBodega {
   transferencia_bodega_id: string;
   soruce: string;
@@ -6,7 +21,7 @@ export interface TransferenciaBodega {
   cantidad: string;
   descripcion: string;
   responsable: string;
-  estado: string;
+  estado: TransferenciaEstado;
   codigo: string;
   created_at: string | null;
   updated_at: string | null;
@@ -49,7 +64,7 @@ export interface TransferenciaBodegaResponse {
 export interface SourcesResponse {
   items: Source[];
   search_criteria: {
-    filter_groups: any[];
+    filter_groups: FilterGroup[];
   };
   total_count: number;
 }

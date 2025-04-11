@@ -1,54 +1,39 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useApiError } from './useApiError';
-import { useLoadingState } from './useLoadingState';
+import { apiClient } from '@/api/apiConfig';
 
-export interface Bodega {
+interface Bodega {
   bodega_id: number;
   bodega_nombre: string;
 }
 
-export const useBodegas = (source: string) => {
-  const { token } = useAuth();
-  const { handleApiError } = useApiError();
-  const { loading, withLoading } = useLoadingState();
+interface UseBodegasResult {
+  bodegas: Bodega[];
+  loading: boolean;
+  error: string | null;
+}
+
+export function useBodegas(source: string): UseBodegasResult {
   const [bodegas, setBodegas] = useState<Bodega[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (source) {
-      fetchBodegas();
-    }
+    const fetchBodegas = async () => {
+      try {
+        setLoading(true);
+        const response = await apiClient.get(`/api/bodegas/${source}`);
+        setBodegas(response.data);
+        setError(null);
+      } catch (err) {
+        setError('Erro ao carregar bodegas');
+        console.error('Erro ao carregar bodegas:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBodegas();
   }, [source]);
 
-  const fetchBodegas = async () => {
-    try {
-      const response = await withLoading(
-        fetch(
-          `https://stg.feetcolombia.com/rest/V1/feetbodega-mercancia/bodega/${source}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        )
-      );
-
-      if (!response.ok) {
-        throw new Error('Erro ao buscar bodegas');
-      }
-
-      const data = await response.json();
-      setBodegas(data);
-    } catch (error) {
-      handleApiError(error);
-      setBodegas([]);
-    }
-  };
-
-  return {
-    bodegas,
-    loading,
-    fetchBodegas
-  };
-}; 
+  return { bodegas, loading, error };
+} 

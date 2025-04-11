@@ -24,6 +24,10 @@ const actionTypes = {
 
 let count = 0
 
+/**
+ * Função auxiliar para gerar IDs únicos para os toasts
+ * @returns {string} ID único para o toast
+ */
 function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER
   return count.toString()
@@ -55,6 +59,10 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
+/**
+ * Adiciona um toast à fila de remoção
+ * @param {string} toastId - ID do toast a ser removido
+ */
 const addToRemoveQueue = (toastId: string) => {
   if (toastTimeouts.has(toastId)) {
     return
@@ -90,8 +98,10 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
+      // Side effects: Este trecho lida com a remoção automática de toasts
+      // após um determinado tempo. Foi mantido aqui para manter a lógica
+      // de gerenciamento de estado centralizada, evitando efeitos colaterais
+      // em outros lugares do código.
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -168,6 +178,10 @@ function toast({ ...props }: Toast) {
   }
 }
 
+/**
+ * Hook para gerenciar notificações toast na aplicação
+ * @returns {Object} Objeto contendo o estado atual dos toasts e funções para manipulação
+ */
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import { useBodegas } from '@/hooks/useBodegas';
 import {
   Select,
   SelectContent,
@@ -6,7 +6,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useBodegas } from '@/hooks/useBodegas';
 
 interface BodegaSelectorProps {
   source: string;
@@ -16,6 +15,14 @@ interface BodegaSelectorProps {
   required?: boolean;
 }
 
+/**
+ * Componente de seleção de bodega
+ * @param {string} source - Fonte dos dados da bodega
+ * @param {string} value - Valor selecionado
+ * @param {(value: string) => void} onChange - Função chamada quando o valor é alterado
+ * @param {string} [label="Bodega"] - Rótulo do seletor
+ * @param {boolean} [required=false] - Indica se o campo é obrigatório
+ */
 export const BodegaSelector: React.FC<BodegaSelectorProps> = ({
   source,
   value,
