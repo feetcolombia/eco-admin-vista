@@ -148,7 +148,7 @@ const TransferenciaBodegas = () => {
   };
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Transferência entre Bodegas</h1>
         <Button 
