@@ -147,6 +147,26 @@ const TransferenciaBodegas = () => {
     return items;
   };
 
+  const handleViewDetails = async (id: string) => {
+    try {
+      const response = await fetch(
+        `https://stg.feetcolombia.com/rest/V1/transferenciabodegas/${id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      const [success, data] = await response.json();
+      if (success) {
+        navigate(`/dashboard/transferencia-mercancia/${id}`, { state: { transferencia: data } });
+      }
+    } catch (error) {
+      console.error('Erro ao buscar detalhes da transferência:', error);
+    }
+  };
+
   return (
     <div className="">
       <div className="flex justify-between items-center mb-6">
@@ -213,7 +233,11 @@ const TransferenciaBodegas = () => {
                 <TableCell>{transferencia.soruce}</TableCell>
                 <TableCell>{transferencia.historico === 'n' ? 'Não' : 'Sim'}</TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="sm">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleViewDetails(transferencia.transferencia_bodega_id)}
+                  >
                     <Eye className="h-4 w-4" />
                   </Button>
                 </TableCell>
