@@ -20,6 +20,15 @@ import {
 import { TransferenciaBodega, TransferenciaBodegaResponse } from '@/api/types/transferTypes';
 import { Plus, Eye } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 
 const TransferenciaBodegas = () => {
   const navigate = useNavigate();
@@ -78,6 +87,64 @@ const TransferenciaBodegas = () => {
       default:
         return 'Desconhecido';
     }
+  };
+
+  const renderPaginationItems = () => {
+    const items = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    if (startPage > 1) {
+      items.push(
+        <PaginationItem key="1">
+          <PaginationLink onClick={() => setCurrentPage(1)}>1</PaginationLink>
+        </PaginationItem>
+      );
+      if (startPage > 2) {
+        items.push(
+          <PaginationItem key="ellipsis-start">
+            <PaginationEllipsis />
+          </PaginationItem>
+        );
+      }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      items.push(
+        <PaginationItem key={i}>
+          <PaginationLink
+            onClick={() => setCurrentPage(i)}
+            isActive={currentPage === i}
+          >
+            {i}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        items.push(
+          <PaginationItem key="ellipsis-end">
+            <PaginationEllipsis />
+          </PaginationItem>
+        );
+      }
+      items.push(
+        <PaginationItem key={totalPages}>
+          <PaginationLink onClick={() => setCurrentPage(totalPages)}>
+            {totalPages}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    return items;
   };
 
   return (
@@ -156,27 +223,27 @@ const TransferenciaBodegas = () => {
         </Table>
       </div>
 
-      <div className="flex justify-between items-center mt-4">
-        <div className="text-sm text-gray-500">
-          Página {currentPage} de {totalPages}
+      {totalPages > 1 && (
+        <div className="mt-4 flex justify-center">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+              {renderPaginationItems()}
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            Anterior
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-          >
-            Próximo
-          </Button>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

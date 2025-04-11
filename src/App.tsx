@@ -24,6 +24,7 @@ import TransferenciaBodegas from "@/pages/TransferenciaBodegas";
 import TransferenciaSources from "@/pages/TransferenciaSources";
 import NovaTransferenciaBodega from "@/pages/NovaTransferenciaBodega";
 import ExecutarTransferencia from "@/pages/ExecutarTransferencia";
+import ConfirmarTransferencia from "@/pages/ConfirmarTransferencia";
 import NotFound from "./pages/NotFound";
 import SalidaMercanciaForm from './pages/SalidaMercanciaForm';
 
@@ -60,6 +61,7 @@ const App = () => (
                 <Route path="/dashboard/salida-mercancia/:id/confirmar" element={<SalidaMercanciaConfirmar />} />
                 <Route path="/dashboard/transferencia-mercancia" element={<TransferenciaBodegas />} />
                 <Route path="/dashboard/transferencia-mercancia/novo" element={<NovaTransferenciaBodega />} />
+                <Route path="/dashboard/transferencia-mercancia/:id/confirmar" element={<ConfirmarTransferencia />} />
                 <Route path="/dashboard/transferencia-mercancia/:id" element={<ExecutarTransferencia />} />
                 <Route path="/dashboard/transferencia-sources" element={<TransferenciaSources />} />
                 
