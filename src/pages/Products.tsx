@@ -155,16 +155,16 @@ const Products = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Produtos</h1>
+          <h1 className="text-2xl font-bold">Productos</h1>
           <p className="text-muted-foreground">
-            Gerencie os produtos da sua loja
+            Administre los productos de su tienda
           </p>
         </div>
         <Button 
           className="bg-ecommerce-500 hover:bg-ecommerce-600"
           onClick={() => navigate("/dashboard/products/new")}
         >
-          <Plus size={16} className="mr-2" /> Novo Produto
+          <Plus size={16} className="mr-2" /> Nuevo Producto
         </Button>
       </div>
 

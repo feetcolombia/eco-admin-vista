@@ -41,7 +41,7 @@ export function ProductFilters({
             <div className="relative flex-1">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Digite o SKU do produto..." 
+                placeholder="Ingrese el SKU del producto..." 
                 className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -58,14 +58,14 @@ export function ProductFilters({
         </div>
 
         <div className="w-full md:w-72">
-          <Label>Website</Label>
+          <Label>Sitio Web</Label>
           <Select
             value={selectedWebsite}
             onValueChange={setSelectedWebsite}
             disabled={websitesLoading}
           >
             <SelectTrigger>
-              <SelectValue placeholder={websitesLoading ? "Carregando..." : "Selecione um website"} />
+              <SelectValue placeholder={websitesLoading ? "Cargando..." : "Seleccione un sitio web"} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
@@ -79,14 +79,14 @@ export function ProductFilters({
         </div>
 
         <div className="w-full md:w-72">
-          <Label>Categoria</Label>
+          <Label>Categoría</Label>
           <Select
             value={selectedCategories[0]?.toString() || "all"}
             onValueChange={(value) => handleCategorySelection(value === "all" ? 0 : Number(value))}
             disabled={categoriesLoading}
           >
             <SelectTrigger>
-              <SelectValue placeholder={categoriesLoading ? "Carregando..." : "Selecione uma categoria"} />
+              <SelectValue placeholder={categoriesLoading ? "Cargando..." : "Seleccione una categoría"} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas</SelectItem>

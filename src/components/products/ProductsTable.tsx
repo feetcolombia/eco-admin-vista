@@ -59,16 +59,16 @@ export const ProductsTable = ({
           <TableHeader>
             <TableRow>
               <TableHead className="w-8"></TableHead>
-              <TableHead>SKU Pai</TableHead>
-              <TableHead>Nome</TableHead>
-              <TableHead>Preço</TableHead>
-              <TableHead>Categorias</TableHead>
-              <TableHead>Websites</TableHead>
-              <TableHead>Cor</TableHead>
+              <TableHead>SKU Padre</TableHead>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Precio</TableHead>
+              <TableHead>Categorías</TableHead>
+              <TableHead>Sitios Web</TableHead>
+              <TableHead>Color</TableHead>
               <TableHead>Material</TableHead>
               <TableHead>Marca</TableHead>
               <TableHead>Estilo</TableHead>
-              <TableHead>Ações</TableHead>
+              <TableHead>Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -95,7 +95,7 @@ export const ProductsTable = ({
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
-                          {product.extension_attributes.category_links.length} categorias
+                          {product.extension_attributes.category_links.length} categorías
                           <ChevronDown className="ml-1 h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -112,7 +112,7 @@ export const ProductsTable = ({
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
-                          {product.extension_attributes.website_ids.length} websites
+                          {product.extension_attributes.website_ids.length} sitios web
                           <ChevronDown className="ml-1 h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -154,7 +154,7 @@ export const ProductsTable = ({
 
       <div className="mt-4 flex items-center justify-between">
         <div className="text-sm text-gray-500">
-          Mostrando {(currentPage - 1) * pageSize + 1} a {Math.min(currentPage * pageSize, totalCount)} de {totalCount} produtos
+          Mostrando {(currentPage - 1) * pageSize + 1} a {Math.min(currentPage * pageSize, totalCount)} de {totalCount} productos
         </div>
         <div className="flex gap-2">
           <Button
@@ -169,7 +169,7 @@ export const ProductsTable = ({
             onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
           >
-            Próxima
+            Siguiente
           </Button>
         </div>
       </div>

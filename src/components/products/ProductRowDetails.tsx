@@ -1,4 +1,3 @@
-
 import {
   Table,
   TableBody,
@@ -23,10 +22,10 @@ export const ProductRowDetails = ({ productId, childProducts }: ProductRowDetail
             <TableHeader>
               <TableRow>
                 <TableHead>SKU</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Preço</TableHead>
-                <TableHead>Estoque</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Precio</TableHead>
+                <TableHead>Inventario</TableHead>
+                <TableHead>Estado</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -38,13 +37,13 @@ export const ProductRowDetails = ({ productId, childProducts }: ProductRowDetail
                   <TableCell>
                     <div className="flex items-center">
                       <span className={`w-2 h-2 rounded-full mr-2 ${child.is_closedbox ? 'bg-yellow-500' : 'bg-green-500'}`}></span>
-                      {child.is_closedbox ? 'Caixa Fechada' : 'Unidade'}
+                      {child.is_closedbox ? 'Caja Cerrada' : 'Unidad'}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center">
                       <span className={`w-2 h-2 rounded-full mr-2 ${child.status === 1 ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                      {child.status === 1 ? 'Ativo' : 'Inativo'}
+                      {child.status === 1 ? 'Activo' : 'Inactivo'}
                     </div>
                   </TableCell>
                 </TableRow>
