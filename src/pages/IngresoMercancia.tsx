@@ -117,9 +117,9 @@ const IngresoMercancia = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Ingresso de Mercadorias</h1>
+          <h1 className="text-2xl font-bold">Ingreso de Mercancías</h1>
           <p className="text-muted-foreground">
-            Gerencie o ingresso de mercadorias no sistema
+            Gestione el ingreso de mercancías en el sistema
           </p>
         </div>
         <Button 
@@ -127,7 +127,7 @@ const IngresoMercancia = () => {
           onClick={handleNewClick}
         >
           <Plus className="w-4 h-4 mr-2" />
-          Novo Ingresso
+          Nuevo Ingreso
         </Button>
       </div>
 
@@ -138,10 +138,10 @@ const IngresoMercancia = () => {
               <TableRow>
                 <TableHead>ID</TableHead>
                 <TableHead>Consecutivo</TableHead>
-                <TableHead>Origem</TableHead>
-                <TableHead>Responsável</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Data</TableHead>
+                <TableHead>Origen</TableHead>
+                <TableHead>Responsable</TableHead>
+                <TableHead>Descripción</TableHead>
+                <TableHead>Fecha</TableHead>
                 <TableHead>Estado</TableHead>
               </TableRow>
             </TableHeader>
@@ -172,9 +172,9 @@ const IngresoMercancia = () => {
                         }`}
                       >
                         {ingreso.estado === "n"
-                          ? "Novo"
+                          ? "Nuevo"
                           : ingreso.estado === "p"
-                          ? "Processando"
+                          ? "Procesando"
                           : "Completado"}
                       </div>
                     </TableCell>
@@ -183,7 +183,7 @@ const IngresoMercancia = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-4">
-                    Nenhum ingresso encontrado
+                    No se encontraron ingresos
                   </TableCell>
                 </TableRow>
               )}
