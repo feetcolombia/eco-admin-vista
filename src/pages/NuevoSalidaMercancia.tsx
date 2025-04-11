@@ -42,7 +42,7 @@ const NuevoSalidaMercancia = () => {
     e.preventDefault();
 
     if (!selectedSource || !responsable || !descripcion) {
-      toast.error("Preencha todos os campos obrigatórios");
+      toast.error("Por favor complete todos los campos obligatorios");
       return;
     }
 
@@ -58,7 +58,7 @@ const NuevoSalidaMercancia = () => {
       };
 
       const response = await createSalidaMercancia(payload);
-      toast.success("Saída de mercadoria criada com sucesso");
+      toast.success("Salida de mercancía creada exitosamente");
       navigate(`/dashboard/salida-mercancia/${response.salidamercancia_id}`);
     } catch (error) {
       // O toast de erro já é mostrado no hook
@@ -76,14 +76,14 @@ const NuevoSalidaMercancia = () => {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Novo Processo de Saída</h1>
+        <h1 className="text-2xl font-bold">Nuevo Proceso de Salida</h1>
         <div className="flex gap-2">
           <Button
             variant="outline"
             className="bg-gray-100"
             onClick={() => navigate(-1)}
           >
-            Regresar
+            Volver
           </Button>
           <Button
             className="bg-ecommerce-500 hover:bg-ecommerce-600"
@@ -98,11 +98,11 @@ const NuevoSalidaMercancia = () => {
         <CardContent className="p-6 space-y-6">
           <div className="space-y-2">
             <Label htmlFor="source" className="text-sm font-medium">
-              Origem<span className="text-red-500">*</span>
+              Origen<span className="text-red-500">*</span>
             </Label>
             <Select value={selectedSource} onValueChange={setSelectedSource}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecione a origem" />
+                <SelectValue placeholder="Seleccione el origen" />
               </SelectTrigger>
               <SelectContent>
                 {sources.map((source) => (
@@ -116,7 +116,7 @@ const NuevoSalidaMercancia = () => {
 
           <div className="space-y-2">
             <Label htmlFor="fecha" className="text-sm font-medium">
-              Data<span className="text-red-500">*</span>
+              Fecha<span className="text-red-500">*</span>
             </Label>
             <Input
               id="fecha"
@@ -128,25 +128,25 @@ const NuevoSalidaMercancia = () => {
 
           <div className="space-y-2">
             <Label htmlFor="responsable" className="text-sm font-medium">
-              Usuário Responsável<span className="text-red-500">*</span>
+              Usuario Responsable<span className="text-red-500">*</span>
             </Label>
             <Input
               id="responsable"
               value={responsable}
               onChange={(e) => setResponsable(e.target.value)}
-              placeholder="Digite o nome do responsável"
+              placeholder="Ingrese el nombre del responsable"
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="descripcion" className="text-sm font-medium">
-              Descrição<span className="text-red-500">*</span>
+              Descripción<span className="text-red-500">*</span>
             </Label>
             <Textarea
               id="descripcion"
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
-              placeholder="Digite a descrição"
+              placeholder="Ingrese la descripción"
               rows={4}
             />
           </div>

@@ -121,9 +121,9 @@ const SalidaMercancia = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Saída de Mercadorias</h1>
+          <h1 className="text-2xl font-bold">Salida de Mercancías</h1>
           <p className="text-muted-foreground">
-            Gerencie a saída de mercadorias no sistema
+            Gestione la salida de mercancías en el sistema
           </p>
         </div>
         <Button 
@@ -131,7 +131,7 @@ const SalidaMercancia = () => {
           onClick={handleNewClick}
         >
           <Plus className="w-4 h-4 mr-2" />
-          Nova Saída
+          Nueva Salida
         </Button>
       </div>
 
@@ -142,9 +142,9 @@ const SalidaMercancia = () => {
               <TableRow>
                 <TableHead>ID</TableHead>
                 <TableHead>Consecutivo</TableHead>
-                <TableHead>Origem</TableHead>
-                <TableHead>Responsável</TableHead>
-                <TableHead>Data</TableHead>
+                <TableHead>Origen</TableHead>
+                <TableHead>Responsable</TableHead>
+                <TableHead>Fecha</TableHead>
                 <TableHead>Estado</TableHead>
               </TableRow>
             </TableHeader>
@@ -174,9 +174,9 @@ const SalidaMercancia = () => {
                         }`}
                       >
                         {salida.estado === "n"
-                          ? "Novo"
+                          ? "Nuevo"
                           : salida.estado === "p"
-                          ? "Processando"
+                          ? "En Proceso"
                           : "Completado"}
                       </div>
                     </TableCell>
@@ -185,7 +185,7 @@ const SalidaMercancia = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-4">
-                    Nenhuma saída encontrada
+                    No se encontraron salidas
                   </TableCell>
                 </TableRow>
               )}

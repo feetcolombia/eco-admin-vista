@@ -143,7 +143,7 @@ const SalidaMercanciaDetalle = () => {
 
   const handleSaveProducts = async () => {
     if (!id || products.length === 0) {
-      toast.error('Adicione produtos antes de salvar');
+      toast.error('Agregue productos antes de salvar');
       return;
     }
 
@@ -168,7 +168,7 @@ const SalidaMercanciaDetalle = () => {
 
   const handleCompletarSalida = async () => {
     if (!id || products.length === 0) {
-      toast.error('Adicione produtos antes de completar');
+      toast.error('Agregue productos antes de completar');
       return;
     }
 
@@ -203,11 +203,11 @@ const SalidaMercanciaDetalle = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Executar Processo de Saída</h1>
+          <h1 className="text-2xl font-bold">Ejecutar Proceso de Salida</h1>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="bg-gray-100">
-            Voltar
+            Volver
           </Button>
           <Button 
             variant="outline" 
@@ -234,11 +234,11 @@ const SalidaMercanciaDetalle = () => {
             <span className="font-medium">{salida.salidamercancia_id}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Origem</span>
+            <span className="text-gray-600">Origen</span>
             <span className="font-medium">{salida.source}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Usuário Responsável</span>
+            <span className="text-gray-600">Usuario Responsable</span>
             <span className="font-medium">{salida.nombre_responsable}</span>
           </div>
         </div>
@@ -248,7 +248,7 @@ const SalidaMercanciaDetalle = () => {
             <span className="font-medium">{salida.consecutivo}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Data</span>
+            <span className="text-gray-600">Fecha</span>
             <span className="font-medium">
               {format(new Date(salida.fecha), "dd/MM/yyyy")}
             </span>
@@ -256,7 +256,7 @@ const SalidaMercanciaDetalle = () => {
           <div className="flex justify-between">
             <span className="text-gray-600">Estado</span>
             <span className="font-medium">
-              {salida.estado === 'n' ? 'Novo' : salida.estado === 'p' ? 'Processando' : 'Completado'}
+              {salida.estado === 'n' ? 'Nuevo' : salida.estado === 'p' ? 'En Proceso' : 'Completado'}
             </span>
           </div>
         </div>
@@ -267,7 +267,7 @@ const SalidaMercanciaDetalle = () => {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <Label htmlFor="sound">Som</Label>
+                <Label htmlFor="sound">Sonido</Label>
                 <Switch
                   id="sound"
                   checked={soundEnabled}
@@ -277,7 +277,7 @@ const SalidaMercanciaDetalle = () => {
               <div className="w-48">
                 <Select value={selectedBodega} onValueChange={handleBodegaChange}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione a posição" />
+                    <SelectValue placeholder="Seleccione la posición" />
                   </SelectTrigger>
                   <SelectContent>
                     {bodegas.map((bodega) => (
@@ -296,7 +296,7 @@ const SalidaMercanciaDetalle = () => {
 
           <form onSubmit={handleBarcodeSubmit} className="w-full">
             <Input
-              placeholder="Escanear ou digitar código de barras"
+              placeholder="Escanear o digitar código de barras"
               value={barcode}
               onChange={(e) => setBarcode(e.target.value)}
               onKeyDown={async (e: React.KeyboardEvent<HTMLInputElement>) => {

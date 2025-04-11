@@ -133,16 +133,16 @@ export const useSalidaMercanciaApi = () => {
       );
 
       if (!response.ok) {
-        throw new Error("Erro ao criar saída de mercadoria");
+        throw new Error("Error al crear salida de mercancía");
       }
 
       const data = await response.json();
       return data;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro ao criar saída de mercadoria";
+      const message = error instanceof Error ? error.message : "Error al crear salida de mercancía";
       setError(message);
       toast({
-        title: "Erro",
+        title: "Error",
         description: message,
         variant: "destructive",
       });
@@ -160,7 +160,7 @@ export const useSalidaMercanciaApi = () => {
         { headers }
       );
       
-      if (!response.ok) throw new Error('Erro ao buscar saídas');
+      if (!response.ok) throw new Error('Error al buscar salidas');
       
       const data = await response.json();
       return {
@@ -169,8 +169,8 @@ export const useSalidaMercanciaApi = () => {
       };
     } catch (error) {
       toast({
-        title: "Erro",
-        description: "Erro ao buscar as saídas. Tente novamente.",
+        title: "Error",
+        description: "Error al buscar las salidas. Intente nuevamente.",
         variant: "destructive",
       });
       return { items: [], total_count: 0 };

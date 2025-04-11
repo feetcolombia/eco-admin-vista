@@ -87,15 +87,18 @@ const SalidaMercanciaForm = () => {
       <Card>
         <CardContent className="p-6">
           <div className="space-y-4">
+            <h1 className="text-2xl font-bold">Formulario de Salida de Mercancía</h1>
             <div className="space-y-2">
-              <Label htmlFor="barcode">Código de Barras</Label>
+              <Label htmlFor="barcode" className="text-sm font-medium">
+                Código de Barras<span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="barcode"
                 value={barcode}
                 onChange={(e) => setBarcode(e.target.value)}
                 onKeyDown={handleBarcodeKeyDown}
                 onBlur={handleBarcodeBlur}
-                placeholder="Digite ou escaneie o código de barras"
+                placeholder="Ingrese el código de barras"
                 disabled={loading}
               />
             </div>
@@ -156,6 +159,21 @@ const SalidaMercanciaForm = () => {
                 </TableBody>
               </Table>
             )}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="bg-gray-100"
+              onClick={() => navigate(-1)}
+            >
+              Volver
+            </Button>
+            <Button
+              className="bg-ecommerce-500 hover:bg-ecommerce-600"
+              onClick={handleSubmit}
+            >
+              Guardar
+            </Button>
           </div>
         </CardContent>
       </Card>
