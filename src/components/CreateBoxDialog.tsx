@@ -178,20 +178,19 @@ export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialo
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>SKU</TableHead>
-                    <TableHead>Nome</TableHead>
+                    <TableHead className="hidden">SKU</TableHead>
                     <TableHead>Tamanho</TableHead>
                     <TableHead>Quantidade</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {childProducts.map((child) => {
-                    const talla = child.custom_attributes.find(attr => attr.attribute_code === 'talla')?.value;
+                    const tallaValue = child.custom_attributes.find(attr => attr.attribute_code === 'talla')?.value;
+                    const tallaLabel = tallaOptions.find(option => option.value === tallaValue)?.label || tallaValue;
                     return (
                       <TableRow key={child.id}>
-                        <TableCell>{child.sku}</TableCell>
-                        <TableCell>{child.name}</TableCell>
-                        <TableCell>{talla}</TableCell>
+                        <TableCell className="hidden">{child.sku}</TableCell>
+                        <TableCell>{tallaLabel}</TableCell>
                         <TableCell>
                           <Input
                             type="number"
