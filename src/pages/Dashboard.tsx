@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import {
   Card,
@@ -65,10 +64,10 @@ const Dashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold">
               {stats?.totalSales
-                ? `R$ ${stats.totalSales.toLocaleString("pt-BR", {
+                ? `$ ${stats.totalSales.toLocaleString("es-CO", {
                     minimumFractionDigits: 2,
-                  })}`
-                : "R$ 0,00"}
+                  })} COP`
+                : "$ 0,00 COP"}
             </div>
             <p className="text-xs text-muted-foreground">
               +20.1% em relação ao mês anterior
@@ -165,7 +164,7 @@ const Dashboard = () => {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        R$ {order.total.toFixed(2)}
+                        $ {order.total.toLocaleString("es-CO", { minimumFractionDigits: 2 })} COP
                       </TableCell>
                     </TableRow>
                   ))
@@ -206,7 +205,7 @@ const Dashboard = () => {
                       </TableCell>
                       <TableCell>{product.category}</TableCell>
                       <TableCell className="text-right">
-                        R$ {product.price.toFixed(2)}
+                        $ {product.price.toLocaleString("es-CO", { minimumFractionDigits: 2 })} COP
                       </TableCell>
                     </TableRow>
                   ))

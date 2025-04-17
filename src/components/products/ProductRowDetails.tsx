@@ -33,7 +33,7 @@ export const ProductRowDetails = ({ productId, childProducts }: ProductRowDetail
                 <TableRow key={child.id}>
                   <TableCell>{child.sku}</TableCell>
                   <TableCell>{child.name}</TableCell>
-                  <TableCell>R$ {child.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
+                  <TableCell>$ {child.price.toLocaleString('es-CO', { minimumFractionDigits: 2 })} COP</TableCell>
                   <TableCell>
                     <div className="flex items-center">
                       <span className={`w-2 h-2 rounded-full mr-2 ${child.is_closedbox ? 'bg-yellow-500' : 'bg-green-500'}`}></span>

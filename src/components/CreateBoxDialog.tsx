@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -34,7 +33,7 @@ interface CreateBoxDialogProps {
 }
 
 export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialogProps) {
-  const [sku, setSku] = useState('');
+  const [sku, setSku] = useState(parentProduct.sku);
   const [barcode, setBarcode] = useState('');
   const [selectedTalla, setSelectedTalla] = useState('');
   const [tallaOptions, setTallaOptions] = useState<TallaOption[]>([]);
