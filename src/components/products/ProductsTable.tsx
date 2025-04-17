@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, Search, Package, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Product, Website, Category } from "@/api/productApi";
 import { ProductRowDetails } from "./ProductRowDetails";
+import productApi from "@/api/productApi";
+
+interface AttributeOption {
+  label: string;
+  value: string;
+}
 
 interface ProductsTableProps {
   products: Product[];
@@ -46,10 +52,51 @@ export const ProductsTable = ({
   pageSize,
   totalPages
 }: ProductsTableProps) => {
-  
+  const [marcaOptions, setMarcaOptions] = useState<AttributeOption[]>([]);
+  const [colorOptions, setColorOptions] = useState<AttributeOption[]>([]);
+  const [materialOptions, setMaterialOptions] = useState<AttributeOption[]>([]);
+  const [estiloOptions, setEstiloOptions] = useState<AttributeOption[]>([]);
+
+  useEffect(() => {
+    const fetchAttributeOptions = async () => {
+      try {
+        const [marca, color, material, estilo] = await Promise.all([
+          productApi.getMarcaOptions(),
+          productApi.getColorOptions(),
+          productApi.getMaterialOptions(),
+          productApi.getEstiloOptions()
+        ]);
+        setMarcaOptions(marca);
+        setColorOptions(color);
+        setMaterialOptions(material);
+        setEstiloOptions(estilo);
+      } catch (error) {
+        console.error('Erro ao buscar opções de atributos:', error);
+      }
+    };
+
+    fetchAttributeOptions();
+  }, []);
+
   const getAttributeValue = (product: Product, code: string) => {
     const attribute = product.custom_attributes.find(attr => attr.attribute_code === code);
-    return attribute ? attribute.value : '';
+    if (!attribute) return '';
+    
+    const value = attribute.value;
+    if (typeof value !== 'string') return '';
+
+    switch (code) {
+      case 'marca':
+        return marcaOptions.find(opt => opt.value === value)?.label || value;
+      case 'color':
+        return colorOptions.find(opt => opt.value === value)?.label || value;
+      case 'material':
+        return materialOptions.find(opt => opt.value === value)?.label || value;
+      case 'estilo':
+        return estiloOptions.find(opt => opt.value === value)?.label || value;
+      default:
+        return value;
+    }
   };
 
   return (

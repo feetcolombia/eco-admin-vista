@@ -1,6 +1,10 @@
-
 import { apiClient, getAuthHeaders } from './apiConfig';
 import { Product, ProductsResponse, TallaOption, BoxProduct, ProductDetail } from './types/productTypes';
+
+interface AttributeOption {
+  label: string;
+  value: string;
+}
 
 export const productsApi = {
   getProducts: async (page: number = 1, pageSize: number = 15): Promise<ProductsResponse> => {
@@ -80,6 +84,58 @@ export const productsApi = {
       }, { headers: getAuthHeaders() });
     } catch (error) {
       console.error('Erro ao salvar detalhes da caixa:', error);
+      throw error;
+    }
+  },
+
+  getMarcaOptions: async (): Promise<AttributeOption[]> => {
+    try {
+      const response = await apiClient.get<AttributeOption[]>(
+        '/rest/V1/products/attributes/marca/options',
+        { headers: getAuthHeaders() }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar opções de marca:', error);
+      throw error;
+    }
+  },
+
+  getColorOptions: async (): Promise<AttributeOption[]> => {
+    try {
+      const response = await apiClient.get<AttributeOption[]>(
+        '/rest/V1/products/attributes/color/options',
+        { headers: getAuthHeaders() }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar opções de cor:', error);
+      throw error;
+    }
+  },
+
+  getMaterialOptions: async (): Promise<AttributeOption[]> => {
+    try {
+      const response = await apiClient.get<AttributeOption[]>(
+        '/rest/V1/products/attributes/material/options',
+        { headers: getAuthHeaders() }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar opções de material:', error);
+      throw error;
+    }
+  },
+
+  getEstiloOptions: async (): Promise<AttributeOption[]> => {
+    try {
+      const response = await apiClient.get<AttributeOption[]>(
+        '/rest/V1/products/attributes/estilo/options',
+        { headers: getAuthHeaders() }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar opções de estilo:', error);
       throw error;
     }
   }

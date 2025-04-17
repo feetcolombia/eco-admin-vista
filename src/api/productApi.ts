@@ -1,4 +1,3 @@
-
 import { productsApi } from './productsApi';
 import { websitesApi } from './websitesApi';
 import { categoriesApi } from './categoriesApi';
@@ -13,6 +12,12 @@ const productApi = {
   createBox: productsApi.createBox,
   setAsChild: productsApi.setAsChild,
   saveBoxDetails: productsApi.saveBoxDetails,
+  
+  // Attribute Options
+  getMarcaOptions: productsApi.getMarcaOptions,
+  getColorOptions: productsApi.getColorOptions,
+  getMaterialOptions: productsApi.getMaterialOptions,
+  getEstiloOptions: productsApi.getEstiloOptions,
   
   // Websites
   getWebsites: websitesApi.getWebsites,
