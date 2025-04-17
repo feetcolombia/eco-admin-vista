@@ -18,6 +18,7 @@ interface NovaCurvaModalProps {
   onClose: () => void;
   onSuccess: () => void;
   curvaId?: string | null;
+  isViewMode?: boolean;
 }
 
 interface Talla {
@@ -31,6 +32,7 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
   onClose,
   onSuccess,
   curvaId,
+  isViewMode = false,
 }) => {
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
@@ -138,7 +140,7 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            {curvaId ? "Editar Curva" : "Nueva Curva"}
+            {isViewMode ? "Ver Curva" : (curvaId ? "Editar Curva" : "Nueva Curva")}
           </DialogTitle>
         </DialogHeader>
 
@@ -155,6 +157,7 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
               }}
               placeholder="Ingrese el nombre de la curva"
               className={errors.nombre ? "border-red-500" : ""}
+              disabled={isViewMode}
             />
             {errors.nombre && (
               <p className="text-sm text-red-500 mt-1">{errors.nombre}</p>
@@ -167,40 +170,38 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
               placeholder="Ingrese la descripción de la curva"
+              disabled={isViewMode}
             />
           </div>
 
           <div>
-            <Label>Tallas *</Label>
+            <Label>Tallas</Label>
             <div className="flex gap-2">
               <Input
                 value={novaTalla}
                 onChange={(e) => setNovaTalla(e.target.value)}
+                disabled={isViewMode}
                 placeholder="Agregar talla"
               />
-              <Button onClick={handleAddTalla} type="button">
-                Agregar
-              </Button>
+              {!isViewMode && (
+                <Button onClick={handleAddTalla} type="button">
+                  Agregar
+                </Button>
+              )}
             </div>
-            {errors.tallas && (
-              <p className="text-sm text-red-500 mt-1">{errors.tallas}</p>
-            )}
             <div className="mt-2 space-y-2">
               {tallas.map((talla, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <Input value={talla.talla} disabled />
-                  <Button
-                    variant="destructive"
-                    onClick={() => {
-                      handleRemoveTalla(index);
-                      if (errors.tallas && tallas.length > 1) {
-                        setErrors({ ...errors, tallas: undefined });
-                      }
-                    }}
-                    type="button"
-                  >
-                    Eliminar
-                  </Button>
+                  {!isViewMode && (
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleRemoveTalla(index)}
+                      type="button"
+                    >
+                      Eliminar
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
@@ -208,15 +209,16 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleSubmit}
-            disabled={!nombre.trim() || tallas.length === 0}
-          >
-            {curvaId ? "Guardar" : "Crear"}
-          </Button>
+          {!isViewMode ? (
+            <>
+              <Button variant="outline" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSubmit}>Guardar</Button>
+            </>
+          ) : (
+            <Button onClick={onClose}>Cerrar</Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

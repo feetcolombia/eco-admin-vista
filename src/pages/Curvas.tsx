@@ -16,6 +16,7 @@ const Curvas = () => {
   const [selectedCurvaId, setSelectedCurvaId] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [curvaToDelete, setCurvaToDelete] = useState<CurvaLista | null>(null);
+  const [isViewMode, setIsViewMode] = useState(false);
   const { loading, getCurvas, deleteCurva } = useCurvasApi();
 
   useEffect(() => {
@@ -56,12 +57,20 @@ const Curvas = () => {
   const actions = [
     {
       icon: <Eye className="h-4 w-4" />,
-      onClick: (curva: CurvaLista) => setSelectedCurvaId(curva.curva_producto_id),
+      onClick: (curva: CurvaLista) => {
+        setSelectedCurvaId(curva.curva_producto_id);
+        setIsViewMode(true);
+        setIsModalOpen(true);
+      },
       variant: "ghost" as const,
     },
     {
       icon: <Pencil className="h-4 w-4" />,
-      onClick: (curva: CurvaLista) => setSelectedCurvaId(curva.curva_producto_id),
+      onClick: (curva: CurvaLista) => {
+        setSelectedCurvaId(curva.curva_producto_id);
+        setIsViewMode(false);
+        setIsModalOpen(true);
+      },
       variant: "ghost" as const,
     },
     {
@@ -123,9 +132,11 @@ const Curvas = () => {
         onClose={() => {
           setIsModalOpen(false);
           setSelectedCurvaId(null);
+          setIsViewMode(false);
         }}
         onSuccess={fetchCurvas}
         curvaId={selectedCurvaId}
+        isViewMode={isViewMode}
       />
 
       <ConfirmDeleteModal
