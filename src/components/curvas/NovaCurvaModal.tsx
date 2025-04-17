@@ -36,6 +36,7 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
   const [descripcion, setDescripcion] = useState("");
   const [tallas, setTallas] = useState<Talla[]>([]);
   const [novaTalla, setNovaTalla] = useState("");
+  const [errors, setErrors] = useState<{ nombre?: string; tallas?: string }>({});
   const { toast } = useToast();
   const { createCurva, updateCurva, getCurva } = useCurvasApi();
 
@@ -75,29 +76,61 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
     setTallas(tallas.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async () => {
-    if (curvaId) {
-      const data = {
-        data: {
-          curva_producto_id: parseInt(curvaId),
-          nombre,
-          descripcion,
-          tallas: tallas.map(t => ({ talla: parseInt(t.talla) }))
-        }
-      };
-      await updateCurva(data);
-    } else {
-      const data = {
-        data: {
-          nombre,
-          descripcion,
-          tallas: tallas.map(t => ({ talla: parseInt(t.talla) }))
-        }
-      };
-      await createCurva(data);
+  const validateForm = () => {
+    const newErrors: { nombre?: string; tallas?: string } = {};
+    
+    if (!nombre.trim()) {
+      newErrors.nombre = "El nombre es obligatorio";
     }
-    onSuccess();
-    onClose();
+    
+    if (tallas.length === 0) {
+      newErrors.tallas = "Debe agregar al menos una talla";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      toast({
+        title: "Error",
+        description: "Por favor complete todos los campos obligatorios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (curvaId) {
+        const data = {
+          data: {
+            curva_producto_id: parseInt(curvaId),
+            nombre,
+            descripcion,
+            tallas: tallas.map(t => ({ talla: parseInt(t.talla) }))
+          }
+        };
+        await updateCurva(data);
+      } else {
+        const data = {
+          data: {
+            nombre,
+            descripcion,
+            tallas: tallas.map(t => ({ talla: parseInt(t.talla) }))
+          }
+        };
+        await createCurva(data);
+      }
+      onSuccess();
+      onClose();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al guardar la curva",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -111,12 +144,21 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
 
         <div className="space-y-4">
           <div>
-            <Label>Nombre</Label>
+            <Label>Nombre *</Label>
             <Input
               value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
+              onChange={(e) => {
+                setNombre(e.target.value);
+                if (errors.nombre) {
+                  setErrors({ ...errors, nombre: undefined });
+                }
+              }}
               placeholder="Ingrese el nombre de la curva"
+              className={errors.nombre ? "border-red-500" : ""}
             />
+            {errors.nombre && (
+              <p className="text-sm text-red-500 mt-1">{errors.nombre}</p>
+            )}
           </div>
 
           <div>
@@ -129,7 +171,7 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
           </div>
 
           <div>
-            <Label>Tallas</Label>
+            <Label>Tallas *</Label>
             <div className="flex gap-2">
               <Input
                 value={novaTalla}
@@ -140,13 +182,21 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
                 Agregar
               </Button>
             </div>
+            {errors.tallas && (
+              <p className="text-sm text-red-500 mt-1">{errors.tallas}</p>
+            )}
             <div className="mt-2 space-y-2">
               {tallas.map((talla, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <Input value={talla.talla} disabled />
                   <Button
                     variant="destructive"
-                    onClick={() => handleRemoveTalla(index)}
+                    onClick={() => {
+                      handleRemoveTalla(index);
+                      if (errors.tallas && tallas.length > 1) {
+                        setErrors({ ...errors, tallas: undefined });
+                      }
+                    }}
                     type="button"
                   >
                     Eliminar
@@ -161,7 +211,10 @@ export const NovaCurvaModal: React.FC<NovaCurvaModalProps> = ({
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit}>
+          <Button 
+            onClick={handleSubmit}
+            disabled={!nombre.trim() || tallas.length === 0}
+          >
             {curvaId ? "Guardar" : "Crear"}
           </Button>
         </DialogFooter>
