@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ChevronDown, ChevronUp, Search, Package, Plus } from "lucide-react";
+import { ChevronDown, ChevronUp, Search, Package, Plus, SquarePen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -31,6 +31,7 @@ interface ProductsTableProps {
   categories: Category[];
   websites: Website[];
   handleCreateBox: (product: Product) => void;
+  handleEditProduct: (product: Product) => void;
   currentPage: number;
   setCurrentPage: (page: number) => void;
   totalCount: number;
@@ -46,6 +47,7 @@ export const ProductsTable = ({
   categories,
   websites,
   handleCreateBox,
+  handleEditProduct,
   currentPage,
   setCurrentPage,
   totalCount,
@@ -176,21 +178,30 @@ export const ProductsTable = ({
                   <TableCell>{getAttributeValue(product, 'material')}</TableCell>
                   <TableCell>{getAttributeValue(product, 'marca')}</TableCell>
                   <TableCell>{getAttributeValue(product, 'estilo')}</TableCell>
-                  <TableCell >
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleCreateBox(product)}
-                    >
-                      <Package size={16} />
-                    </Button>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleCreateBox(product)}
+                      >
+                        <Package size={16} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditProduct(product)}
+                      >
+                        <SquarePen size={16} />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
                 {expandedRows.includes(product.id) && childProducts[product.id] && (
                   <ProductRowDetails 
                     productId={product.id} 
-                    childProducts={childProducts[product.id]} 
+                    childProducts={childProducts[product.id]}
+                    handleEditProduct={handleEditProduct}
                   />
                 )}
               </React.Fragment>

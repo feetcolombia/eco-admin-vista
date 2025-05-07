@@ -6,6 +6,7 @@ import productApi, { Product, Website, Category } from "@/api/productApi";
 import { ProductFilters } from "@/components/products/ProductFilters";
 import { ProductsTable } from "@/components/products/ProductsTable";
 import { CreateBoxDialog } from "@/components/CreateBoxDialog";
+import { EditProductDialog } from "@/components/EditProductDialog";
 import { flattenCategories } from "@/utils/categoryUtils";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -23,6 +24,7 @@ const Products = () => {
   const pageSize = 15;
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCreateBoxOpen, setIsCreateBoxOpen] = useState(false);
+  const [isEditProductOpen, setIsEditProductOpen] = useState(false);
   const [websites, setWebsites] = useState<Website[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
@@ -149,6 +151,15 @@ const Products = () => {
     setIsCreateBoxOpen(true);
   };
 
+  const handleEditProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setIsEditProductOpen(true);
+  };
+
+  const handleEditSuccess = () => {
+    handleSearch();
+  };
+
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
@@ -197,6 +208,7 @@ const Products = () => {
               categories={categories}
               websites={websites}
               handleCreateBox={handleCreateBox}
+              handleEditProduct={handleEditProduct}
               currentPage={currentPage}
               setCurrentPage={setCurrentPage}
               totalCount={totalCount}
@@ -208,14 +220,25 @@ const Products = () => {
       </Card>
 
       {selectedProduct && (
-        <CreateBoxDialog
-          open={isCreateBoxOpen}
-          onClose={() => {
-            setIsCreateBoxOpen(false);
-            setSelectedProduct(null);
-          }}
-          parentProduct={selectedProduct}
-        />
+        <>
+          <CreateBoxDialog
+            open={isCreateBoxOpen}
+            onClose={() => {
+              setIsCreateBoxOpen(false);
+              setSelectedProduct(null);
+            }}
+            parentProduct={selectedProduct}
+          />
+          <EditProductDialog
+            open={isEditProductOpen}
+            onClose={() => {
+              setIsEditProductOpen(false);
+              setSelectedProduct(null);
+            }}
+            product={selectedProduct}
+            onSuccess={handleEditSuccess}
+          />
+        </>
       )}
     </div>
   );
