@@ -175,7 +175,7 @@ export const useIngresoMercanciaApi = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `${BASE_URL}/feetmercancia-ingreso/ingresomercancia/search?searchCriteria[currentPage]=${page}&searchCriteria[pageSize]=${pageSize}`,
+        `${BASE_URL}/feetmercancia-ingreso/ingresomercancia/search?searchCriteria[currentPage]=${page}&searchCriteria[pageSize]=${pageSize}&searchCriteria[sortOrders][0][field]=fecha&searchCriteria[sortOrders][0][direction]=DESC`,
         { headers }
       );
       

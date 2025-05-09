@@ -43,6 +43,10 @@ interface TallaOption {
   value_index: number;
 }
 
+interface TallaMapping {
+  [key: string]: string;
+}
+
 const NewProduct = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -55,6 +59,7 @@ const NewProduct = () => {
   const [styles, setStyles] = useState<AttributeOption[]>([]);
   const [curvas, setCurvas] = useState<Curva[]>([]);
   const [curvaDetalhe, setCurvaDetalhe] = useState<CurvaResponse | null>(null);
+  const [tallaMapping, setTallaMapping] = useState<TallaMapping>({});
   const [childSkus, setChildSkus] = useState<Array<{
     sku: string;
     talla: string;
@@ -75,16 +80,64 @@ const NewProduct = () => {
     curva: ""
   });
 
+  // Função para formatar o preço no formato colombiano
+  const formatPrice = (value: string) => {
+    // Remove todos os caracteres não numéricos
+    const numericValue = value.replace(/[^\d]/g, '');
+    
+    // Se o valor for vazio, retorna vazio
+    if (!numericValue) return '';
+    
+    // Converte para número e formata
+    const number = parseInt(numericValue, 10);
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(number);
+  };
+
+  // Função para converter o preço formatado de volta para número
+  const unformatPrice = (formattedValue: string) => {
+    return formattedValue.replace(/[^\d]/g, '');
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         
+        // Fetch talla mapping
+        const tallaResponse = await apiClient.get('/rest/V1/products/attributes/talla', {
+          headers: getAuthHeaders()
+        });
+        
+        const mapping: TallaMapping = {};
+        tallaResponse.data.options.forEach((option: { label: string; value: string }) => {
+          if (option.label && option.value) {
+            // Remove espaços em branco e converte para string
+            const label = option.label.trim();
+            if (!isNaN(Number(label))) {
+              mapping[label] = option.value;
+            }
+          }
+        });
+        setTallaMapping(mapping);
+
         // Fetch websites
         const websitesResponse = await apiClient.get<Website[]>('/rest/V1/store/websites', {
           headers: getAuthHeaders()
         });
         setWebsites(websitesResponse.data);
+        
+        // Seleciona automaticamente o primeiro website
+        if (websitesResponse.data.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            website: websitesResponse.data[0].id.toString()
+          }));
+        }
 
         // Fetch categories
         setCategoriesLoading(true);
@@ -207,6 +260,12 @@ const NewProduct = () => {
     }
   };
 
+  // Atualiza o handler do preço
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedValue = formatPrice(e.target.value);
+    setFormData(prev => ({ ...prev, price: unformatPrice(formattedValue) }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -238,11 +297,11 @@ const NewProduct = () => {
             ],
             configurable_product_options: [
               {
-                attribute_id: "200", // ID do atributo talla
+                attribute_id: "200",
                 label: "Talla",
                 position: 0,
                 values: curvaDetalhe.tallas.map(talla => ({
-                  value_index: parseInt(talla.talla)
+                  value_index: parseInt(tallaMapping[talla.talla] || "0")
                 }))
               }
             ]
@@ -286,7 +345,7 @@ const NewProduct = () => {
         const childProductData = {
           product: {
             sku: childSku.sku,
-            name: childSku.sku,
+            name: `${formData.name} - Talla ${tallaMapping[childSku.talla]}`,
             price: parseFloat(formData.price),
             status: 1,
             visibility: 1,
@@ -296,7 +355,7 @@ const NewProduct = () => {
             custom_attributes: [
               {
                 attribute_code: "talla",
-                value: childSku.talla
+                value: tallaMapping[childSku.talla] || "0"
               }
             ]
           }
@@ -369,13 +428,14 @@ const NewProduct = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="price">Preço</Label>
+                <Label htmlFor="price">Precio</Label>
                 <Input
                   id="price"
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  type="text"
+                  value={formData.price ? formatPrice(formData.price) : ''}
+                  onChange={handlePriceChange}
                   required
+                  placeholder="COP 0"
                 />
               </div>
 
@@ -393,25 +453,6 @@ const NewProduct = () => {
                     {categories.map((category) => (
                       <SelectItem key={category.id} value={category.id.toString()}>
                         {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="website">Website</Label>
-                <Select
-                  value={formData.website}
-                  onValueChange={(value) => setFormData({ ...formData, website: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um website" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {websites.map((website) => (
-                      <SelectItem key={website.id} value={website.id.toString()}>
-                        {website.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -531,11 +572,19 @@ const NewProduct = () => {
                         <div className="space-y-2">
                           <div>
                             <Label>Talla {childSku.talla}</Label>
-                            <div className="text-sm font-medium">{childSku.sku}</div>
+                            <Input 
+                              value={childSku.sku}
+                              readOnly
+                              className="text-sm font-medium"
+                            />
                           </div>
                           <div>
                             <Label>Código de Barras</Label>
-                            <div className="text-sm font-mono">{childSku.barcode}</div>
+                            <Input 
+                              value={childSku.barcode}
+                              readOnly
+                              className="text-sm font-mono"
+                            />
                           </div>
                         </div>
                       </CardContent>

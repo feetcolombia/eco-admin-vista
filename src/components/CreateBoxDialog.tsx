@@ -40,6 +40,7 @@ export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialo
   const [loading, setLoading] = useState(false);
   const [childProducts, setChildProducts] = useState<Product[]>([]);
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
+  const [autoSelectedMessage, setAutoSelectedMessage] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -63,9 +64,33 @@ export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialo
           });
         
         setTallaOptions(filteredOptions);
-        setChildProducts(childrenResponse.filter(product => !product.is_closedbox));
+        const filteredChildren = childrenResponse.filter(product => !product.is_closedbox);
+        setChildProducts(filteredChildren);
+
+        // Encontrar a próxima caixa disponível
+        if (filteredChildren.length > 0) {
+          const existingBoxes = childrenResponse.filter(product => product.is_closedbox);
+          console.log('Caixas existentes:', existingBoxes);
+          console.log('Número de caixas existentes:', existingBoxes.length);
+          console.log('Opções de caixa disponíveis:', filteredOptions);
+          
+          const nextBoxNumber = existingBoxes.length + 1;
+          console.log('Próximo número de caixa:', nextBoxNumber);
+          
+          const nextBox = filteredOptions.find(option => option.label === `Caja ${nextBoxNumber}`);
+          console.log('Próxima caixa encontrada:', nextBox);
+          
+          if (nextBox) {
+            setSelectedTalla(nextBox.value);
+            setAutoSelectedMessage(`Se ha seleccionado automáticamente Caja ${nextBoxNumber} como tipo de caja predeterminado.`);
+          } else {
+            console.log('Nenhuma caixa encontrada com o número:', nextBoxNumber);
+          }
+        } else {
+          console.log('Não há produtos filhos filtrados');
+        }
       } catch (error) {
-        console.error('Erro ao carregar dados:', error);
+        console.error('Error al cargar datos:', error);
       }
     };
 
@@ -83,6 +108,12 @@ export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialo
     try {
       setLoading(true);
 
+      // Encontrar o valor correto do atributo talla para a caixa selecionada
+      const selectedTallaOption = tallaOptions.find(option => option.value === selectedTalla);
+      if (!selectedTallaOption) {
+        throw new Error('No se encontró la opción de talla seleccionada');
+      }
+
       // Criar a caixa
       await productApi.createBox({
         product: {
@@ -97,11 +128,7 @@ export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialo
           custom_attributes: [
             {
               attribute_code: 'talla',
-              value: selectedTalla
-            },
-            {
-              attribute_code: 'is_closedbox',
-              value: true
+              value: selectedTallaOption.value
             }
           ]
         }
@@ -123,7 +150,7 @@ export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialo
 
       onClose();
     } catch (error) {
-      console.error('Erro ao salvar caixa:', error);
+      console.error('Error al guardar la caja:', error);
     } finally {
       setLoading(false);
     }
@@ -133,17 +160,23 @@ export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialo
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Criar Caixa para Produto {parentProduct.sku}</DialogTitle>
+          <DialogTitle>Crear Caja para Producto {parentProduct.sku}</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
+          {autoSelectedMessage && (
+            <div className="bg-blue-50 text-blue-700 p-3 rounded-md text-sm">
+              {autoSelectedMessage}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label>SKU da Caixa</label>
+              <label>SKU de la Caja</label>
               <Input
                 value={sku}
                 onChange={(e) => setSku(e.target.value)}
-                placeholder="Digite o SKU da caixa"
+                placeholder="Ingrese el SKU de la caja"
               />
             </div>
             <div className="space-y-2">
@@ -151,16 +184,16 @@ export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialo
               <Input
                 value={barcode}
                 onChange={(e) => setBarcode(e.target.value)}
-                placeholder="Digite o código de barras"
+                placeholder="Ingrese el código de barras"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label>Tipo de Caixa</label>
+            <label>Tipo de Caja</label>
             <Select value={selectedTalla} onValueChange={setSelectedTalla}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecione o tipo de caixa" />
+                <SelectValue placeholder="Seleccione el tipo de caja" />
               </SelectTrigger>
               <SelectContent>
                 {tallaOptions.map((option) => (
@@ -173,14 +206,14 @@ export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialo
           </div>
 
           <div className="space-y-2">
-            <label>Conteúdo da Caixa</label>
+            <label>Contenido de la Caja</label>
             <ScrollArea className="h-[300px] border rounded-md">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="hidden">SKU</TableHead>
-                    <TableHead>Tamanho</TableHead>
-                    <TableHead>Quantidade</TableHead>
+                    <TableHead>Talla</TableHead>
+                    <TableHead>Cantidad</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -214,7 +247,7 @@ export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialo
             Cancelar
           </Button>
           <Button onClick={handleSave} disabled={loading}>
-            {loading ? 'Salvando...' : 'Guardar Caixa'}
+            {loading ? 'Guardando...' : 'Guardar Caja'}
           </Button>
         </DialogFooter>
       </DialogContent>

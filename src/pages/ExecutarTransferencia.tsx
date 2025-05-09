@@ -38,6 +38,17 @@ interface TransferenciaDetalle {
   productos: any[];
 }
 
+interface Source {
+  source_code: string;
+  name: string;
+  enabled: boolean;
+  description?: string;
+  extension_attributes: {
+    is_pickup_location_active: boolean;
+    frontend_name: string;
+  };
+}
+
 const ExecutarTransferencia = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -46,15 +57,18 @@ const ExecutarTransferencia = () => {
   const [loading, setLoading] = useState(true);
   const [transferencia, setTransferencia] = useState<any>(null);
   const [codigoBarras, setCodigoBarras] = useState('');
-  const [sonido, setSonido] = useState(false);
+  const [selectedBodega, setSelectedBodega] = useState<string>("");
+  const [sonido, setSonido] = useState(true);
   const [totalEscaneado, setTotalEscaneado] = useState(0);
   const [saving, setSaving] = useState(false);
   const [barcode, setBarcode] = useState('');
   const [error, setError] = useState('');
   const [produtos, setProdutos] = useState([]);
+  const [sources, setSources] = useState<Source[]>([]);
 
   useEffect(() => {
     fetchTransferencia();
+    fetchSources();
   }, [id]);
 
   const fetchTransferencia = async () => {
@@ -83,6 +97,29 @@ const ExecutarTransferencia = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchSources = async () => {
+    try {
+      const response = await fetch(
+        'https://stg.feetcolombia.com/rest/V1/inventory/sources',
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+      const data = await response.json();
+      setSources(data.items);
+    } catch (error) {
+      console.error('Erro ao buscar fontes:', error);
+    }
+  };
+
+  const getSourceName = (sourceCode: string) => {
+    const source = sources.find(s => s.source_code === sourceCode);
+    return source ? source.name : sourceCode;
   };
 
   const handleBarcodeSubmit = async (e: React.FormEvent) => {
@@ -224,7 +261,7 @@ const ExecutarTransferencia = () => {
   }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Ejecutar Transferencia</h1>
         <div className="flex gap-2">
@@ -260,13 +297,13 @@ const ExecutarTransferencia = () => {
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <div className="mb-4">
+            {/* <div className="mb-4">
               <Label className="text-sm text-gray-500">ID</Label>
               <div className="font-medium">{transferencia.transferencia_bodega_id}</div>
-            </div>
+            </div> */}
             <div className="mb-4">
               <Label className="text-sm text-gray-500">Origen</Label>
-              <div className="font-medium">{transferencia.soruce}</div>
+              <div className="font-medium">{getSourceName(transferencia.soruce)}</div>
             </div>
             <div className="mb-4">
               <Label className="text-sm text-gray-500">Usuario Responsable</Label>
@@ -289,8 +326,18 @@ const ExecutarTransferencia = () => {
             <div className="mb-4">
               <Label className="text-sm text-gray-500">Estado</Label>
               <div className="font-medium">
-                <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                  Nuevo
+                <span className={`px-2 py-1 rounded-full text-xs ${
+                  transferencia.estado === 'n' 
+                    ? 'bg-blue-100 text-blue-800'
+                    : transferencia.estado === 'p'
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : 'bg-green-100 text-green-800'
+                }`}>
+                  {transferencia.estado === 'n' 
+                    ? 'Nuevo' 
+                    : transferencia.estado === 'p'
+                    ? 'En Proceso'
+                    : 'Finalizado'}
                 </span>
               </div>
             </div>
@@ -390,6 +437,7 @@ const ExecutarTransferencia = () => {
                     variant="ghost" 
                     size="sm"
                     onClick={() => removerProduto(produto.id)}
+                    disabled={transferencia?.estado === 'f'}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

@@ -50,7 +50,7 @@ const Products = () => {
       if (searchQuery) {
         searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][0][field]`] = 'sku';
         searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][0][value]`] = searchQuery;
-        searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][0][condition_type]`] = 'eq';
+        searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][0][condition_type]`] = 'like';
         filterGroupIndex++;
       }
 

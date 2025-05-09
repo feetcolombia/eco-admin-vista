@@ -54,6 +54,17 @@ interface ProductItem {
   quantity: number;
 }
 
+interface Source {
+  source_code: string;
+  name: string;
+  enabled: boolean;
+  description?: string;
+  extension_attributes: {
+    is_pickup_location_active: boolean;
+    frontend_name: string;
+  };
+}
+
 const SalidaMercanciaDetalle = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -61,16 +72,18 @@ const SalidaMercanciaDetalle = () => {
   const [bodegas, setBodegas] = useState<Bodega[]>([]);
   const [selectedBodega, setSelectedBodega] = useState<string>("");
   const [selectedBodegaId, setSelectedBodegaId] = useState<number>(0);
-  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const [barcode, setBarcode] = useState("");
   const [totalScanned, setTotalScanned] = useState(0);
   const [products, setProducts] = useState<ProductItem[]>([]);
+  const [sources, setSources] = useState<Source[]>([]);
 
-  const { loading, getSalidaById, getBodegas, getProductQuantity, saveProducts } = useSalidaMercanciaApi();
+  const { loading, getSalidaById, getBodegas, getProductQuantity, saveProducts, getSources } = useSalidaMercanciaApi();
 
   useEffect(() => {
     if (id) {
       fetchSalida();
+      fetchSources();
     }
   }, [id]);
 
@@ -108,6 +121,16 @@ const SalidaMercanciaDetalle = () => {
         setSelectedBodegaId(data[0].bodega_id);
       }
     }
+  };
+
+  const fetchSources = async () => {
+    const sourcesData = await getSources();
+    setSources(sourcesData);
+  };
+
+  const getSourceName = (sourceCode: string) => {
+    const source = sources.find(s => s.source_code === sourceCode);
+    return source ? source.name : sourceCode;
   };
 
   const handleBodegaChange = (bodegaNombre: string) => {
@@ -229,13 +252,13 @@ const SalidaMercanciaDetalle = () => {
 
       <div className="grid grid-cols-2 gap-6 mb-6">
         <div className="space-y-4">
-          <div className="flex justify-between">
+          {/* <div className="flex justify-between">
             <span className="text-gray-600">ID</span>
             <span className="font-medium">{salida.salidamercancia_id}</span>
-          </div>
+          </div> */}
           <div className="flex justify-between">
             <span className="text-gray-600">Origen</span>
-            <span className="font-medium">{salida.source}</span>
+            <span className="font-medium">{getSourceName(salida.source)}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">Usuario Responsable</span>
@@ -382,6 +405,7 @@ const SalidaMercanciaDetalle = () => {
                           setProducts(prev => prev.filter((_, i) => i !== index));
                           setTotalScanned(prev => prev - 1);
                         }}
+                        disabled={salida?.estado === 'c'}
                       >
                         Remover
                       </Button>

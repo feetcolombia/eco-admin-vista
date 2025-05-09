@@ -15,22 +15,45 @@ import { useIngresoMercanciaApi } from "@/hooks/useIngresoMercanciaApi";
 import { format } from "date-fns";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
+interface Source {
+  source_code: string;
+  name: string;
+  enabled: boolean;
+  description?: string;
+  extension_attributes: {
+    is_pickup_location_active: boolean;
+    frontend_name: string;
+  };
+}
+
 const IngresoMercancia = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-  const { loading, getIngresoMercancia } = useIngresoMercanciaApi();
+  const { loading, getIngresoMercancia, getSources } = useIngresoMercanciaApi();
   const [ingresos, setIngresos] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [sources, setSources] = useState<Source[]>([]);
 
   useEffect(() => {
     fetchIngresos();
+    fetchSources();
   }, [currentPage]);
 
   const fetchIngresos = async () => {
     const response = await getIngresoMercancia(currentPage, pageSize);
     setIngresos(response.items);
     setTotalCount(response.total_count);
+  };
+
+  const fetchSources = async () => {
+    const sourcesData = await getSources();
+    setSources(sourcesData);
+  };
+
+  const getSourceName = (sourceCode: string) => {
+    const source = sources.find(s => s.source_code === sourceCode);
+    return source ? source.name : sourceCode;
   };
 
   const handleRowClick = (id: number) => {
@@ -155,7 +178,7 @@ const IngresoMercancia = () => {
                   >
                     <TableCell>{ingreso.ingresomercancia_id}</TableCell>
                     <TableCell>{ingreso.consecutivo}</TableCell>
-                    <TableCell>{ingreso.source}</TableCell>
+                    <TableCell>{getSourceName(ingreso.source)}</TableCell>
                     <TableCell>{ingreso.nombre_responsable}</TableCell>
                     <TableCell>{ingreso.descripcion || '-'}</TableCell>
                     <TableCell>

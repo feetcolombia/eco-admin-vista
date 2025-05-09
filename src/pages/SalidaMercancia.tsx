@@ -23,22 +23,45 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
+interface Source {
+  source_code: string;
+  name: string;
+  enabled: boolean;
+  description?: string;
+  extension_attributes: {
+    is_pickup_location_active: boolean;
+    frontend_name: string;
+  };
+}
+
 const SalidaMercancia = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-  const { loading, getSalidaMercancia } = useSalidaMercanciaApi();
+  const { loading, getSalidaMercancia, getSources } = useSalidaMercanciaApi();
   const [salidas, setSalidas] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [sources, setSources] = useState<Source[]>([]);
 
   useEffect(() => {
     fetchSalidas();
+    fetchSources();
   }, [currentPage]);
 
   const fetchSalidas = async () => {
     const response = await getSalidaMercancia(currentPage, pageSize);
     setSalidas(response.items);
     setTotalCount(response.total_count);
+  };
+
+  const fetchSources = async () => {
+    const sourcesData = await getSources();
+    setSources(sourcesData);
+  };
+
+  const getSourceName = (sourceCode: string) => {
+    const source = sources.find(s => s.source_code === sourceCode);
+    return source ? source.name : sourceCode;
   };
 
   const handleRowClick = (id: number) => {
@@ -158,7 +181,7 @@ const SalidaMercancia = () => {
                   >
                     <TableCell>{salida.salidamercancia_id}</TableCell>
                     <TableCell>{salida.consecutivo}</TableCell>
-                    <TableCell>{salida.source}</TableCell>
+                    <TableCell>{getSourceName(salida.source)}</TableCell>
                     <TableCell>{salida.nombre_responsable}</TableCell>
                     <TableCell>
                       {format(new Date(salida.fecha), "dd/MM/yyyy")}
