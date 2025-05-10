@@ -41,7 +41,9 @@ const Products = () => {
         'searchCriteria[filter_groups][0][filters][0][value]': 'configurable',
         'searchCriteria[filter_groups][0][filters][0][condition_type]': 'eq',
         'searchCriteria[currentPage]': currentPage.toString(),
-        'searchCriteria[pageSize]': pageSize.toString()
+        'searchCriteria[pageSize]': pageSize.toString(),
+        'searchCriteria[sortOrders][0][field]': 'entity_id',
+        'searchCriteria[sortOrders][0][direction]': 'DESC'
       };
 
       let filterGroupIndex = 1;
