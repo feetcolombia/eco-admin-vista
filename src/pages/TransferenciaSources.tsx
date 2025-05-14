@@ -1,75 +1,83 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Source, SourcesResponse } from '@/api/types/transferTypes';
-import { Plus, Eye } from 'lucide-react';
+import { Eye, Trash } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { transferSourcesApi, TransferSource } from '@/api/transferSourcesApi';
+import { useToast } from '@/components/ui/use-toast';
+
+const estadoLabel = { c: 'Contando', n: 'Nuevo', f: 'Completo' };
 
 const TransferenciaSources = () => {
   const { token } = useAuth();
-  const [sources, setSources] = useState<Source[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<TransferSource[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  useEffect(() => {
-    fetchSources();
-  }, []);
-
-  const fetchSources = async () => {
+  const fetchAll = async () => {
     try {
-      const response = await fetch(
-        'https://stg.feetcolombia.com/rest/all/V1/inventory/sources',
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      const data: SourcesResponse = await response.json();
-      setSources(data.items);
-    } catch (error) {
-      console.error('Erro ao buscar sources:', error);
-    } finally {
-      setLoading(false);
-    }
+      const all = await transferSourcesApi.getAll();
+      setItems(all);
+    } catch (e) { console.error(e); }
   };
 
-  const filteredSources = sources.filter(source =>
-    source.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    source.source_code.toLowerCase().includes(searchTerm.toLowerCase())
+ const handleDelete = async (id: number) => {
+     const ok = window.confirm(
+       '¿Seguro desea eliminar este registro? Se perderá el proceso realizado hasta el momento.'
+     );
+     if (!ok) 
+      return;
+     try {
+       const success = await transferSourcesApi.delete(id);
+       if (!success) throw new Error('No se pudo eliminar');
+       setItems(prev => prev.filter(x => x.transferencia_source_id !== id));
+       toast({
+        title: "Éxito",
+        description: "Registro eliminado correctamente"
+      });
+     } catch (e) {
+       console.error('Error al eliminar transferencia:', e);
+     }
+   };
+
+  useEffect(() => { fetchAll() }, []);
+
+  const filtered = items.filter(x =>
+    x.consecutivo.includes(searchTerm) ||
+    x.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+
+   const handleView = (src: TransferSource) => {
+ 
+     if (['n', 'ic', 'if'].includes(src.tipo)) {
+       navigate(`/transferenciaMercancia/sources/execute-transferencia-source/${src.transferencia_source_id}`);
+     } else if (src.tipo === 'sc' || src.tipo === 'sf') {
+       navigate(`/transferenciaMercancia/sources/execute-transferencia-source-ingreso/${src.transferencia_source_id}`);
+     } else if (src.tipo === 'pf' && src.estado === 'f') {
+       navigate(`/transferenciaMercancia/sources/confirm-transferencia-source/${src.transferencia_source_id}`);
+     }
+   };
 
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Transferência entre Sources</h1>
-        <Button className="bg-ecommerce-500 hover:bg-ecommerce-600">
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Transferência
-        </Button>
+        <h1 className="text-2xl font-bold">Transferencias entre sources</h1>
+        <Button onClick={() => navigate('/new-transferencia-source')}>
+      Nueva Transferencia
+    </Button>
       </div>
 
       <div className="flex gap-4 mb-6">
         <Input
-          placeholder="Buscar por nome ou código..."
+          placeholder="Buscar consecutivo o descripción..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={e => setSearchTerm(e.target.value)}
           className="max-w-sm"
         />
       </div>
@@ -78,35 +86,54 @@ const TransferenciaSources = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Código</TableHead>
-              <TableHead>Nome</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Região</TableHead>
-              <TableHead>País</TableHead>
-              <TableHead>CEP</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
+              <TableHead>Consecutivo</TableHead>
+              <TableHead>Origen</TableHead>
+              <TableHead>Destino</TableHead>
+              <TableHead>Descripción</TableHead>
+              <TableHead>Responsable</TableHead>
+              <TableHead>Fecha</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredSources.map((source) => (
-              <TableRow key={source.source_code}>
-                <TableCell className="font-medium">{source.source_code}</TableCell>
-                <TableCell>{source.name}</TableCell>
-                <TableCell>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    source.enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {source.enabled ? 'Ativo' : 'Inativo'}
-                  </span>
-                </TableCell>
-                <TableCell>{source.region}</TableCell>
-                <TableCell>{source.country_id}</TableCell>
-                <TableCell>{source.postcode}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="sm">
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </TableCell>
+            {filtered.map(src => (
+              <TableRow key={src.transferencia_source_id}>
+                <TableCell>{src.consecutivo}</TableCell>
+                <TableCell>{src.source_origen}</TableCell>
+                <TableCell>{src.source_destino}</TableCell>
+                <TableCell>{src.descripcion}</TableCell>
+                <TableCell>{src.nombre_responsable}</TableCell>
+                <TableCell>{src.fecha}</TableCell>
+                <TableCell>{estadoLabel[src.estado]}</TableCell>
+                <TableCell className="text-right space-x-2">
+                          <Button
+            variant="ghost"
+            size="sm"
+            title="Ver registro"
+            onClick={() => handleView(src)}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  title="Eliminar registro"
+                  disabled={src.tipo === 'pf' && src.estado === 'f'}
+                  onClick={
+                    src.tipo === 'pf' && src.estado === 'f'
+                      ? undefined
+                      : () => handleDelete(src.transferencia_source_id)
+                  }
+                >
+                  <Trash
+                    className="h-4 w-4 text-red-500"
+                    style={{
+                      opacity: src.tipo === 'pf' && src.estado === 'f' ? 0.5 : 1
+                    }}
+                  />
+                </Button>
+              </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -116,4 +143,4 @@ const TransferenciaSources = () => {
   );
 };
 
-export default TransferenciaSources; 
+export default TransferenciaSources;
