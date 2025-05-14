@@ -22,11 +22,16 @@ import SalidaMercanciaConfirmar from "@/pages/SalidaMercanciaConfirmar";
 import NuevoSalidaMercancia from "@/pages/NuevoSalidaMercancia";
 import TransferenciaBodegas from "@/pages/TransferenciaBodegas";
 import TransferenciaSources from "@/pages/TransferenciaSources";
+import NuevaTransferencia from './pages/transferenciaMercancia/sources/NuevaTransferencia';
+import ExecutarTransferenciaSource from './pages/transferenciaMercancia/sources/ExecutarTransferenciaSource';
+import ExecutarTransferenciaSourceIngreso from "./pages/transferenciaMercancia/sources/ExecutarTransferenciaSourceIngreso";
 import NovaTransferenciaBodega from "@/pages/NovaTransferenciaBodega";
 import ExecutarTransferencia from "@/pages/ExecutarTransferencia";
 import ConfirmarTransferencia from "@/pages/ConfirmarTransferencia";
 import NotFound from "./pages/NotFound";
 import SalidaMercanciaForm from './pages/SalidaMercanciaForm';
+import ConfirmarTransferenciaSource from "./pages/transferenciaMercancia/sources/ConfirmarTransferenciaSources";
+
 
 const queryClient = new QueryClient();
 
@@ -64,6 +69,10 @@ const App = () => (
                 <Route path="/dashboard/transferencia-mercancia/:id/confirmar" element={<ConfirmarTransferencia />} />
                 <Route path="/dashboard/transferencia-mercancia/:id" element={<ExecutarTransferencia />} />
                 <Route path="/dashboard/transferencia-sources" element={<TransferenciaSources />} />
+                <Route path="/new-transferencia-source" element={<NuevaTransferencia />} />
+                <Route path="/transferenciaMercancia/sources/execute-transferencia-source/:id" element={<ExecutarTransferenciaSource />} />
+                <Route path="/transferenciaMercancia/sources/execute-transferencia-source-ingreso/:id" element={<ExecutarTransferenciaSourceIngreso />} />
+                <Route path="/transferenciaMercancia/sources/confirm-transferencia-source/:id" element={<ConfirmarTransferenciaSource />} />
                 
                 {/* Legacy paths to maintain compatibility */}
                 <Route path="/ingreso-mercancia/nuevo" element={<Navigate to="/dashboard/ingreso-mercancia/nuevo" replace />} />
