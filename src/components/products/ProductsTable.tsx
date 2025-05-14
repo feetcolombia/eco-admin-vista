@@ -144,12 +144,12 @@ export const ProductsTable = ({
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
-                          {product.extension_attributes.category_links.length} categorías
+                          {product.extension_attributes?.category_links?.length || 0} categorías
                           <ChevronDown className="ml-1 h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="w-56 bg-white">
-                        {product.extension_attributes.category_links.map((link) => (
+                        {product.extension_attributes?.category_links?.map((link) => (
                           <div key={link.category_id} className="px-2 py-1.5 text-sm">
                             {categories.find(cat => cat.id === parseInt(link.category_id))?.name || link.category_id}
                           </div>
@@ -161,12 +161,12 @@ export const ProductsTable = ({
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
-                          {product.extension_attributes.website_ids.length} sitios web
+                          {product.extension_attributes?.website_ids?.length || 0} sitios web
                           <ChevronDown className="ml-1 h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="w-56 bg-white">
-                        {product.extension_attributes.website_ids.map((websiteId) => (
+                        {product.extension_attributes?.website_ids?.map((websiteId) => (
                           <div key={websiteId} className="px-2 py-1.5 text-sm">
                             {websites.find(site => site.id === websiteId)?.name || websiteId}
                           </div>

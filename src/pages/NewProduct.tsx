@@ -266,6 +266,18 @@ const NewProduct = () => {
     setFormData(prev => ({ ...prev, price: unformatPrice(formattedValue) }));
   };
 
+  // Função para atualizar um SKU filho específico
+  const updateChildSku = (index: number, field: 'sku' | 'barcode', value: string) => {
+    setChildSkus(prev => {
+      const newSkus = [...prev];
+      newSkus[index] = {
+        ...newSkus[index],
+        [field]: value
+      };
+      return newSkus;
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -573,16 +585,18 @@ const NewProduct = () => {
                           <div>
                             <Label>Talla {childSku.talla}</Label>
                             <Input 
+                              key={`sku-${childSku.talla}`}
                               value={childSku.sku}
-                              readOnly
+                              onChange={(e) => updateChildSku(childSkus.indexOf(childSku), 'sku', e.target.value)}
                               className="text-sm font-medium"
                             />
                           </div>
                           <div>
                             <Label>Código de Barras</Label>
                             <Input 
+                              key={`barcode-${childSku.talla}`}
                               value={childSku.barcode}
-                              readOnly
+                              onChange={(e) => updateChildSku(childSkus.indexOf(childSku), 'barcode', e.target.value)}
                               className="text-sm font-mono"
                             />
                           </div>

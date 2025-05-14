@@ -14,6 +14,9 @@ import {
   MoveHorizontal,
   Building2,
   Network,
+  Warehouse,
+  List,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -130,6 +133,30 @@ const DashboardSidebar = () => {
             label="Entre Sources"
             isCollapsed={isCollapsed}
           />
+        </nav>
+      </div>
+
+      <div className="px-3 pt-4 pb-2">
+        {!isCollapsed && <div className="text-xs text-gray-500 mb-2">BODEGAS</div>}
+        <nav className="space-y-1">
+          <SidebarLink
+            to="/dashboard/bodegas/listar"
+            icon={<List size={18} />}
+            label="Listar Bodegas"
+            isCollapsed={isCollapsed}
+          />
+         {/*  <SidebarLink
+            to="/dashboard/bodegas/transferir"
+            icon={<MoveHorizontal size={18} />}
+            label="Transferir Bodegas"
+            isCollapsed={isCollapsed}
+          />
+          <SidebarLink
+            to="/dashboard/bodegas/reporte"
+            icon={<FileText size={18} />}
+            label="Reporte Bodegas"
+            isCollapsed={isCollapsed}
+          /> */}
         </nav>
       </div>
 
