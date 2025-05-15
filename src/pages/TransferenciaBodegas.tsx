@@ -29,16 +29,20 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
+import { transferBodegasApi,Source } from '@/api/transferBodegasApi';
+import { Loader2 } from 'lucide-react';
 
 const TransferenciaBodegas = () => {
   const navigate = useNavigate();
   const { token } = useAuth();
   const [transferencias, setTransferencias] = useState<TransferenciaBodega[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isFetchingAll, setIsFetchingAll] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -48,32 +52,60 @@ const TransferenciaBodegas = () => {
     };
   }, []);
 
+  // reinicia página al cambiar filtro o buscador
+    useEffect(() => {
+      setCurrentPage(1);
+    }, [selectedStatus]);
+
   useEffect(() => {
-    fetchTransferencias();
-  }, [currentPage, searchTerm, selectedStatus]);
+      const handler = setTimeout(() => {
+        if (searchTerm.trim()) {
+          setIsFetchingAll(true);
+          fetchAllTransferencias();
+        } else {
+          fetchTransferencias();
+        }
+      }, 300);
+  
+      return () => clearTimeout(handler);
+    }, [searchTerm, selectedStatus]);
+
+   useEffect(() => {
+       // sólo paginación si no hay búsqueda activa
+       if (!searchTerm.trim()) {
+         fetchTransferencias();
+       }
+     }, [currentPage]);
 
   const fetchTransferencias = async () => {
     try {
-      const response = await fetch(
-        `https://stg.feetcolombia.com/rest/V1/transferenciabodegas/list?currentPage=${currentPage}&pageSize=10`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      const [success, data] = await response.json();
-      if (success) {
-        setTransferencias(data.items);
-        setTotalPages(Math.ceil(data.total_count / data.page_size));
-      }
+    const [success, data] = await transferBodegasApi.list(currentPage, 10);
+    if (success) {
+      setTransferencias(data.items);
+      setTotalCount(data.total_count);
+      setTotalPages(Math.ceil(data.total_count / data.page_size));
+    }
     } catch (error) {
       console.error('Erro ao buscar transferências:', error);
     } finally {
       setLoading(false);
     }
   };
+  
+
+  const fetchAllTransferencias = async () => {
+      try {
+        const [success, data] = await transferBodegasApi.list(1, totalCount || 100000);
+        if (success) {
+          setTransferencias(data.items);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar todas para búsqueda:', error);
+      } finally {
+        setLoading(false);
+        setIsFetchingAll(false);
+      }
+    };
 
   const getStatusColor = (estado: string) => {
     switch (estado.toLowerCase()) {
@@ -89,9 +121,11 @@ const TransferenciaBodegas = () => {
   const getStatusText = (estado: string) => {
     switch (estado.toLowerCase()) {
       case 'n':
-        return 'Novo';
+        return 'Nuevo';
       case 'f':
         return 'Finalizado';
+      case 'c':
+        return 'Contando';
       default:
         return 'Desconhecido';
     }
@@ -157,40 +191,45 @@ const TransferenciaBodegas = () => {
 
   const handleViewDetails = async (id: string) => {
     try {
-      const response = await fetch(
-        `https://stg.feetcolombia.com/rest/V1/transferenciabodegas/${id}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
+        const [success, data] = await transferBodegasApi.getById(id,token);
+        if (success) {
+          navigate(`/dashboard/transferencia-mercancia/${id}`, {
+            state: { transferencia: data }
+          });
         }
-      );
-      const [success, data] = await response.json();
-      if (success) {
-        navigate(`/dashboard/transferencia-mercancia/${id}`, { state: { transferencia: data } });
+      } catch (error) {
+        console.error('Error al obtener detalles de la transferencia:', error);
       }
-    } catch (error) {
-      console.error('Erro ao buscar detalhes da transferência:', error);
-    }
   };
+
+  const filtered = transferencias.filter(t => {
+    const matchesSearch =
+      t.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.nombre_responsable.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      selectedStatus === 'all' || t.estado.toLowerCase() === selectedStatus;
+    return matchesSearch && matchesStatus;
+  });
+
+    const isSearching = searchTerm.trim().length > 0;
+    const displayed = filtered;  
 
   return (
     <div className="overflow-hidden">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Transferência entre Bodegas</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Transferencia entre Bodegas</h1>
         <Button 
           className="bg-ecommerce-500 hover:bg-ecommerce-600"
           onClick={() => navigate('/dashboard/transferencia-mercancia/novo')}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Nova Transferência
+          Nueva Transferencia
         </Button>
       </div>
 
       <div className="flex gap-4 mb-6">
         <Input
-          placeholder="Buscar por código ou responsável..."
+          placeholder="Buscar por código o responsable..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
@@ -204,8 +243,9 @@ const TransferenciaBodegas = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="n">Novo</SelectItem>
+            <SelectItem value="n">Nuevo</SelectItem>
             <SelectItem value="f">Finalizado</SelectItem>
+            <SelectItem value="c">Contando</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -215,20 +255,29 @@ const TransferenciaBodegas = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Código</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Origem</TableHead>
-              <TableHead>Destino</TableHead>
-              <TableHead>Responsável</TableHead>
-              <TableHead>Tipo</TableHead>
               <TableHead>Source</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead>Bodega Origen</TableHead>
+              <TableHead>Bodega Destino</TableHead>
+              <TableHead>Responsable</TableHead>
+              <TableHead>Es Masiva</TableHead>     
               <TableHead>Histórico</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transferencias.map((transferencia) => (
+       {isFetchingAll ? (
+         <TableRow>
+           <TableCell colSpan={9} className="text-center py-4">
+             <Loader2 className="inline-block animate-spin mr-2" />
+             Cargando resultados...
+           </TableCell>
+         </TableRow>
+       ) : (
+         displayed.map((transferencia) => (
               <TableRow key={transferencia.transferencia_bodega_id}>
                 <TableCell className="font-medium">{transferencia.codigo}</TableCell>
+                <TableCell>{transferencia.soruce}</TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(transferencia.estado)}`}>
                     {getStatusText(transferencia.estado)}
@@ -237,9 +286,8 @@ const TransferenciaBodegas = () => {
                 <TableCell>{transferencia.nombre_bodega_origen}</TableCell>
                 <TableCell>{transferencia.nombre_bodega_destino}</TableCell>
                 <TableCell>{transferencia.nombre_responsable}</TableCell>
-                <TableCell>Normal</TableCell>
-                <TableCell>{transferencia.soruce}</TableCell>
-                <TableCell>{transferencia.historico === 'n' ? 'Não' : 'Sim'}</TableCell>
+                <TableCell>{transferencia.es_masiva == 'n' ? 'No' : 'Si'}</TableCell>          
+                <TableCell>{transferencia.historico === 'n' || transferencia.historico == null ? 'No' : 'Si'}</TableCell>
                 <TableCell className="text-right">
                   <Button 
                     variant="ghost" 
@@ -250,12 +298,14 @@ const TransferenciaBodegas = () => {
                   </Button>
                 </TableCell>
               </TableRow>
-            ))}
+                       ))
+       )}
+            
           </TableBody>
         </Table>
       </div>
 
-      {totalPages > 1 && (
+      {!searchTerm.trim() && totalPages > 1 && (
         <div className="mt-4 flex justify-center">
           <Pagination>
             <PaginationContent>

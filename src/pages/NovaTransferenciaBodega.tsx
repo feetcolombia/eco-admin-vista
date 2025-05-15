@@ -23,6 +23,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Bodega } from '@/api/types/transferTypes';
 import { useToast } from '@/components/ui/use-toast';
+import { transferBodegasApi,Source } from '@/api/transferBodegasApi';
 
 interface TransferenciaResponse {
   source: string;
@@ -67,35 +68,17 @@ const NovaTransferenciaBodega = () => {
 
   const fetchOrigens = async () => {
     try {
-      const response = await fetch(
-        'https://stg.feetcolombia.com/rest/all/V1/inventory/sources',
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      const data = await response.json();
-      setOrigens(data.items || []);
+      const items: Source[] = await transferBodegasApi.getOrigens();
+      setOrigens(items);
     } catch (error) {
-      console.error('Erro ao buscar origens:', error);
+      console.error('Error al obtener sources:', error);
     }
   };
 
   const fetchBodegas = async () => {
     try {
-      const response = await fetch(
-        `https://stg.feetcolombia.com/rest/V1/feetbodega-mercancia/bodega/${formData.origem}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      const data = await response.json();
-      setBodegas(data);
+      const items = await transferBodegasApi.getBodegasMercancia(formData.origem);
+      setBodegas(items);
     } catch (error) {
       console.error('Erro ao buscar bodegas:', error);
     }
@@ -108,11 +91,41 @@ const NovaTransferenciaBodega = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.origem) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Origen es obligatorio.' })
+      return
+    }
+    if (!date) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Fecha es obligatoria.' })
+      return
+    }
+    if (!formData.descricao.trim()) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Descripción es obligatoria.' })
+      return
+    }
+    if (!formData.cargaMasiva) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Seleccione si realizará carga masiva.' })
+      return
+    }
+    // si NO es carga masiva, validar bodegas
+    if (formData.cargaMasiva === 'nao') {
+      if (!formData.bodegaOrigem) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Bodega origen es obligatoria.' })
+        return
+      }
+      if (!formData.bodegaDestino) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Bodega destino es obligatoria.' })
+        return
+      }
+    }
     setLoading(true);
 
     try {
+
       const payload = {
         data: {
+          transferencia_id: 0,
+          soruce: formData.origem,
           source: formData.origem,
           responsable: "1",
           nombre_responsable: "admin",
@@ -120,38 +133,26 @@ const NovaTransferenciaBodega = () => {
           id_bodega_destino: formData.cargaMasiva === 'nao' ? parseInt(formData.bodegaDestino) : 0,
           descripcion: formData.descricao,
           estado: "n",
-          transferencia_total: 0
+          es_masiva: formData.cargaMasiva,
+          created_at: format(date, "yyyy-MM-dd HH:mm:ss"),
+          historico: "n"
         }
       };
 
-      const response = await fetch(
-        'https://stg.feetcolombia.com/rest/V1/transferenciabodegas',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      const responseData = await response.json();
+      const responseData = await transferBodegasApi.updateTransferencia(payload);
       
-      if (response.ok && Array.isArray(responseData) && responseData.length > 0) {
-        const transferencia = responseData[0] as TransferenciaResponse;
-        if (transferencia.transferencia_id) {
-          navigate(`/dashboard/transferencia-mercancia/${transferencia.transferencia_id}`);
-          return;
-        }
+      if (responseData.length > 0) {
+        const t = responseData[0];
+        navigate(`/dashboard/transferencia-mercancia/${t.transferencia_id}`);
+        return;
       }
-      throw new Error('Erro ao criar transferência');
+      throw new Error('Error al crear la transferência');
     } catch (error) {
-      console.error('Erro ao salvar:', error);
+      console.error('Error al guardar:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível criar a transferência. Tente novamente.",
+        description: "No se pudo crear la transferencia, intente nuevamente.",
       });
     } finally {
       setLoading(false);
@@ -161,7 +162,7 @@ const NovaTransferenciaBodega = () => {
   return (
     <div className="container mx-auto py-6 max-w-3xl">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Novo Processo de Transferência</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Nuevo Proceso de Transferencia</h1>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -184,7 +185,7 @@ const NovaTransferenciaBodega = () => {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Origem<span className="text-red-500">*</span>
+              Origen<span className="text-red-500">*</span>
             </label>
             <Select
               value={formData.origem}
@@ -265,8 +266,8 @@ const NovaTransferenciaBodega = () => {
                 <SelectValue placeholder="Seleccione una opción" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="sim">Sim</SelectItem>
-                <SelectItem value="nao">Não</SelectItem>
+                <SelectItem value="sim">Si</SelectItem>
+                <SelectItem value="nao">No</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -285,6 +286,7 @@ const NovaTransferenciaBodega = () => {
                     <SelectValue placeholder="Selecionar bodega origen" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="0">Ninguna</SelectItem>
                     {bodegas.map((bodega) => (
                       <SelectItem key={bodega.bodega_id} value={String(bodega.bodega_id)}>
                         {bodega.bodega_nombre}
@@ -306,6 +308,7 @@ const NovaTransferenciaBodega = () => {
                     <SelectValue placeholder="Selecionar bodega destino" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="0">Ninguna</SelectItem>
                     {bodegas
                       .filter(bodega => String(bodega.bodega_id) !== formData.bodegaOrigem)
                       .map((bodega) => (
@@ -322,7 +325,7 @@ const NovaTransferenciaBodega = () => {
           {formData.cargaMasiva === 'sim' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Arquivo CSV
+                Archivo CSV
               </label>
               <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
                 <div className="space-y-1 text-center">

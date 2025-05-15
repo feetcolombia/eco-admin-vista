@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { transferenciaApi } from '@/services/api/transferencia';
+import { transferBodegasApi, Source } from '@/api/transferBodegasApi';
 
 interface Produto {
   transferencia_productos_id: string;
@@ -15,23 +15,6 @@ interface Produto {
   id_producto: string;
   sku: string;
 }
-
-interface TransferenciaConfirmacao {
-  transferencia_bodega_id: string;
-  soruce: string;
-  id_bodega_origen: string;
-  id_bodega_destino: string;
-  cantidad: string;
-  descripcion: string;
-  responsable: string;
-  estado: string;
-  codigo: string;
-  nombre_bodega_origen: string;
-  nombre_bodega_destino: string;
-  nombre_responsable: string;
-  productos: Produto[];
-}
-
 const ConfirmarTransferencia = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -46,9 +29,9 @@ const ConfirmarTransferencia = () => {
 
   const fetchTransferencia = async () => {
     try {
-      const data = await transferenciaApi.getTransferencia(id!, token);
+      const data = await transferBodegasApi.getTransferencia(id!, token);
       if (data) {
-        setTransferencia(data);
+        setTransferencia(data[1]);
       }
     } catch (error) {
       toast({
@@ -63,17 +46,23 @@ const ConfirmarTransferencia = () => {
 
   const handleConfirmar = async () => {
     try {
-      await transferenciaApi.confirmarTransferencia(transferencia, token);
+      await transferBodegasApi.updateTransferenciaPut({
+          data: {
+            ...transferencia,
+            estado: 'f',
+            transferencia_id: transferencia.transferencia_bodega_id,
+          }
+        });
       toast({
-        title: "Sucesso",
-        description: "Transferência confirmada com sucesso.",
+        title: "Datos guardados",
+        description: "Transferencia finalizad correctamente.",
       });
       navigate('/dashboard/transferencia-mercancia');
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao confirmar a transferência.",
+        description: "Error al finalizar la transferencia.",
       });
     }
   };
@@ -110,11 +99,17 @@ const ConfirmarTransferencia = () => {
             Exportar a Excel
           </Button>
           <Button
-            onClick={handleConfirmar}
+            onClick={() => {
+              const ok = window.confirm(
+                'Esta acción finalizará el proceso y no podrá ser revertida.'
+              )
+              if (!ok) return
+              handleConfirmar()
+            }}
             className="bg-ecommerce-500 hover:bg-ecommerce-600"
           >
             Confirmar
-          </Button>
+         </Button>
         </div>
       </div>
 
