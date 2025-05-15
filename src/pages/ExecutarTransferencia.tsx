@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { transferenciaApi } from '@/services/api/transferencia';
 import { Trash2, Loader2 } from 'lucide-react';
+import { transferBodegasApi, Source } from '@/api/transferBodegasApi';
 
 interface TransferenciaDetalle {
   transferencia_bodega_id: string;
@@ -38,16 +39,6 @@ interface TransferenciaDetalle {
   productos: any[];
 }
 
-interface Source {
-  source_code: string;
-  name: string;
-  enabled: boolean;
-  description?: string;
-  extension_attributes: {
-    is_pickup_location_active: boolean;
-    frontend_name: string;
-  };
-}
 
 const ExecutarTransferencia = () => {
   const { id } = useParams();
@@ -59,7 +50,6 @@ const ExecutarTransferencia = () => {
   const [codigoBarras, setCodigoBarras] = useState('');
   const [selectedBodega, setSelectedBodega] = useState<string>("");
   const [sonido, setSonido] = useState(true);
-  const [totalEscaneado, setTotalEscaneado] = useState(0);
   const [saving, setSaving] = useState(false);
   const [barcode, setBarcode] = useState('');
   const [error, setError] = useState('');
@@ -73,11 +63,12 @@ const ExecutarTransferencia = () => {
 
   const fetchTransferencia = async () => {
     try {
-      const data = await transferenciaApi.getTransferencia(id!, token);
-      if (data) {
-        setTransferencia(data);
-        if (data.productos && data.productos.length > 0) {
-          const produtosExistentes = data.productos.map((produto: any) => ({
+      const data = await transferBodegasApi.getTransferencia(id!, token);
+      if (data && data.length > 0) {
+        console.log('data', data);
+        setTransferencia(data[1]);
+        if (data[1].productos && data[1].productos.length > 0) {
+          const produtosExistentes = data[1].productos.map((produto: any) => ({
             id: produto.id_producto,
             sku: produto.sku,
             quantidade: parseInt(produto.cantidad_transferir),
@@ -85,7 +76,6 @@ const ExecutarTransferencia = () => {
             observacion: produto.observacion || ''
           }));
           setProdutos(produtosExistentes);
-          setTotalEscaneado(produtosExistentes.length);
         }
       }
     } catch (error) {
@@ -101,17 +91,8 @@ const ExecutarTransferencia = () => {
 
   const fetchSources = async () => {
     try {
-      const response = await fetch(
-        'https://stg.feetcolombia.com/rest/V1/inventory/sources',
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          }
-        }
-      );
-      const data = await response.json();
-      setSources(data.items);
+      const items: Source[] = await transferBodegasApi.getOrigens();
+      setSources(items);
     } catch (error) {
       console.error('Erro ao buscar fontes:', error);
     }
@@ -127,45 +108,63 @@ const ExecutarTransferencia = () => {
     if (!barcode.trim()) return;
 
     try {
-      const response = await fetch(
-        'https://stg.feetcolombia.com/rest/V1/transferenciabarcode',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            barcode: barcode,
-            idBodegaOrigen: transferencia.id_bodega_origen,
-            idBodegaDestino: transferencia.id_bodega_destino,
-            source: transferencia.soruce,
-            cantidadTransferir: 1
-          }),
-        }
-      );
-
-      const data = await response.json();
+            const data = await transferBodegasApi.scanBarcode(
+                barcode,
+                transferencia.id_bodega_origen,
+                transferencia.id_bodega_destino,
+                transferencia.soruce,
+                1
+              );
       
-      if (Array.isArray(data) && data.length > 0 && data[0].success) {
-        const produto = data[0];
-        setProdutos(prev => [...prev, {
-          id: produto.id_producto,
-          sku: produto.product_sku,
-          quantidade: 1,
-          quantidadeDisponivel: parseInt(produto.cantidad_disponible)
-        }]);
-        setBarcode('');
-        setError('');
-        setTotalEscaneado(prev => prev + 1);
-      } else {
-        setError('Producto no encontrado');
-      }
-    } catch (error) {
-      console.error('Error al validar producto:', error);
-      setError('Error al validar producto');
-    }
-  };
+            if (Array.isArray(data) && data.length > 0 && data[0].success) {
+                const produto = data[0];
+                const qtyAvailable = parseInt(produto.cantidad_disponible, 10);
+        
+                // intentar actualizar lista de productos
+                setProdutos(prev => {
+                  const exists = prev.find(p => p.id === produto.id_producto);
+                  if (exists) {
+                    // validar que no exceda stock disponible
+                    console.log('exists.quantidade', exists.quantidade);
+                    console.log('exists.qtyAvailable',qtyAvailable);
+                    if (exists.quantidade + 1 > qtyAvailable) {
+                      setError("La cantidad disponible del producto es menor a la cantidad a escanear");
+                      toast({
+                        variant: "destructive",
+                        title: "Error",
+                        description: "La cantidad disponible del producto es menor a la cantidad a escanear",
+                      });
+                      return prev;
+                    }
+                    return prev.map(p =>
+                      p.id === produto.id_producto
+                        ? { ...p, quantidade: p.quantidade + 1 }
+                        : p
+                    );
+                  }
+                  // nuevo producto
+                  return [
+                    ...prev,
+                    {
+                      id: produto.id_producto,
+                      sku: produto.product_sku,
+                      quantidade: 1,
+                      quantidadeDisponivel: qtyAvailable,
+                      observacion: ''
+                    }
+                  ];
+                });
+                setError('');
+                setBarcode('');
+              } else {
+                setError('Producto no encontrado');
+              }
+           } catch (error) {
+             console.error('Error al validar producto:', error);
+             setError('Error al validar producto');
+           }
+         };
+
 
   const handleSave = async () => {
     if (!transferencia) return;
@@ -187,35 +186,19 @@ const ExecutarTransferencia = () => {
             id_producto: produto.id,
             cantidad_transferir: produto.quantidade,
             cantidad_existente: produto.quantidadeDisponivel,
-            observacion: "",
+            observacion: produto.observacion,
             sku: produto.sku
           }))
         }
       };
 
-      const response = await fetch(
-        'https://stg.feetcolombia.com/rest/V1/transferenciabodegas',
-        {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      const data = await response.json();
-      
-      if (Array.isArray(data) && data[0] === true) {
-        toast({
-          title: "Éxito",
-          description: `Transferencia guardada correctamente con ID: ${data[1]}`,
-        });
-        navigate('/dashboard/transferencia-mercancia');
-      } else {
-        throw new Error('Error al guardar la transferencia');
-      }
+      const [success, updatedId] = await transferBodegasApi.updateTransferenciaPut(payload);
+      if (!success) throw new Error('Error al guardar la transferencia');
+      toast({
+        title: "Éxito",
+        description: `Transferencia actualizada correctamente con ID: ${updatedId}`,
+      });
+      /*navigate('/dashboard/transferencia-mercancia');*/
     } catch (error) {
       console.error('Error al guardar transferencia:', error);
       toast({
@@ -260,6 +243,17 @@ const ExecutarTransferencia = () => {
     return <div>Carregando...</div>;
   }
 
+  const totalEscaneado = produtos.reduce((sum, p) => sum + p.quantidade, 0);
+
+  const handleObservacionChange = (id: string, observacion: string) => {
+    setProdutos(prev =>
+      prev.map(p =>
+        p.id === id ? { ...p, observacion } : p
+      )
+    );
+  };
+  
+
   return (
     <div className="mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
@@ -271,26 +265,32 @@ const ExecutarTransferencia = () => {
           >
             Regresar
           </Button>
-          <Button
-            onClick={handleSave}
-            className="bg-ecommerce-500 hover:bg-ecommerce-600"
-            disabled={saving || !produtos.length}
-          >
-            {saving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Guardando...
-              </>
-            ) : (
-              'Guardar'
-            )}
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={handleCompletar}
-          >
-            Completar
-          </Button>
+          {transferencia.estado !== 'f' && (
+            <>
+              <Button
+                onClick={handleSave}
+                className="bg-ecommerce-500 hover:bg-ecommerce-600"
+                disabled={saving || !produtos.length}
+              >
+                {saving
+                  ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Guardando...
+                    </>
+                  )
+                  : 'Guardar'
+                }
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={handleCompletar}
+                disabled={produtos.length === 0}
+              >
+                Completar
+            </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -312,6 +312,10 @@ const ExecutarTransferencia = () => {
             <div>
               <Label className="text-sm text-gray-500">Descripción</Label>
               <div className="font-medium">{transferencia.descripcion}</div>
+            </div>
+            <div className="mb-4">
+              <Label className="text-sm text-gray-500">Bodega Origen</Label>
+              <div className="font-medium">{transferencia.nombre_bodega_origen}</div>
             </div>
           </div>
           <div>
@@ -340,11 +344,7 @@ const ExecutarTransferencia = () => {
                     : 'Finalizado'}
                 </span>
               </div>
-            </div>
-            <div className="mb-4">
-              <Label className="text-sm text-gray-500">Bodega Origen</Label>
-              <div className="font-medium">{transferencia.nombre_bodega_origen}</div>
-            </div>
+            </div>           
             <div>
               <Label className="text-sm text-gray-500">Bodega Destino</Label>
               <div className="font-medium">{transferencia.nombre_bodega_destino}</div>
@@ -378,8 +378,13 @@ const ExecutarTransferencia = () => {
               onChange={(e) => setBarcode(e.target.value)}
               className="flex-1"
               autoFocus
+              disabled={transferencia.estado === 'f'}
             />
-            <Button type="submit" variant="secondary">
+            <Button
+              type="submit"
+              variant="secondary"
+              disabled={transferencia.estado === 'f'}
+            >
               Adicionar
             </Button>
           </div>
@@ -428,7 +433,7 @@ const ExecutarTransferencia = () => {
                     type="text"
                     placeholder="Agregar observación"
                     value={produto.observacion}
-                    onChange={() => {}}
+                    onChange={(e) => handleObservacionChange(produto.id, e.target.value)}
                     className="max-w-[200px]"
                   />
                 </TableCell>

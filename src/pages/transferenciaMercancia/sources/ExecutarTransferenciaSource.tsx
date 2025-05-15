@@ -350,7 +350,7 @@ const handleCompletar = async () => {
             </div>
             <div className="mb-4">
               <Label className="text-sm text-gray-500">Source Origen</Label>
-              <div className="font-medium">{transferencia.source_destino}</div>
+              <div className="font-medium">{transferencia.origen}</div>
             </div>
             <div className="mb-4">
               <Label className="text-sm text-gray-500">Usuario Responsable</Label>

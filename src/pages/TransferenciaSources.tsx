@@ -9,6 +9,15 @@ import { Eye, Trash } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { transferSourcesApi, TransferSource } from '@/api/transferSourcesApi';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 
 const estadoLabel = { c: 'Contando', n: 'Nuevo', f: 'Completo' };
 
@@ -18,6 +27,8 @@ const TransferenciaSources = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   const fetchAll = async () => {
     try {
@@ -46,14 +57,20 @@ const TransferenciaSources = () => {
    };
 
   useEffect(() => { fetchAll() }, []);
+  
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
 
   const filtered = items.filter(x =>
     x.consecutivo.includes(searchTerm) ||
     x.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-
-   const handleView = (src: TransferSource) => {
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+  
+  const handleView = (src: TransferSource) => {
  
      if (['n', 'ic', 'if'].includes(src.tipo)) {
        navigate(`/transferenciaMercancia/sources/execute-transferencia-source/${src.transferencia_source_id}`);
@@ -97,7 +114,7 @@ const TransferenciaSources = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map(src => (
+            {paginated.map(src => (
               <TableRow key={src.transferencia_source_id}>
                 <TableCell>{src.consecutivo}</TableCell>
                 <TableCell>{src.source_origen}</TableCell>
@@ -138,6 +155,57 @@ const TransferenciaSources = () => {
             ))}
           </TableBody>
         </Table>
+        {totalPages > 1 && (
+        <div className="px-4 py-2 flex justify-end">
+          <Pagination>
+            <PaginationPrevious
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              Anterior
+            </PaginationPrevious>
+
+            <PaginationContent>
+              {Array.from({ length: totalPages }).map((_, i) => {
+                const pageNumber = i + 1;
+                // show ellipsis for large number of pages
+                if (
+                  pageNumber !== 1 &&
+                  pageNumber !== totalPages &&
+                  Math.abs(pageNumber - page) > 2
+                ) {
+                  if (
+                    (pageNumber < page && pageNumber !== 2) ||
+                    (pageNumber > page && pageNumber !== totalPages - 1)
+                  ) {
+                    return <PaginationEllipsis key={pageNumber} />;
+                  }
+                }
+                return (
+                  <PaginationItem key={pageNumber}>
+                    <PaginationLink
+                      onClick={() => setPage(pageNumber)}
+                      isActive={pageNumber === page}
+                    >
+                      {pageNumber}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+            </PaginationContent>
+
+            <PaginationNext
+              onClick={() => {
+                if (page !== totalPages) {
+                  setPage(p => Math.min(totalPages, p + 1));
+                }
+              }}
+            >
+              Siguiente
+            </PaginationNext>
+          </Pagination>
+        </div>
+      )}
       </div>
     </div>
   );
