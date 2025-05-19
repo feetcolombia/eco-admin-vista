@@ -159,7 +159,6 @@ const IngresoMercancia = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
                 <TableHead>Consecutivo</TableHead>
                 <TableHead>Origen</TableHead>
                 <TableHead>Responsable</TableHead>
@@ -176,7 +175,6 @@ const IngresoMercancia = () => {
                     className="cursor-pointer hover:bg-gray-50"
                     onClick={() => handleRowClick(ingreso.ingresomercancia_id)}
                   >
-                    <TableCell>{ingreso.ingresomercancia_id}</TableCell>
                     <TableCell>{ingreso.consecutivo}</TableCell>
                     <TableCell>{getSourceName(ingreso.source)}</TableCell>
                     <TableCell>{ingreso.nombre_responsable}</TableCell>

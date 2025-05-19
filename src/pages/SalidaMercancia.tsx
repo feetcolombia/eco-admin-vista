@@ -163,7 +163,6 @@ const SalidaMercancia = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
                 <TableHead>Consecutivo</TableHead>
                 <TableHead>Origen</TableHead>
                 <TableHead>Responsable</TableHead>
@@ -179,7 +178,6 @@ const SalidaMercancia = () => {
                     className="cursor-pointer hover:bg-gray-50"
                     onClick={() => handleRowClick(salida.salidamercancia_id)}
                   >
-                    <TableCell>{salida.salidamercancia_id}</TableCell>
                     <TableCell>{salida.consecutivo}</TableCell>
                     <TableCell>{getSourceName(salida.source)}</TableCell>
                     <TableCell>{salida.nombre_responsable}</TableCell>
@@ -207,7 +205,7 @@ const SalidaMercancia = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
+                  <TableCell colSpan={5} className="text-center py-4">
                     No se encontraron salidas
                   </TableCell>
                 </TableRow>
