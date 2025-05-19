@@ -138,5 +138,21 @@ export const productsApi = {
       console.error('Erro ao buscar opções de estilo:', error);
       throw error;
     }
+  },
+
+  getProductBySku: async (sku: string): Promise<Product | null> => {
+    try {
+      const response = await apiClient.get<Product>(
+        `/rest/V1/products/${encodeURIComponent(sku)}`,
+        { headers: getAuthHeaders() }
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      console.error('Error al buscar producto por SKU:', error);
+      throw error;
+    }
   }
 };

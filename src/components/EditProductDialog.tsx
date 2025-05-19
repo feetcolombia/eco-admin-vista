@@ -111,7 +111,13 @@ export function EditProductDialog({ open, onClose, product, onSuccess }: EditPro
 
       const productData = {
         product: {
+          sku: product.sku,
+          name: formData.name,
           price: parseFloat(priceWithoutFormat),
+          type_id: "simple",
+          attribute_set_id: 4, // ID do conjunto de atributos padrão
+          status: 1,
+          visibility: 4,
           custom_attributes: [
             {
               attribute_code: 'color',
@@ -133,7 +139,7 @@ export function EditProductDialog({ open, onClose, product, onSuccess }: EditPro
         }
       };
 
-      await apiClient.put(`/rest/V1/products/${product.id}`, productData, {
+      await apiClient.put(`/rest/V1/products/${product.sku}`, productData, {
         headers: getAuthHeaders()
       });
 

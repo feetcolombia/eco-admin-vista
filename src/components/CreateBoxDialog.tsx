@@ -25,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import productApi, { Product, TallaOption, ProductDetail } from '@/api/productApi';
+import { useToast } from "@/components/ui/use-toast";
 
 interface CreateBoxDialogProps {
   open: boolean;
@@ -33,6 +34,7 @@ interface CreateBoxDialogProps {
 }
 
 export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialogProps) {
+  const { toast } = useToast();
   const [sku, setSku] = useState(parentProduct.sku);
   const [barcode, setBarcode] = useState('');
   const [selectedTalla, setSelectedTalla] = useState('');
@@ -41,6 +43,7 @@ export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialo
   const [childProducts, setChildProducts] = useState<Product[]>([]);
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const [autoSelectedMessage, setAutoSelectedMessage] = useState('');
+  const [skuError, setSkuError] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -104,9 +107,46 @@ export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialo
     setQuantities({ ...quantities, [sku]: quantity });
   };
 
+  const validateSku = async (value: string) => {
+    if (!value.trim()) {
+      setSkuError('El SKU es obligatorio');
+      return false;
+    }
+
+    try {
+      const existingProduct = await productApi.getProductBySku(value);
+      if (existingProduct) {
+        setSkuError('Ya existe un producto con este SKU. Por favor, elija otro SKU.');
+        return false;
+      }
+      setSkuError('');
+      return true;
+    } catch (error) {
+      console.error('Error al validar SKU:', error);
+      setSkuError('Error al validar el SKU. Por favor, intente nuevamente.');
+      return false;
+    }
+  };
+
+  const handleSkuChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSku(value);
+    if (value.trim()) {
+      await validateSku(value);
+    } else {
+      setSkuError('');
+    }
+  };
+
   const handleSave = async () => {
     try {
       setLoading(true);
+
+      // Validar SKU antes de continuar
+      const isSkuValid = await validateSku(sku);
+      if (!isSkuValid) {
+        return;
+      }
 
       // Encontrar o valor correto do atributo talla para a caixa selecionada
       const selectedTallaOption = tallaOptions.find(option => option.value === selectedTalla);
@@ -175,9 +215,13 @@ export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialo
               <label>SKU de la Caja</label>
               <Input
                 value={sku}
-                onChange={(e) => setSku(e.target.value)}
+                onChange={handleSkuChange}
                 placeholder="Ingrese el SKU de la caja"
+                className={skuError ? "border-red-500" : ""}
               />
+              {skuError && (
+                <p className="text-sm text-red-500 mt-1">{skuError}</p>
+              )}
             </div>
             <div className="space-y-2">
               <label>Código de Barras</label>

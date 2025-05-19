@@ -12,6 +12,7 @@ const productApi = {
   createBox: productsApi.createBox,
   setAsChild: productsApi.setAsChild,
   saveBoxDetails: productsApi.saveBoxDetails,
+  getProductBySku: productsApi.getProductBySku,
   
   // Attribute Options
   getMarcaOptions: productsApi.getMarcaOptions,
