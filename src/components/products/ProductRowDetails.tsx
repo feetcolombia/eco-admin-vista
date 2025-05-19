@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/table";
 import { Product } from "@/api/productApi";
 import { Button } from "@/components/ui/button";
-import { SquarePen } from "lucide-react";
+import { SquarePen, Box, ShoppingBag } from "lucide-react";
 
 interface ProductRowDetailsProps {
   productId: number;
@@ -41,7 +41,17 @@ export const ProductRowDetails = ({ productId, childProducts, handleEditProduct 
                   <TableCell>
                     <div className="flex items-center">
                       <span className={`w-2 h-2 rounded-full mr-2 ${child.is_closedbox ? 'bg-yellow-500' : 'bg-green-500'}`}></span>
-                      {child.is_closedbox ? 'Caja Cerrada' : 'Unidad'}
+                      {child.is_closedbox ? (
+                        <>
+                          <Box size={16} className="mr-1" />
+                          Módulo
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingBag size={16} className="mr-1" />
+                          Unidad
+                        </>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
