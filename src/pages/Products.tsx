@@ -48,11 +48,18 @@ const Products = () => {
 
       let filterGroupIndex = 1;
 
-      // Adiciona filtro de SKU se houver
+      // Adiciona filtro de SKU e nome se houver termo de busca
       if (searchQuery) {
+        // Filtro para SKU
         searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][0][field]`] = 'sku';
         searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][0][value]`] = `%${searchQuery}%`;
         searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][0][condition_type]`] = 'like';
+
+        // Filtro para nome (usando OR com o SKU)
+        searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][1][field]`] = 'name';
+        searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][1][value]`] = `%${searchQuery}%`;
+        searchCriteria[`searchCriteria[filter_groups][${filterGroupIndex}][filters][1][condition_type]`] = 'like';
+
         filterGroupIndex++;
       }
 

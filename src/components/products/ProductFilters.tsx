@@ -78,7 +78,7 @@ export function ProductFilters({
           </Select>
         </div>
 
-        <div className="w-full md:w-72">
+        {/* <div className="w-full md:w-72">
           <Label>Categoría</Label>
           <Select
             value={selectedCategories[0]?.toString() || "all"}
@@ -97,7 +97,7 @@ export function ProductFilters({
               ))}
             </SelectContent>
           </Select>
-        </div>
+        </div> */}
       </div>
     </div>
   );
