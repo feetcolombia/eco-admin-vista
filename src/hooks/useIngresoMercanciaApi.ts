@@ -96,6 +96,18 @@ interface IngresoMercanciaProductoPayload {
   bodega_id: string;
 }
 
+interface BodegaPayload {
+  bodega: {
+    bodega_source: string;
+    bodega_nombre: string;
+    bodega_descripcion: string;
+    bodega_altura: number;
+    bodega_largo: number;
+    bodega_profundidad: number;
+    bodega_limite: number;
+  }
+}
+
 const BASE_URL = 'https://stg.feetcolombia.com/rest/V1';
 
 export const useIngresoMercanciaApi = () => {
@@ -342,6 +354,37 @@ export const useIngresoMercanciaApi = () => {
     }
   };
 
+  const createBodega = async (data: BodegaPayload): Promise<boolean> => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${BASE_URL}/feetbodega-mercancia/bodega`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(data)
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Erro da API:', errorData);
+        throw new Error('Erro ao criar bodega');
+      }
+      
+      return true;
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao criar a bodega. Tente novamente.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     getSources,
@@ -352,5 +395,6 @@ export const useIngresoMercanciaApi = () => {
     getBarcodeData,
     saveIngresoMercanciaProductos,
     confirmarIngresoMercancia,
+    createBodega,
   };
 }; 

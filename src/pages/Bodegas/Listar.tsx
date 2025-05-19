@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
 import { useIngresoMercanciaApi } from "@/hooks/useIngresoMercanciaApi";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Pagination,
@@ -13,6 +13,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { useNavigate } from "react-router-dom";
 
 const ListarBodegas = () => {
   const { getSources, getBodegas, loading } = useIngresoMercanciaApi();
@@ -22,6 +23,7 @@ const ListarBodegas = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchSources() {
@@ -118,6 +120,13 @@ const ListarBodegas = () => {
           <h1 className="text-2xl font-bold">Bodegas</h1>
           <p className="text-muted-foreground">Administre as bodegas do sistema</p>
         </div>
+        <Button 
+          className="flex items-center gap-2"
+          onClick={() => navigate("/dashboard/bodegas/nova")}
+        >
+          <Plus className="h-4 w-4" />
+          Nueva Posición
+        </Button>
       </div>
       <Card>
         <CardContent className="p-6">

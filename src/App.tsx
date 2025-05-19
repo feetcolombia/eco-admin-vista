@@ -29,6 +29,7 @@ import NovaTransferenciaBodega from "@/pages/NovaTransferenciaBodega";
 import ExecutarTransferencia from "@/pages/ExecutarTransferencia";
 import ConfirmarTransferencia from "@/pages/ConfirmarTransferencia";
 import ListarBodegas from "@/pages/Bodegas/Listar";
+import CriarBodega from "@/pages/Bodegas/Criar";
 import NotFound from "./pages/NotFound";
 import SalidaMercanciaForm from './pages/SalidaMercanciaForm';
 import ConfirmarTransferenciaSource from "./pages/transferenciaMercancia/sources/ConfirmarTransferenciaSources";
@@ -77,6 +78,7 @@ const App = () => (
                 
                 {/* Bodegas routes */}
                 <Route path="/dashboard/bodegas/listar" element={<ListarBodegas />} />
+                <Route path="/dashboard/bodegas/nova" element={<CriarBodega />} />
                 
                 {/* Legacy paths to maintain compatibility */}
                 <Route path="/ingreso-mercancia/nuevo" element={<Navigate to="/dashboard/ingreso-mercancia/nuevo" replace />} />
