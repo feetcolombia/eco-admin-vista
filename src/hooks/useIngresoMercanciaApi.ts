@@ -38,6 +38,7 @@ interface Bodega {
   bodega_id: number;
   bodega_source: string;
   bodega_nombre: string;
+  bodega_descripcion: string;
   bodega_altura: number;
   bodega_largo: number;
   bodega_profundidad: number;
@@ -105,6 +106,17 @@ interface BodegaPayload {
     bodega_largo: number;
     bodega_profundidad: number;
     bodega_limite: number;
+  }
+}
+
+interface UpdateBodegaPayload {
+  bodega: {
+    bodega_nombre?: string;
+    bodega_descripcion?: string;
+    bodega_altura?: number;
+    bodega_largo?: number;
+    bodega_profundidad?: number;
+    bodega_limite?: number;
   }
 }
 
@@ -237,7 +249,7 @@ export const useIngresoMercanciaApi = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `${BASE_URL}/feetbodega-mercancia/bodega/${source}`,
+        `${BASE_URL}/feetbodega-mercancia/bodega/source/${source}`,
         { headers }
       );
       
@@ -385,6 +397,60 @@ export const useIngresoMercanciaApi = () => {
     }
   };
 
+  const getBodegaById = async (id: number): Promise<Bodega | null> => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${BASE_URL}/feetbodega-mercancia/bodega/id/${id}`,
+        { headers }
+      );
+      
+      if (!response.ok) throw new Error('Erro ao buscar bodega');
+      
+      return await response.json();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar os detalhes da bodega. Tente novamente.",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateBodega = async (id: number, data: UpdateBodegaPayload): Promise<boolean> => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${BASE_URL}/feetbodega-mercancia/bodega/${id}`,
+        {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify(data)
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Erro da API:', errorData);
+        throw new Error('Erro ao atualizar bodega');
+      }
+      
+      return true;
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar a bodega. Tente novamente.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     getSources,
@@ -396,5 +462,7 @@ export const useIngresoMercanciaApi = () => {
     saveIngresoMercanciaProductos,
     confirmarIngresoMercancia,
     createBodega,
+    getBodegaById,
+    updateBodega,
   };
 }; 

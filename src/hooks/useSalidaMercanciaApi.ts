@@ -217,7 +217,7 @@ export const useSalidaMercanciaApi = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `${BASE_URL}/feetbodega-mercancia/bodega/${source}`,
+        `${BASE_URL}/feetbodega-mercancia/bodega/source/${source}`,
         { headers }
       );
       

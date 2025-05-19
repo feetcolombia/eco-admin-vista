@@ -3,8 +3,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
 import { useIngresoMercanciaApi } from "@/hooks/useIngresoMercanciaApi";
-import { Eye, Pencil, Trash2, Plus } from "lucide-react";
+import { Eye, Pencil, Plus, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Pagination,
   PaginationContent,
@@ -14,14 +21,31 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { useNavigate } from "react-router-dom";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+
+interface BodegaDetalhes {
+  bodega_id: number;
+  bodega_source: string;
+  bodega_nombre: string;
+  bodega_descripcion: string;
+  bodega_altura: number;
+  bodega_largo: number;
+  bodega_profundidad: number;
+  bodega_limite: number;
+}
 
 const ListarBodegas = () => {
-  const { getSources, getBodegas, loading } = useIngresoMercanciaApi();
+  const { getSources, getBodegas, getBodegaById, updateBodega, loading } = useIngresoMercanciaApi();
   const [sources, setSources] = useState([]);
   const [selectedSource, setSelectedSource] = useState("");
   const [bodegas, setBodegas] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedBodega, setSelectedBodega] = useState<BodegaDetalhes | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedBodega, setEditedBodega] = useState<BodegaDetalhes | null>(null);
   const itemsPerPage = 10;
   const navigate = useNavigate();
 
@@ -60,6 +84,63 @@ const ListarBodegas = () => {
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
   const currentItems = filteredBodegas.slice(startIndex, endIndex);
 
+  const handleViewBodega = async (bodegaId: number, shouldEdit: boolean = false) => {
+    const bodega = await getBodegaById(bodegaId);
+    if (bodega) {
+      setSelectedBodega(bodega);
+      setEditedBodega(bodega); // Garantir que editedBodega também seja preenchido
+      setIsViewModalOpen(true);
+      if (shouldEdit) {
+        setIsEditing(true);
+      }
+    }
+  };
+
+  const handleEditClick = () => {
+    setEditedBodega(selectedBodega);
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditedBodega(null);
+    setIsEditing(false);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editedBodega) return;
+
+    const success = await updateBodega(editedBodega.bodega_id, {
+      bodega: {
+        bodega_nombre: editedBodega.bodega_nombre,
+        bodega_descripcion: editedBodega.bodega_descripcion,
+        bodega_altura: editedBodega.bodega_altura,
+        bodega_largo: editedBodega.bodega_largo,
+        bodega_profundidad: editedBodega.bodega_profundidad,
+        bodega_limite: editedBodega.bodega_limite,
+      }
+    });
+
+    if (success) {
+      toast.success("Bodega atualizada com sucesso!");
+      setIsEditing(false);
+      // Atualizar a lista de bodegas
+      if (selectedSource) {
+        const data = await getBodegas(selectedSource);
+        setBodegas(data);
+      }
+      // Atualizar os detalhes da bodega
+      const updatedBodega = await getBodegaById(editedBodega.bodega_id);
+      if (updatedBodega) {
+        setSelectedBodega(updatedBodega);
+      }
+    }
+  };
+
+  const handleInputChange = (field: keyof BodegaDetalhes, value: string | number) => {
+    if (!editedBodega) return;
+    setEditedBodega(prev => prev ? { ...prev, [field]: value } : null);
+  };
+
   const columns = [
     { header: "Nome", accessor: "bodega_nombre" },
     { header: "Altura", accessor: "bodega_altura" },
@@ -70,14 +151,17 @@ const ListarBodegas = () => {
 
   const actions = [
     {
-      icon: <Eye className="h-4 w-4" />, onClick: (bodega) => {}, variant: "ghost" as const
+      icon: <Eye className="h-4 w-4" />,
+      onClick: (bodega) => handleViewBodega(bodega.bodega_id, false),
+      variant: "ghost" as const,
+      tooltip: "Visualizar"
     },
     {
-      icon: <Pencil className="h-4 w-4" />, onClick: (bodega) => {}, variant: "ghost" as const
-    },
-    {
-      icon: <Trash2 className="h-4 w-4" />, onClick: (bodega) => {}, variant: "ghost" as const, colorClass: "text-red-500 hover:text-red-600"
-    },
+      icon: <Pencil className="h-4 w-4" />,
+      onClick: (bodega) => handleViewBodega(bodega.bodega_id, true),
+      variant: "ghost" as const,
+      tooltip: "Editar"
+    }
   ];
 
   // Gerar array de páginas a exibir
@@ -193,6 +277,148 @@ const ListarBodegas = () => {
           )}
         </CardContent>
       </Card>
+      
+      <Dialog open={isViewModalOpen} onOpenChange={(open) => {
+        setIsViewModalOpen(open);
+        if (!open) {
+          setIsEditing(false);
+          setEditedBodega(null);
+        }
+      }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex justify-between items-center">
+              <span>Detalhes da Bodega</span>
+              {!isEditing && selectedBodega && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleEditClick}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedBodega && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <div className="font-medium">ID:</div>
+                <div className="col-span-3">{selectedBodega.bodega_id}</div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <div className="font-medium">Source:</div>
+                <div className="col-span-3">{selectedBodega.bodega_source}</div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <div className="font-medium">Nome:</div>
+                <div className="col-span-3">
+                  {isEditing ? (
+                    <Input
+                      value={editedBodega?.bodega_nombre || ''}
+                      onChange={(e) => handleInputChange('bodega_nombre', e.target.value)}
+                    />
+                  ) : (
+                    selectedBodega.bodega_nombre
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <div className="font-medium">Descrição:</div>
+                <div className="col-span-3">
+                  {isEditing ? (
+                    <Textarea
+                      value={editedBodega?.bodega_descripcion || ''}
+                      onChange={(e) => handleInputChange('bodega_descripcion', e.target.value)}
+                    />
+                  ) : (
+                    selectedBodega.bodega_descripcion
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <div className="font-medium">Altura:</div>
+                <div className="col-span-3">
+                  {isEditing ? (
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={editedBodega?.bodega_altura || ''}
+                      onChange={(e) => handleInputChange('bodega_altura', parseFloat(e.target.value))}
+                    />
+                  ) : (
+                    `${selectedBodega.bodega_altura}m`
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <div className="font-medium">Largura:</div>
+                <div className="col-span-3">
+                  {isEditing ? (
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={editedBodega?.bodega_largo || ''}
+                      onChange={(e) => handleInputChange('bodega_largo', parseFloat(e.target.value))}
+                    />
+                  ) : (
+                    `${selectedBodega.bodega_largo}m`
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <div className="font-medium">Profundidade:</div>
+                <div className="col-span-3">
+                  {isEditing ? (
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={editedBodega?.bodega_profundidad || ''}
+                      onChange={(e) => handleInputChange('bodega_profundidad', parseFloat(e.target.value))}
+                    />
+                  ) : (
+                    `${selectedBodega.bodega_profundidad}m`
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <div className="font-medium">Limite:</div>
+                <div className="col-span-3">
+                  {isEditing ? (
+                    <Input
+                      type="number"
+                      value={editedBodega?.bodega_limite || ''}
+                      onChange={(e) => handleInputChange('bodega_limite', parseInt(e.target.value))}
+                    />
+                  ) : (
+                    selectedBodega.bodega_limite
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          {isEditing && (
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={handleCancelEdit}
+                className="flex items-center gap-2"
+              >
+                <X className="h-4 w-4" />
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSaveEdit}
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                <Save className="h-4 w-4" />
+                {loading ? "Salvando..." : "Salvar"}
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

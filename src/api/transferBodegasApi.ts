@@ -103,7 +103,7 @@ export const transferBodegasApi = {
 
   getBodegasMercancia: async (source: string): Promise<Bodega[]> => {
     const resp = await apiClient.get<Bodega[]>(
-      `/rest/V1/feetbodega-mercancia/bodega/${encodeURIComponent(source)}`,
+      `/rest/V1/feetbodega-mercancia/bodega/source/${encodeURIComponent(source)}`,
       { headers: getAuthHeaders() }
     );
     return resp.data;
