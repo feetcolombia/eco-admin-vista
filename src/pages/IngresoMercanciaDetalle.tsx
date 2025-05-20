@@ -156,42 +156,69 @@ const IngresoMercanciaDetalle = () => {
     return source ? source.name : sourceCode;
   };
 
+  const playBeep = (success: boolean) => {
+    if (!soundEnabled) return;
+    
+    try {
+      // Criar um contexto de áudio
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      // Configurar o som
+      oscillator.type = success ? 'sine' : 'square';
+      oscillator.frequency.setValueAtTime(success ? 800 : 400, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      
+      // Conectar os nós
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Tocar o som
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (error) {
+      console.log('Erro ao reproduzir som:', error);
+    }
+  };
+
   const handleBarcodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (barcode && selectedBodega) {
-      const barcodeData = await getBarcodeData(barcode);
+    if (!barcode.trim()) return;
+
+    try {
+      const response = await getBarcodeData(barcode);
       
-      if (barcodeData) {
-        const existingItemIndex = scannedItems.findIndex(
-          item => item.sku === barcodeData.product_sku && item.position === selectedBodega
-        );
+      // Verificar se o produto já existe com o mesmo SKU e mesma posição
+      const existingItemIndex = scannedItems.findIndex(
+        item => item.sku === response.product_sku && item.position === selectedBodega
+      );
 
-        if (existingItemIndex >= 0) {
-          // Se já existe um item com mesmo SKU e posição, incrementa a quantidade
-          const updatedItems = [...scannedItems];
-          updatedItems[existingItemIndex].quantity += 1;
-          setScannedItems(updatedItems);
-        } else {
-          // Se não existe, adiciona novo item
-          setScannedItems([
-            ...scannedItems,
-            {
-              sku: barcodeData.product_sku,
-              position: selectedBodega,
-              quantity: 1
-            }
-          ]);
-        }
-
-        if (soundEnabled) {
-          // Reproduz um som de beep
-          const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSA0PVqzn77BdGAg+ltryxnMpBSl+zPLaizsIGGS57OihUBELTKXh8bllHgU2jdXzzn0vBSF1xe/glEILElyx6OyrWBUIQ5zd8sFuJAUuhM/z1YU2Bhxqvu7mnEoODlOq5O+zYBoGPJPY88p2KwUme8rx3I4+CRZiturqpVITC0mi4PK8aB8GM4nU8tGAMQYfcsLu45ZFDBFYr+ftrVoXCECY3PLEcSYELIHO8diJOQgZaLvt559NEAxPqOPwtmMcBjiP1/PMeS0GI3fH8N2RQAoUXrTp66hVFApGnt/yvmwhBTCG0fPTgjQGHW/A7eSaRw0PVqzl77BdGAg+ltrzxnUoBSh+zPDaizsIGGS56+mjTxELTKXh8bllHgU1jdT0z3wvBSF0xPDglEQKElux6OyrWRUIRJve8sFuJAUug8/y1oU2Bhxqvu3mnEoPDlOq5O+zYRsGPJPY88p3KgUme8rx3I4+CRVht+rqpVITC0mh4PG9aB8GMojU8tGAMQYfccPu45ZFDBFYr+ftrVwWCECY3PLEcSYGK4DN8tiIOQgZZ7vs559NEAxPqOPxtmQcBjiP1/PMeS0FI3fH8N+RQAoUXrTp66hWFApGnt/yv2wiBTCG0fPTgzQHHG3A7eSaSA0PVqzl77BdGAk9ltnzxnUoBSh+y/HajDsIF2W56+mjUREKTKPi8blnHgU1jdTy0HwvBSF0xPDglUUKElux6OyrWhUJQ5vd88FwJAQug8/y1oY2Bhxqvu3mnEwODVKp5e+zYRsGOpPY88p3KgUmecnw3Y4/CBVgtuvqpVQSCkif4PG9bCEFMofR89GBMwYdccLv45dHDRBXr+fur10YB0CX2/PEcycFKn/M8tiKOggZZ7vs559PEAxPpuPxt2UeBTeP1/POei4FI3bH8d+RQQkUXbPq66hWFApGnt/yv2wiBTCG0PPTgzUGHG3A7eSaSA0PVKzl77BeGQc9ltnzyHYpBSh9y/HajD0JFmS46+mjUREKTKPi8blnHwU1jdTy0H4wBiF0xPDglUUKElqw6OyrWhUJQprd88NxJQQug8/y2IY3BxtnvO3mnU0ODVKp5e+0YhsGOpHY88p5LAUlecnw3Y9ACBVgtuvqp1QSCkif4PG9bCEFMofR89GBMwYdccLv45dHDRBXr+fur10YCECWAABJTklGSVhJTkc=');
-          audio.play();
-        }
-
-        setTotalScanned(prev => prev + 1);
-        setBarcode("");
+      if (existingItemIndex !== -1) {
+        // Se o produto já existe, apenas incrementa a quantidade
+        setScannedItems(prev => prev.map((item, index) => {
+          if (index === existingItemIndex) {
+            return { ...item, quantity: item.quantity + 1 };
+          }
+          return item;
+        }));
+        playBeep(true);
+      } else {
+        // Se o produto não existe, adiciona como novo
+        const newItem: ScannedItem = {
+          sku: response.product_sku,
+          position: selectedBodega,
+          quantity: 1
+        };
+        setScannedItems(prev => [...prev, newItem]);
+        playBeep(true);
       }
+
+      setTotalScanned(prev => prev + 1);
+      setBarcode("");
+    } catch (error) {
+      playBeep(false);
+      // O toast de erro já é mostrado no hook
     }
   };
 

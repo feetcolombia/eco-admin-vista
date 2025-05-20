@@ -141,6 +141,32 @@ const SalidaMercanciaDetalle = () => {
     }
   };
 
+  const playBeep = (success: boolean) => {
+    if (!soundEnabled) return;
+    
+    try {
+      // Criar um contexto de áudio
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      // Configurar o som
+      oscillator.type = success ? 'sine' : 'square';
+      oscillator.frequency.setValueAtTime(success ? 800 : 400, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      
+      // Conectar os nós
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Tocar o som
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (error) {
+      console.log('Erro ao reproduzir som:', error);
+    }
+  };
+
   const handleBarcodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!barcode.trim() || !selectedBodegaId) return;
@@ -167,11 +193,7 @@ const SalidaMercanciaDetalle = () => {
           return product;
         }));
 
-        // Reproduzir som se estiver habilitado
-        if (soundEnabled) {
-          const audio = new Audio('/beep-success.mp3');
-          audio.play().catch(e => console.log('Erro ao reproduzir som', e));
-        }
+        playBeep(true);
       } else {
         // Se o produto não existe, adiciona como novo
         const newProduct: ProductItem = {
@@ -184,20 +206,12 @@ const SalidaMercanciaDetalle = () => {
         setProducts(prev => [...prev, newProduct]);
         setTotalScanned(prev => prev + 1);
 
-        // Reproduzir som se estiver habilitado
-        if (soundEnabled) {
-          const audio = new Audio('/beep-success.mp3');
-          audio.play().catch(e => console.log('Erro ao reproduzir som', e));
-        }
+        playBeep(true);
       }
       
       setBarcode('');
     } catch (error) {
-      // Reproduzir som de erro se estiver habilitado
-      if (soundEnabled) {
-        const audio = new Audio('/beep-error.mp3');
-        audio.play().catch(e => console.log('Erro ao reproduzir som', e));
-      }
+      playBeep(false);
       // O toast de erro já é mostrado no hook
     }
   };
