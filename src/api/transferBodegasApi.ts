@@ -176,4 +176,20 @@ export const transferBodegasApi = {
         );
         return resp.data;
     },
+
+    validateAndUploadCSV: async (payload: {
+      csv_file: string;
+      source: string;
+      fecha: string;
+      nombre_responsable: string;
+      descripcion: string;
+      responsable: number;
+    }): Promise<{ message: string; error: boolean }[]> => {
+      const resp = await apiClient.post(
+        '/rest/V1/transferenciacsv',
+        { data: payload },
+        { headers: getAuthHeaders() }
+      );
+      return resp.data;
+    },
 };

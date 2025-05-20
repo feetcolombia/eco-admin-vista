@@ -366,6 +366,29 @@ export const useIngresoMercanciaApi = () => {
     }
   };
 
+  async function validateCsv(payload: {
+    csv_file: string;
+    source: string;
+    fecha: string;
+    nombre_responsable: string;
+    descripcion: string;
+    creador: number;
+  }): Promise<{ message: string; error: boolean }[]> {
+    const response = await fetch(
+      `${BASE_URL}/feetmercancia-ingreso/ingresomercancia/csv`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ data: payload }),
+      }
+    );
+    const result = await response.json();
+    return result;
+  };
+
   const createBodega = async (data: BodegaPayload): Promise<boolean> => {
     setLoading(true);
     try {
@@ -464,5 +487,6 @@ export const useIngresoMercanciaApi = () => {
     createBodega,
     getBodegaById,
     updateBodega,
+    validateCsv,
   };
 }; 

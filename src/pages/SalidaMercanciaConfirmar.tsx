@@ -64,7 +64,7 @@ const SalidaMercanciaConfirmar = () => {
         sourceCode: "default"
       });
       
-      toast.success("Saída de mercadoria completada com sucesso");
+      toast.success("Salida de mercancía confirmada con éxito");
       navigate("/dashboard/salida-mercancia");
     } catch (error) {
       // O toast de erro já é mostrado no hook
@@ -82,7 +82,7 @@ const SalidaMercanciaConfirmar = () => {
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Verificação - Confirmar Processo de Saída</h1>
+        <h1 className="text-2xl font-bold">Verificar - Confirmar proceso de salida de mercancía</h1>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -117,7 +117,7 @@ const SalidaMercanciaConfirmar = () => {
         </div>
 
         <div className="bg-white rounded-lg p-6 shadow">
-          <h2 className="text-lg font-semibold mb-4">Total por Posição</h2>
+          <h2 className="text-lg font-semibold mb-4">Total por Posición</h2>
           <div className="space-y-2">
             {productosPorPosicion.map((posicion, index) => (
               <div key={index} className="flex justify-between items-center">
@@ -137,10 +137,10 @@ const SalidaMercanciaConfirmar = () => {
                 SKU
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Posição
+                Posición
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Quantidade
+                Cantidad a sacar
               </th>
             </tr>
           </thead>

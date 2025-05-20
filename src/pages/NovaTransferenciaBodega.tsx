@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { Bodega } from '@/api/types/transferTypes';
 import { useToast } from '@/components/ui/use-toast';
 import { transferBodegasApi,Source } from '@/api/transferBodegasApi';
+import { toast } from "sonner";
 
 interface TransferenciaResponse {
   source: string;
@@ -50,18 +51,19 @@ const NovaTransferenciaBodega = () => {
   const [formData, setFormData] = useState({
     origem: '',
     descricao: '',
-    cargaMasiva: 'nao',
+    cargaMasiva: 'n',
     arquivo: null as File | null,
     bodegaOrigem: '',
     bodegaDestino: '',
   });
+  const [csvValidationResult, setCsvValidationResult] = useState<{ sku: string; error: string }[] | null>(null);
 
   useEffect(() => {
     fetchOrigens();
   }, []);
 
   useEffect(() => {
-    if (formData.origem && formData.cargaMasiva === 'nao') {
+    if (formData.origem && formData.cargaMasiva === 'n') {
       fetchBodegas();
     }
   }, [formData.origem, formData.cargaMasiva]);
@@ -108,7 +110,7 @@ const NovaTransferenciaBodega = () => {
       return
     }
     // si NO es carga masiva, validar bodegas
-    if (formData.cargaMasiva === 'nao') {
+    if (formData.cargaMasiva === 'n') {
       if (!formData.bodegaOrigem) {
         toast({ variant: 'destructive', title: 'Error', description: 'Bodega origen es obligatoria.' })
         return
@@ -129,8 +131,8 @@ const NovaTransferenciaBodega = () => {
           source: formData.origem,
           responsable: "1",
           nombre_responsable: "admin",
-          id_bodega_origen: formData.cargaMasiva === 'nao' ? parseInt(formData.bodegaOrigem) : 0,
-          id_bodega_destino: formData.cargaMasiva === 'nao' ? parseInt(formData.bodegaDestino) : 0,
+          id_bodega_origen: formData.cargaMasiva === 'n' ? parseInt(formData.bodegaOrigem) : 0,
+          id_bodega_destino: formData.cargaMasiva === 'n' ? parseInt(formData.bodegaDestino) : 0,
           descripcion: formData.descricao,
           estado: "n",
           es_masiva: formData.cargaMasiva,
@@ -159,6 +161,68 @@ const NovaTransferenciaBodega = () => {
     }
   };
 
+  const handleValidarGuardar = () => {
+
+    if (!formData.arquivo) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Archivo CSV es obligatorio.' });
+      return;
+    }
+  
+    if (formData.arquivo.type !== 'text/csv') {
+      toast({ variant: 'destructive', title: 'Error', description: 'El archivo debe ser un CSV válido.' });
+      return;
+    }
+  
+    setLoading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const csvText = e.target?.result;
+        if (typeof csvText === "string") {
+          // Construye un objeto con los campos requeridos
+          const data = {
+            csv_file: csvText,
+            source: formData.origem,
+            nombre_responsable: "admin",
+            fecha: format(date, "yyyy-MM-dd HH:mm:ss"),
+            descripcion: formData.descricao,
+            responsable: 1
+          };
+
+          const result = await transferBodegasApi.validateAndUploadCSV(data);
+          console.log('Resultado de la validación:', result[0].error);
+          if (result.length > 0 && !result[0].error) {
+            toast({
+              variant: "success",
+              title: "Éxito",
+              description: "Datos validados y guardados correctamente, recuerde que debe en la siguiente pantalla completar el proceso dando click en el botón de guardar",
+            });
+            setCsvValidationResult(null);
+            setTimeout(() => {
+              navigate(`/dashboard/transferencia-mercancia/${result[0].transferencia_bodega_id}`);
+            }, 1500);
+          } else if (result.length > 0 && result[0].error) {
+            // Parsear el mensaje de error para extraer sku y error
+            const errors = result[0].message.split(',').map(msg => {
+              const [skuPart, ...errorPart] = msg.split(':');
+              return { sku: skuPart.trim(), error: errorPart.join(':').trim() };
+            });
+            setCsvValidationResult(errors);
+          }
+        }
+      };
+      reader.readAsText(formData.arquivo);
+    } catch (error) {
+      console.error('Error al validar CSV:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo procesar el archivo CSV, intente nuevamente.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
   return (
     <div className="container mx-auto py-6 max-w-3xl">
       <div className="flex justify-between items-center mb-6">
@@ -266,13 +330,12 @@ const NovaTransferenciaBodega = () => {
                 <SelectValue placeholder="Seleccione una opción" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="sim">Si</SelectItem>
-                <SelectItem value="nao">No</SelectItem>
+                <SelectItem value="s">Si</SelectItem>
+                <SelectItem value="n">No</SelectItem>
               </SelectContent>
             </Select>
           </div>
-
-          {formData.cargaMasiva === 'nao' && formData.origem && (
+          {formData.origem && formData.cargaMasiva === 'n' && (
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -283,7 +346,7 @@ const NovaTransferenciaBodega = () => {
                   onValueChange={(value) => setFormData(prev => ({ ...prev, bodegaOrigem: value }))}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecionar bodega origen" />
+                    <SelectValue placeholder="Seleccionar bodega origen" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="0">Ninguna</SelectItem>
@@ -295,7 +358,6 @@ const NovaTransferenciaBodega = () => {
                   </SelectContent>
                 </Select>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Bodega destino<span className="text-red-500">*</span>
@@ -305,7 +367,7 @@ const NovaTransferenciaBodega = () => {
                   onValueChange={(value) => setFormData(prev => ({ ...prev, bodegaDestino: value }))}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecionar bodega destino" />
+                    <SelectValue placeholder="Seleccionar bodega destino" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="0">Ninguna</SelectItem>
@@ -321,36 +383,53 @@ const NovaTransferenciaBodega = () => {
               </div>
             </>
           )}
-
-          {formData.cargaMasiva === 'sim' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Archivo CSV
-              </label>
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                <div className="space-y-1 text-center">
-                  <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                  <div className="flex text-sm text-gray-600">
-                    <label
-                      htmlFor="file-upload"
-                      className="relative cursor-pointer bg-white rounded-md font-medium text-ecommerce-500 hover:text-ecommerce-400 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-ecommerce-500"
-                    >
-                      <span>Upload um arquivo</span>
-                      <input
-                        id="file-upload"
-                        name="file-upload"
-                        type="file"
-                        className="sr-only"
-                        accept=".csv"
-                        onChange={handleFileChange}
-                      />
-                    </label>
-                    <p className="pl-1">ou arraste e solte</p>
-                  </div>
-                  <p className="text-xs text-gray-500">CSV até 10MB</p>
-                </div>
+          {formData.cargaMasiva === 's' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Archivo CSV<span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="file"
+                  id="arquivo"
+                  accept=".csv"
+                  onChange={(e) =>
+                    setFormData(prev => ({ ...prev, arquivo: e.target.files?.[0] || null }))
+                  }
+                  required
+                />
               </div>
-            </div>
+              <div className="mt-2">
+                <Button
+                  type="button"
+                  onClick={handleValidarGuardar}
+                  className="bg-ecommerce-500 hover:bg-ecommerce-600"
+                >
+                  Validar y Guardar
+                </Button>
+              </div>
+              {csvValidationResult && csvValidationResult.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-lg font-bold mb-2">Errores de Validación</h3>
+                <table className="min-w-full border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="border p-2">SKU</th>
+                      <th className="border p-2">Error</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {csvValidationResult.map((errorItem, index) => (
+                      <tr key={index}>
+                        <td className="border p-2">{errorItem.sku}</td>
+                        <td className="border p-2">{errorItem.error}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            </>
           )}
         </div>
       </form>

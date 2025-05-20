@@ -25,6 +25,7 @@ interface SalidaMercancia {
   estado: string;
   descripcion: string;
   nombre_responsable: string;
+  es_masiva?: string;
   productos?: {
     salida_mercancia_producto_id: string;
     salida_mercancia_id: string;
@@ -50,7 +51,7 @@ interface ProductItem {
   barcode: string;
   sku: string;
   bodega_nombre: string;
-  inventory_quantity: number;
+  transferencia_quantity: number;
   quantity: number;
 }
 
@@ -103,7 +104,7 @@ const SalidaMercanciaDetalle = () => {
           barcode: product.sku,
           sku: product.sku,
           bodega_nombre: product.bodega_nombre,
-          inventory_quantity: parseInt(product.cantidad),
+          transferencia_quantity: parseInt(product.cantidad),
           quantity: parseInt(product.cantidad)
         }));
         setProducts(existingProducts);
@@ -157,12 +158,12 @@ const SalidaMercanciaDetalle = () => {
         // Se o produto já existe, apenas incrementa a quantidade
         setProducts(prev => prev.map((product, index) => {
           if (index === existingProductIndex) {
-            // Garantir que não ultrapasse o inventory_quantity
+            // Garantir que não ultrapasse o transferencia_quantity
             const newQuantity = Math.min(
               product.quantity + 1,
-              response.inventory_quantity
+              response.transferencia_quantity
             );
-            return { ...product, inventory_quantity: response.inventory_quantity, quantity: newQuantity };
+            return { ...product, transferencia_quantity: response.transferencia_quantity, quantity: newQuantity };
           }
           return product;
         }));
@@ -178,7 +179,7 @@ const SalidaMercanciaDetalle = () => {
           barcode: response.barcode,
           sku: response.sku,
           bodega_nombre: response.bodega_nombre,
-          inventory_quantity: response.inventory_quantity,
+          transferencia_quantity: response.transferencia_quantity,
           quantity: 1
         };
         setProducts(prev => [...prev, newProduct]);
@@ -209,21 +210,24 @@ const SalidaMercanciaDetalle = () => {
     }
 
     try {
-      const payload = {
-        salidaMercanciaProductos: products.map(product => ({
-          salida_mercancia_id: Number(id),
-          sku: product.sku,
-          cantidad: product.quantity,
-          bodega_id: selectedBodegaId
-        }))
+    const payload = {
+        salidaMercanciaProductos: products.map(product => {
+          const bodegaMatch = bodegas.find(b => b.bodega_nombre === product.bodega_nombre);
+          return {
+            salida_mercancia_id: Number(id),
+            sku: product.sku,
+            cantidad: product.quantity,
+            bodega_id: bodegaMatch ? bodegaMatch.bodega_id : selectedBodegaId
+          };
+        })
       };
 
       await saveProducts(payload);
-      // Limpa a lista de produtos após salvar com sucesso
+      // Limpa a lista de productos y recarga los datos de salida
       setProducts([]);
       setTotalScanned(0);
-      // Redireciona para a listagem
-      navigate('/dashboard/salida-mercancia');
+      await fetchSalida();
+      toast.success("Productos guardados y datos actualizados");
     } catch (error) {
       // O toast de erro já é mostrado no hook
     }
@@ -234,23 +238,25 @@ const SalidaMercanciaDetalle = () => {
       toast.error('Agregue productos antes de completar');
       return;
     }
-
     try {
-      // Primeiro salvamos os produtos
+      // Primero salvamos los productos con bodega_id de cada registro
       const payload = {
-        salidaMercanciaProductos: products.map(product => ({
-          salida_mercancia_id: Number(id),
-          sku: product.sku,
-          cantidad: product.quantity,
-          bodega_id: selectedBodegaId
-        }))
+        salidaMercanciaProductos: products.map(product => {
+          const bodegaMatch = bodegas.find(b => b.bodega_nombre === product.bodega_nombre);
+          return {
+            salida_mercancia_id: Number(id),
+            sku: product.sku,
+            cantidad: product.quantity,
+            bodega_id: bodegaMatch ? bodegaMatch.bodega_id : selectedBodegaId
+          };
+        })
       };
 
       await saveProducts(payload);
-      // Após salvar com sucesso, navegamos para a página de confirmação
+      // Después de guardar con éxito, navegamos a la página de confirmación
       navigate(`/dashboard/salida-mercancia/${id}/confirmar`);
     } catch (error) {
-      // O toast de erro já é mostrado no hook
+      // El toast de error ya es mostrado en el hook
     }
   };
 
@@ -268,26 +274,30 @@ const SalidaMercanciaDetalle = () => {
         <div>
           <h1 className="text-2xl font-bold">Ejecutar Proceso de Salida</h1>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="bg-gray-100">
+              <div className="flex gap-2">
+          <Button variant="outline" className="bg-gray-100" onClick={() => navigate('/dashboard/salida-mercancia')}>
             Volver
           </Button>
-          <Button 
-            variant="outline" 
-            className="bg-gray-100"
-            onClick={handleSaveProducts}
-            disabled={loading || products.length === 0 || salida?.estado === 'c'}
-          >
-            Guardar
-          </Button>
-          <Button 
-            className="bg-ecommerce-500 hover:bg-ecommerce-600"
-            onClick={handleCompletarSalida}
-            disabled={loading || products.length === 0 || salida?.estado === 'c'}
-          >
-            Completar
-          </Button>
-        </div>
+          {salida?.estado !== 'c' && (
+            <>
+              <Button 
+                variant="outline" 
+                className="bg-gray-100"
+                onClick={handleSaveProducts}
+                disabled={loading || products.length === 0}
+              >
+                Guardar
+              </Button>
+              <Button 
+                className="bg-ecommerce-500 hover:bg-ecommerce-600"
+                onClick={handleCompletarSalida}
+                disabled={loading || products.length === 0}
+              >
+                Completar
+              </Button>
+            </>
+          )}
+      </div>
       </div>
 
       <div className="grid grid-cols-2 gap-6 mb-6">
@@ -369,7 +379,7 @@ const SalidaMercanciaDetalle = () => {
               }}
               className="w-full"
               autoFocus
-              disabled={salida?.estado === 'c'}
+              disabled={salida?.estado === 'c' || salida?.es_masiva === "si"}
             />
           </form>
 
@@ -378,10 +388,10 @@ const SalidaMercanciaDetalle = () => {
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-2">SKU</th>
-                  <th className="text-left py-2">Posição</th>
-                  <th className="text-left py-2">Disponível</th>
-                  <th className="text-left py-2">Quantidade</th>
-                  <th className="text-left py-2">Ações</th>
+                  <th className="text-left py-2">Posición</th>
+                  <th className="text-left py-2">Cantidad Disponible</th>
+                  <th className="text-left py-2">Cantidad a Transferir</th>
+                  <th className="text-left py-2">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -389,7 +399,7 @@ const SalidaMercanciaDetalle = () => {
                   <tr key={index} className="border-b">
                     <td className="py-2">{product.sku}</td>
                     <td className="py-2">{product.bodega_nombre}</td>
-                    <td className="py-2">{product.inventory_quantity}</td>
+                    <td className="py-2">{product.transferencia_quantity}</td>
                     <td className="py-2">
                       <div className="flex items-center gap-2">
                         <Button
@@ -412,7 +422,7 @@ const SalidaMercanciaDetalle = () => {
                           onChange={(e) => {
                             const newQuantity = Math.min(
                               Math.max(1, parseInt(e.target.value) || 0),
-                              product.inventory_quantity
+                              product.transferencia_quantity
                             );
                             setProducts(prev => prev.map((p, i) => 
                               i === index ? { ...p, quantity: newQuantity } : p
@@ -420,7 +430,7 @@ const SalidaMercanciaDetalle = () => {
                           }}
                           className="w-20 text-center"
                           min={1}
-                          max={product.inventory_quantity}
+                          max={product.transferencia_quantity}
                           disabled={salida?.estado === 'c'}
                         />
                         <Button
@@ -428,12 +438,12 @@ const SalidaMercanciaDetalle = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const newQuantity = Math.min(product.inventory_quantity, product.quantity + 1);
+                            const newQuantity = Math.min(product.transferencia_quantity, product.quantity + 1);
                             setProducts(prev => prev.map((p, i) => 
                               i === index ? { ...p, quantity: newQuantity } : p
                             ));
                           }}
-                          disabled={product.quantity >= product.inventory_quantity || salida?.estado === 'c'}
+                          disabled={product.quantity >= product.transferencia_quantity || salida?.estado === 'c'}
                         >
                           +
                         </Button>
@@ -447,7 +457,7 @@ const SalidaMercanciaDetalle = () => {
                           setProducts(prev => prev.filter((_, i) => i !== index));
                           setTotalScanned(prev => prev - 1);
                         }}
-                        disabled={salida?.estado === 'c'}
+                        disabled={salida?.estado === 'c' || salida?.es_masiva === "si"}
                       >
                         Remover
                       </Button>
