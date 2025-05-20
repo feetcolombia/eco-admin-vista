@@ -66,6 +66,7 @@ export const transferSourcesApi = {
        fecha: string;
        nombre_responsable: string;
        estado: 'c' | 'n' | 'f';
+       es_masiva?: 's' | 'n';
      }): Promise<TransferSource> => {
            const resp = await apiClient.post<TransferSource>(
                  '/rest/V1/transferencia-source',
@@ -146,6 +147,30 @@ export const transferSourcesApi = {
       >(
         '/rest/V1/transferencia-source/process-products',
         { data: { transferencia_source_id } },
+        { headers: getAuthHeaders() }
+      );
+      return resp.data;
+    },
+
+  importCsv: async (payload: {
+      csv_file: string;
+      source_origen: string;
+      source_destino: string;
+      nombre_responsable: string;
+      descripcion: string;
+      estado: string;
+      tipo: string;
+      creador: string;
+      es_masiva: string;
+    }): Promise<{
+      message: string;
+      error: boolean;
+      transferencia_source_id: string;
+      file_path: string;
+    }[]> => {
+      const resp = await apiClient.post(
+        '/rest/V1/transferencia-source/import-csv',
+        { data: payload },
         { headers: getAuthHeaders() }
       );
       return resp.data;

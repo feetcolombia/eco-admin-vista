@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 interface IngresoMercanciaProducto {
   ingreso_mercancia_producto_id: string;
@@ -33,6 +34,7 @@ interface IngresoMercancia {
   consecutivo: string;
   estado: string;
   nombre_responsable: string;
+  es_masiva: string;
   productos: IngresoMercanciaProducto[];
 }
 
@@ -239,7 +241,7 @@ const IngresoMercanciaDetalle = () => {
 
     const productos: IngresoMercanciaProductoPayload[] = scannedItems.map(item => {
       const bodega = bodegas.find(b => b.bodega_nombre === item.position);
-      if (!bodega) throw new Error(`Bodega não encontrada: ${item.position}`);
+      if (!bodega) throw new Error(`Bodega no encontrada: ${item.position}`);
 
       return {
         ingreso_mercancia_id: ingreso.ingresomercancia_id,
@@ -251,7 +253,8 @@ const IngresoMercanciaDetalle = () => {
 
     const success = await saveIngresoMercanciaProductos(productos);
     if (success) {
-      navigate('/dashboard/ingreso-mercancia');
+      toast.success("Datos guardados correctamente");
+      navigate(`/dashboard/ingreso-mercancia/${ingreso.ingresomercancia_id}`);
     }
   };
 
@@ -262,7 +265,7 @@ const IngresoMercanciaDetalle = () => {
 
     const productos: IngresoMercanciaProductoPayload[] = scannedItems.map(item => {
       const bodega = bodegas.find(b => b.bodega_nombre === item.position);
-      if (!bodega) throw new Error(`Bodega não encontrada: ${item.position}`);
+      if (!bodega) throw new Error(`Bodega no encontrada: ${item.position}`);
 
       return {
         ingreso_mercancia_id: ingreso.ingresomercancia_id,
@@ -302,21 +305,25 @@ const IngresoMercanciaDetalle = () => {
           >
             Regresar
           </Button>
-          <Button 
-            variant="outline" 
-            className="bg-gray-100"
-            onClick={handleSave}
-            disabled={scannedItems.length === 0 || ingreso.estado === 'c'}
-          >
-            Guardar
-          </Button>
-          <Button 
-            className="bg-ecommerce-500 hover:bg-ecommerce-600"
-            onClick={handleCompletar}
-            disabled={scannedItems.length === 0 || ingreso.estado === 'c'}
-          >
-            Completar
-          </Button>
+          {ingreso.estado !== 'c' && (
+            <>
+              <Button 
+                variant="outline" 
+                className="bg-gray-100"
+                onClick={handleSave}
+                disabled={scannedItems.length === 0}
+              >
+                Guardar
+              </Button>
+              <Button 
+                className="bg-ecommerce-500 hover:bg-ecommerce-600"
+                onClick={handleCompletar}
+                disabled={scannedItems.length === 0}
+              >
+                Completar
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -392,7 +399,7 @@ const IngresoMercanciaDetalle = () => {
               onChange={(e) => setBarcode(e.target.value)}
               className="w-full"
               autoFocus
-              disabled={ingreso.estado === 'c'}
+              disabled={ingreso.estado === 'c' || ingreso?.es_masiva === 'si'}
             />
           </form>
 
@@ -402,7 +409,7 @@ const IngresoMercanciaDetalle = () => {
                 <tr className="border-b">
                   <th className="text-left py-2">SKU</th>
                   <th className="text-left py-2">Position</th>
-                  <th className="text-left py-2">Quantity</th>
+                  <th className="text-left py-2">Cantidad a transferir</th>
                   <th className="text-left py-2">Actions</th>
                 </tr>
               </thead>
@@ -424,7 +431,7 @@ const IngresoMercanciaDetalle = () => {
                               setTotalScanned(prev => prev - 1);
                             }
                           }}
-                          disabled={ingreso.estado === 'c'}
+                          disabled={ingreso.estado === 'c' || ingreso?.es_masiva === 'si'}
                         >
                           -
                         </Button>
@@ -438,7 +445,7 @@ const IngresoMercanciaDetalle = () => {
                             setScannedItems(updatedItems);
                             setTotalScanned(prev => prev + 1);
                           }}
-                          disabled={ingreso.estado === 'c'}
+                          disabled={ingreso.estado === 'c'  || ingreso?.es_masiva === 'si'}
                         >
                           +
                         </Button>
@@ -449,7 +456,7 @@ const IngresoMercanciaDetalle = () => {
                         variant="destructive"
                         size="sm"
                         onClick={() => handleRemoveItem(item.sku, item.position)}
-                        disabled={ingreso.estado === 'c'}
+                        disabled={ingreso.estado === 'c' || ingreso?.es_masiva === 'si'}
                       >
                         Remover
                       </Button>

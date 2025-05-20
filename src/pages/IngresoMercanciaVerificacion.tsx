@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useIngresoMercanciaApi } from "@/hooks/useIngresoMercanciaApi";
+import { toast } from "sonner";
 
 interface ScannedItem {
   sku: string;
@@ -82,6 +83,7 @@ const IngresoMercanciaVerificacion = () => {
     );
     
     if (success) {
+      toast.success("Ingreso confirmado, y guardado correctamente");
       navigate('/dashboard/ingreso-mercancia');
     }
   };

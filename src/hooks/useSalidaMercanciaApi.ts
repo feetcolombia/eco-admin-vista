@@ -192,19 +192,19 @@ export const useSalidaMercanciaApi = () => {
     
     setLoading(true);
     try {
-      console.log('Buscando saída com ID:', id);
+      console.log('Buscando salida con ID:', id);
       const response = await fetch(
         `${BASE_URL}/feetmercancia-salida/salidamercancia/${id}`,
         { headers }
       );
       
-      if (!response.ok) throw new Error('Erro ao buscar saída');
+      if (!response.ok) throw new Error('Error al buscar salida mercancía');
       
       return await response.json();
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Erro ao buscar a saída. Tente novamente.",
+        description: "Error al buscar la salida mercancía, intenta nuevamente.",
         variant: "destructive",
       });
       return null;
@@ -289,15 +289,15 @@ export const useSalidaMercanciaApi = () => {
       );
       
       toast({
-        title: "Sucesso",
-        description: "Produtos salvos com sucesso",
+        title: "Exito",
+        description: "Produtos guardados correctamente",
       });
       
       return response.data;
     } catch (err) {
       toast({
         title: "Erro",
-        description: "Erro ao salvar os produtos",
+        description: "Error al guardar los productos",
         variant: "destructive",
       });
       throw err;
@@ -321,13 +321,13 @@ export const useSalidaMercanciaApi = () => {
       );
 
       if (!response.ok) {
-        throw new Error("Erro ao completar saída de mercadoria");
+        throw new Error("Error al completar salida de mercancía");
       }
 
       const data = await response.json();
       return data;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro ao completar saída de mercadoria";
+      const message = error instanceof Error ? error.message : "Error al completar salida de mercancía";
       setError(message);
       toast({
         title: "Erro",
@@ -338,6 +338,30 @@ export const useSalidaMercanciaApi = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  async function validateSalidaCSV(payload: {
+    csv_file: string;
+    source: string;
+    nombre_responsable: string;
+    fecha: string;
+    descripcion: string;
+    estado: string;
+    creador: string;
+  }): Promise<{ message: string; error: boolean }[]> {
+    const response = await fetch(
+      `${BASE_URL}/feetmercancia-salida/salidamercancia/csv`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ data: payload }),
+      }
+    );
+    const result = await response.json();
+    return result;
   };
 
   return {
@@ -351,5 +375,6 @@ export const useSalidaMercanciaApi = () => {
     getProductQuantity,
     saveProducts,
     completarSalida,
+    validateSalidaCSV,
   };
 }; 

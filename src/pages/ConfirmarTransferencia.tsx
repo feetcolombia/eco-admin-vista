@@ -55,7 +55,7 @@ const ConfirmarTransferencia = () => {
         });
       toast({
         title: "Datos guardados",
-        description: "Transferencia finalizad correctamente.",
+        description: "Transferencia finaliza correctamente.",
       });
       navigate('/dashboard/transferencia-mercancia');
     } catch (error) {
@@ -123,15 +123,19 @@ const ConfirmarTransferencia = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-gray-500">Bodega Origen:</p>
-              <p className="font-medium">{transferencia.nombre_bodega_origen}</p>
+              <p className="font-medium">{transferencia.es_masiva === "s" ? "-" : transferencia.nombre_bodega_origen}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Bodega Destino:</p>
-              <p className="font-medium">{transferencia.nombre_bodega_destino}</p>
+              <p className="font-medium">{transferencia.es_masiva === "s" ? "-" : transferencia.nombre_bodega_destino}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">ID Transferencia:</p>
               <p className="font-medium">{transferencia.transferencia_bodega_id}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Es masiva:</p>
+              <p className="font-medium">{transferencia.es_masiva == 's' ? 'Si' : 'No'}</p>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useSalidaMercanciaApi } from "@/hooks/useSalidaMercanciaApi";
-import { format } from "date-fns";
 import { toast } from "sonner";
 
 interface Source {
@@ -27,7 +27,12 @@ const NuevoSalidaMercancia = () => {
   const [selectedSource, setSelectedSource] = useState("");
   const [responsable, setResponsable] = useState("");
   const [descripcion, setDescripcion] = useState("");
-  const { loading, getSources, createSalidaMercancia } = useSalidaMercanciaApi();
+  const { loading, getSources, createSalidaMercancia, validateSalidaCSV } = useSalidaMercanciaApi();
+  // Nuevo estado para carga masiva
+  const [cargaMasiva, setCargaMasiva] = useState<"si" | "no">("no");
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [csvValidationResult, setCsvValidationResult] = useState<{ message: string; error: boolean }[] | null>(null);
+  const [csvLoading, setCsvLoading] = useState(false);
 
   useEffect(() => {
     fetchSources();
@@ -40,11 +45,12 @@ const NuevoSalidaMercancia = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!selectedSource || !responsable || !descripcion) {
       toast.error("Por favor complete todos los campos obligatorios");
       return;
     }
+    // Si es carga masiva, se debe validar el CSV mediante el botón "Validar y Guardar"
+    if (cargaMasiva === "si") return;
 
     try {
       const payload = {
@@ -53,16 +59,63 @@ const NuevoSalidaMercancia = () => {
           creador: 1,
           fecha: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
           nombre_responsable: responsable,
-          descripcion: descripcion
-        }
+          descripcion: descripcion,
+        },
       };
 
       const response = await createSalidaMercancia(payload);
       toast.success("Salida de mercancía creada exitosamente");
       navigate(`/dashboard/salida-mercancia/${response.salidamercancia_id}`);
     } catch (error) {
-      // O toast de erro já é mostrado no hook
+      // Error handling en el hook
     }
+  };
+
+  const handleValidateCsv = () => {
+    if (!csvFile) {
+      alert("Debe cargar un archivo CSV.");
+      return;
+    }
+    setCsvLoading(true);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const csvText = e.target?.result;
+      if (typeof csvText === "string") {
+        try {
+          const payload = {
+            csv_file: csvText,
+            source: selectedSource,
+            nombre_responsable: responsable,
+            fecha: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
+            descripcion: descripcion,
+            estado: "n",
+            creador: "1",
+            es_masiva: cargaMasiva,
+          };
+          const result = await validateSalidaCSV(payload);
+          
+          if (result.length > 0 && !result[0].error) {
+            //const resultSave = await createIngresoMercancia(data);
+            if (result) {
+               // Muestra mensaje de éxito y espera un momento antes de navegar
+              toast.success("Datos validados y guardados correctamente, recuerde que debe en la siguiente pantalla completar el proceso dando click en el botón de guardar");
+              setTimeout(() => {
+                navigate(`/dashboard/salida-mercancia/${result[0].salida_mercancia_id}`);
+              }, 1500); // Delay de 1.5 segundos
+            }        
+          } 
+          else {
+            // Si hay errores, mostrar los resultados de validación en una tabla
+            setCsvValidationResult(result);
+          }
+        } catch (error) {
+          console.error("Error validando CSV:", error);
+        } finally {
+          setCsvLoading(false);
+        }
+      }
+    };
+    reader.readAsText(csvFile);
   };
 
   if (loading) {
@@ -85,12 +138,21 @@ const NuevoSalidaMercancia = () => {
           >
             Volver
           </Button>
-          <Button
-            className="bg-ecommerce-500 hover:bg-ecommerce-600"
-            onClick={handleSubmit}
-          >
-            Guardar
-          </Button>
+          {cargaMasiva === "si" ? (
+            <Button
+              className="bg-ecommerce-500 hover:bg-ecommerce-600"
+              onClick={handleValidateCsv}
+            >
+              {csvLoading ? "Validando y Guardando..." : "Guardar"}
+            </Button>
+          ) : (
+            <Button
+              className="bg-ecommerce-500 hover:bg-ecommerce-600"
+              onClick={handleSubmit}
+            >
+              Guardar
+            </Button>
+          )}
         </div>
       </div>
 
@@ -150,10 +212,80 @@ const NuevoSalidaMercancia = () => {
               rows={4}
             />
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="cargaMasiva" className="text-sm font-medium">
+              Carga Masiva
+            </Label>
+            <Select value={cargaMasiva} onValueChange={setCargaMasiva}>
+              <SelectTrigger id="cargaMasiva">
+                <SelectValue placeholder="Seleccione una opción" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="no">No</SelectItem>
+                <SelectItem value="si">Sí</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {cargaMasiva === "si" && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="csvFile" className="text-sm font-medium">
+                  Archivo CSV<span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  type="file"
+                  id="csvFile"
+                  accept=".csv"
+                  onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                  required
+                />
+              </div>
+              <div>
+                <Button
+                  variant="secondary"
+                  onClick={handleValidateCsv}
+                  disabled={!csvFile || csvLoading}
+                >
+                  {csvLoading ? "Validando y Guardando..." : "Validar y Guardar"}
+                </Button>
+              </div>
+              {csvValidationResult && csvValidationResult.length > 0 && csvValidationResult[0].error ? (
+                <div className="mt-4">
+                  <h3 className="text-lg font-bold mb-2">Errores de Validación</h3>
+                  <table className="min-w-full border-collapse">
+                    <thead>
+                      <tr>
+                        <th className="border p-2">SKU</th>
+                        <th className="border p-2">Error</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {csvValidationResult[0].message.split(",").map((errorMsg, index) => {
+                        const [skuPart, ...rest] = errorMsg.split(":");
+                        const sku = skuPart.trim();
+                        const errorDetail = rest.join(":").trim();
+                        return (
+                          <tr key={index}>
+                            <td className="border p-2">{sku}</td>
+                            <td className="border p-2">{errorDetail}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : csvValidationResult && csvValidationResult.length > 0 && !csvValidationResult[0].error ? (
+                <div className="mt-4 text-green-600 font-bold">
+                  Datos validados correctamente.
+                </div>
+              ) : null}
+            </>
+          )}
         </CardContent>
       </Card>
     </div>
   );
 };
 
-export default NuevoSalidaMercancia; 
+export default NuevoSalidaMercancia;

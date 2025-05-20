@@ -3,18 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { inventorySourcesApi, InventorySource,transferSourcesApi } from '@/api/transferSourcesApi';
-
+import { toast } from "sonner";
 
 const NuevaTransferencia = () => {
   const navigate = useNavigate();
   const [sources, setSources] = useState<InventorySource[]>([]);
   const [form, setForm] = useState({
-    source_origen: '',
-    source_destino: '',
-    fecha: '',
-    descripcion: ''
-  });
-
+      source_origen: '',
+      source_destino: '',
+      fecha: '',
+      descripcion: '',
+      cargaMasiva: 'no',
+      archivo: null,
+    });
+  const today = new Date().toISOString().split('T')[0];
   const [errors, setErrors] = useState<Record<string,string>>({});
 
   useEffect(() => {
@@ -45,6 +47,8 @@ const NuevaTransferencia = () => {
    }
    return error;
  };
+ const [loading, setLoading] = useState(false);
+ const [csvValidationErrors, setCsvValidationErrors] = useState<{ sku: string; error: string }[] | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement|HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -101,6 +105,52 @@ const NuevaTransferencia = () => {
    }
   };
 
+  const handleValidarGuardar = async () => {
+    if (!form.archivo) {
+      alert("Archivo CSV es obligatorio.");
+      return;
+    }
+    setLoading(true);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const csvText = e.target?.result;
+      if (typeof csvText === "string") {
+        const payload = {
+          csv_file: csvText,
+          source_origen: form.source_origen,
+          source_destino: form.source_destino,
+          nombre_responsable: "admin",
+          descripcion: form.descripcion,
+          estado: "c",
+          tipo: "ic",
+          creador: "1",
+          es_masiva: form.cargaMasiva === "si" ? "s" : "n"
+        };
+        try {
+          const result = await transferSourcesApi.importCsv(payload);
+          console.log("Resultado de importación CSV:", result);          if (result.length > 0 && !result[0].error) {
+            toast.success(result[0].message);
+            setCsvValidationErrors(null);
+            navigate(`/transferenciaMercancia/sources/execute-transferencia-source/${result[0].transferencia_source_id}`);
+          } else if(result.length > 0 && result[0].error) {
+            // Parse the error message to extract SKU and error details
+            const errors = result[0].message.split(',').map(msg => {
+              const [skuPart, ...errorPart] = msg.split(':');
+              return { sku: skuPart.trim(), error: errorPart.join(':').trim() };
+            });
+            setCsvValidationErrors(errors);
+          }
+        } catch (error) {
+          console.error("Error al importar CSV:", error);
+          toast.error("Error al importar CSV, intente nuevamente.");
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    reader.readAsText(form.archivo);
+  };
+
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-bold mb-4">Nueva Transferencia</h1>
@@ -153,6 +203,7 @@ const NuevaTransferencia = () => {
             value={form.fecha}
             onChange={handleChange}
             required
+            max={today}
           />
           {errors.fecha && <p className="text-red-500 text-sm mt-1">{errors.fecha}</p>}
         </div>
@@ -169,14 +220,69 @@ const NuevaTransferencia = () => {
           />
         </div>
         {errors.descripcion && <p className="text-red-500 text-sm mt-1">{errors.descripcion}</p>}
-        <div className="flex justify-end space-x-2">
-        <Button type="button" variant="outline" onClick={() => navigate(-1)}>
-        Cancelar
-        </Button>
-        <Button type="submit" disabled={!isValid}>
-          Guardar
-        </Button>
-    </div>
+        <div>
+          <label className="block mb-1">Carga Masiva</label>
+          <select
+            name="cargaMasiva"
+            value={form.cargaMasiva}
+            onChange={handleChange}
+            className="w-full border rounded p-2"
+          >
+            <option value="no">No</option>
+            <option value="si">Sí</option>
+          </select>
+        </div>
+        {form.cargaMasiva === 'si' && (
+          <>
+            <div>
+              <label className="block mb-1">
+                Archivo CSV<span className="text-red-500">*</span>
+              </label>
+              <Input
+                type="file"
+                name="archivo"
+                onChange={(e) =>
+                  setForm(prev => ({ ...prev, archivo: e.target.files ? e.target.files[0] : null }))
+                }
+                required
+              />
+            </div>
+            <div className="mt-2">
+              <Button type="button" onClick={handleValidarGuardar} disabled={loading}>
+                {loading ? "Validando y Guardando..." : "Validar y Guardar"}
+              </Button>
+            </div>
+            {csvValidationErrors && csvValidationErrors.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-lg font-bold mb-2">Errores de Validación</h3>
+                <table className="min-w-full border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="border p-2">SKU</th>
+                      <th className="border p-2">Error</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {csvValidationErrors.map((errorItem, index) => (
+                      <tr key={index}>
+                        <td className="border p-2">{errorItem.sku}</td>
+                        <td className="border p-2">{errorItem.error}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={!isValid}>
+              Guardar
+            </Button>
+        </div>
       </form>
     </div>
   );

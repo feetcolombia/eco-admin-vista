@@ -267,28 +267,30 @@ const ExecutarTransferencia = () => {
           </Button>
           {transferencia.estado !== 'f' && (
             <>
-              <Button
-                onClick={handleSave}
-                className="bg-ecommerce-500 hover:bg-ecommerce-600"
-                disabled={saving || !produtos.length}
-              >
-                {saving
-                  ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Guardando...
-                    </>
-                  )
-                  : 'Guardar'
-                }
-              </Button>
+              {transferencia.es_masiva !== "s" && (
+                <Button
+                  onClick={handleSave}
+                  className="bg-ecommerce-500 hover:bg-ecommerce-600"
+                  disabled={saving || !produtos.length}
+                >
+                  {saving
+                    ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Guardando...
+                      </>
+                    )
+                    : 'Guardar'
+                  }
+                </Button>
+              )}
               <Button
                 variant="secondary"
                 onClick={handleCompletar}
                 disabled={produtos.length === 0}
               >
                 Completar
-            </Button>
+              </Button>
             </>
           )}
         </div>
@@ -315,7 +317,7 @@ const ExecutarTransferencia = () => {
             </div>
             <div className="mb-4">
               <Label className="text-sm text-gray-500">Bodega Origen</Label>
-              <div className="font-medium">{transferencia.nombre_bodega_origen}</div>
+              <div className="font-medium">{transferencia.es_masiva === "s" ? "-" : transferencia.nombre_bodega_origen}</div>
             </div>
           </div>
           <div>
@@ -347,9 +349,13 @@ const ExecutarTransferencia = () => {
             </div>           
             <div>
               <Label className="text-sm text-gray-500">Bodega Destino</Label>
-              <div className="font-medium">{transferencia.nombre_bodega_destino}</div>
+              <div className="font-medium">{transferencia.es_masiva === "s" ? "-" : transferencia.nombre_bodega_destino}</div>
             </div>
           </div>
+          <div>
+              <Label className="text-sm text-gray-500">Es masiva</Label>
+              <div className="font-medium">{transferencia.es_masiva == 's' ? 'Si' : 'No'} </div>
+            </div>
         </div>
       </div>
 
@@ -378,12 +384,12 @@ const ExecutarTransferencia = () => {
               onChange={(e) => setBarcode(e.target.value)}
               className="flex-1"
               autoFocus
-              disabled={transferencia.estado === 'f'}
+              disabled={transferencia.estado === 'f' || transferencia.es_masiva === "s"}
             />
             <Button
               type="submit"
               variant="secondary"
-              disabled={transferencia.estado === 'f'}
+              disabled={transferencia.estado === 'f' || transferencia.es_masiva === "s"}
             >
               Adicionar
             </Button>
@@ -419,12 +425,14 @@ const ExecutarTransferencia = () => {
                       variant="outline" 
                       size="sm" 
                       onClick={() => decrementarQuantidade(produto.id)}
+                      disabled={transferencia.es_masiva === "s"}
                     >-</Button>
                     <span>{produto.quantidade}</span>
                     <Button 
                       variant="outline" 
                       size="sm" 
                       onClick={() => incrementarQuantidade(produto.id)}
+                      disabled={transferencia.es_masiva === "s"}
                     >+</Button>
                   </div>
                 </TableCell>
@@ -442,7 +450,7 @@ const ExecutarTransferencia = () => {
                     variant="ghost" 
                     size="sm"
                     onClick={() => removerProduto(produto.id)}
-                    disabled={transferencia?.estado === 'f'}
+                    disabled={transferencia?.estado === 'f' || transferencia.es_masiva === "s"}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
