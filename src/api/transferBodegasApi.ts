@@ -160,7 +160,7 @@ export const transferBodegasApi = {
         const resp = await apiClient.get<
         [boolean, ListPayload]
         >(
-        `/rest/V1/transferenciabodegas/list?currentPage=${currentPage}&pageSize=${pageSize}`,
+        `/rest/V1/transferenciabodegas/list?currentPage=${currentPage}&pageSize=${pageSize}&sortOrders[0][field]=transferencia_bodega_id&sortOrders[0][direction]=DESC`,
         { headers: getAuthHeaders() }
         );
         return resp.data;

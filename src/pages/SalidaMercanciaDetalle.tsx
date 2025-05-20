@@ -222,6 +222,8 @@ const SalidaMercanciaDetalle = () => {
       // Limpa a lista de produtos após salvar com sucesso
       setProducts([]);
       setTotalScanned(0);
+      // Redireciona para a listagem
+      navigate('/dashboard/salida-mercancia');
     } catch (error) {
       // O toast de erro já é mostrado no hook
     }
