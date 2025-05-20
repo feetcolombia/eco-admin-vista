@@ -274,14 +274,14 @@ const SalidaMercanciaDetalle = () => {
             variant="outline" 
             className="bg-gray-100"
             onClick={handleSaveProducts}
-            disabled={loading || products.length === 0}
+            disabled={loading || products.length === 0 || salida?.estado === 'c'}
           >
             Guardar
           </Button>
           <Button 
             className="bg-ecommerce-500 hover:bg-ecommerce-600"
             onClick={handleCompletarSalida}
-            disabled={loading || products.length === 0}
+            disabled={loading || products.length === 0 || salida?.estado === 'c'}
           >
             Completar
           </Button>
@@ -367,6 +367,7 @@ const SalidaMercanciaDetalle = () => {
               }}
               className="w-full"
               autoFocus
+              disabled={salida?.estado === 'c'}
             />
           </form>
 
@@ -399,7 +400,7 @@ const SalidaMercanciaDetalle = () => {
                               i === index ? { ...p, quantity: newQuantity } : p
                             ));
                           }}
-                          disabled={product.quantity <= 1}
+                          disabled={product.quantity <= 1 || salida?.estado === 'c'}
                         >
                           -
                         </Button>
@@ -418,6 +419,7 @@ const SalidaMercanciaDetalle = () => {
                           className="w-20 text-center"
                           min={1}
                           max={product.inventory_quantity}
+                          disabled={salida?.estado === 'c'}
                         />
                         <Button
                           type="button"
@@ -429,7 +431,7 @@ const SalidaMercanciaDetalle = () => {
                               i === index ? { ...p, quantity: newQuantity } : p
                             ));
                           }}
-                          disabled={product.quantity >= product.inventory_quantity}
+                          disabled={product.quantity >= product.inventory_quantity || salida?.estado === 'c'}
                         >
                           +
                         </Button>

@@ -185,7 +185,7 @@ const IngresoMercanciaDetalle = () => {
 
         if (soundEnabled) {
           // Reproduz um som de beep
-          const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSA0PVqzn77BdGAg+ltryxnMpBSl+zPLaizsIGGS57OihUBELTKXh8bllHgU2jdXzzn0vBSF1xe/glEILElyx6OyrWBUIQ5zd8sFuJAUuhM/z1YU2Bhxqvu7mnEoODlOq5O+zYBoGPJPY88p2KwUme8rx3I4+CRZiturqpVITC0mi4PK8aB8GM4nU8tGAMQYfcsLu45ZFDBFYr+ftrVoXCECY3PLEcSYELIHO8diJOQgZaLvt559NEAxPqOPwtmMcBjiP1/PMeS0GI3fH8N2RQAoUXrTp66hVFApGnt/yvmwhBTCG0fPTgjQGHW/A7eSaRw0PVqzl77BdGAg+ltrzxnUoBSh+zPDaizsIGGS56+mjTxELTKXh8bllHgU1jdT0z3wvBSF0xPDglEQKElux6OyrWRUIRJve8sFuJAUug8/y1oU2Bhxqvu3mnEoPDlOq5O+zYRsGPJPY88p3KgUme8rx3I4+CRVht+rqpVITC0mh4PG9aB8GMojU8tGAMQYfccPu45ZFDBFYr+ftrVwWCECY3PLEcSYGK4DN8tiIOQgZZ7vs559NEAxPqOPxtmQcBjiP1/PMeS0FI3fH8N+RQAoUXrTp66hWFApGnt/yv2wiBTCG0fPTgzQHHG3A7eSaSA0PVqzl77BdGAk9ltnzxnUoBSh+y/HajDsIF2W56+mjUREKTKPi8blnHgU1jdTy0HwvBSF0xPDglUUKElux6OyrWhUJQ5vd88FwJAQug8/y1oY2Bhxqvu3mnEwODVKp5e+zYRsGOpPY88p3KgUmecnw3Y4/CBVgtuvqpVQSCkig4PG9aiAFMofS89GBMgUfccLv45ZGDRBYrufur1wYB0CX2/PEcycFKn/M8tiKOggZZ7vs559PEAxPpuPxt2UeBTeP1/POei4FI3bH8d+RQQkUXbPq66hWFApGnt/yv2wiBTCG0PPTgzUGHG3A7eSaSA0PVKzl77BeGQc9ltnzyHYpBSh9y/HajD0JFmS46+mjUREKTKPi8blnHwU1jdTy0H4wBiF0xPDglUUKElqw6OyrWhUJQprd88NxJQQug8/y2IY3BxtnvO3mnU0ODVKp5e+0YhsGOpHY88p5LAUlecnw3Y9ACBVgtuvqp1QSCkif4PG9bCEFMofR89GBMwYdccLv45dHDRBXr+fur10YB0CX2/PGcycFKn/M8tiKOggZZrvs559PEAxPpuPxt2UeBTeP1/POei4FI3bH8d+RQQsUXbPq66pXFQlFnt/yv24iBTCF0PPThDYGHG3A7eSbSQ0PVKvl77BfGQc9ltnzyHYqBSh9y/HajD0JFmS46+mjUhEKTKPi8blnHwU1jdTy0H4wBiFzw/DglUUKElqw6OyrWhUJQprd88NxJQQug8/y2IY4BxtnvO3mnU4ODVKo5PC0YxsGOpHY88p5LAUleMnw3Y9ACBVgtuvqp1QSCkif4PG9bCEFMofR89GBMwYdccLv45dHDRBXr+fur10YCECWAABJTklGSVhJTkc=');
+          const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSA0PVqzn77BdGAg+ltryxnMpBSl+zPLaizsIGGS57OihUBELTKXh8bllHgU2jdXzzn0vBSF1xe/glEILElyx6OyrWBUIQ5zd8sFuJAUuhM/z1YU2Bhxqvu7mnEoODlOq5O+zYBoGPJPY88p2KwUme8rx3I4+CRZiturqpVITC0mi4PK8aB8GM4nU8tGAMQYfcsLu45ZFDBFYr+ftrVoXCECY3PLEcSYELIHO8diJOQgZaLvt559NEAxPqOPwtmMcBjiP1/PMeS0GI3fH8N2RQAoUXrTp66hVFApGnt/yvmwhBTCG0fPTgjQGHW/A7eSaRw0PVqzl77BdGAg+ltrzxnUoBSh+zPDaizsIGGS56+mjTxELTKXh8bllHgU1jdT0z3wvBSF0xPDglEQKElux6OyrWRUIRJve8sFuJAUug8/y1oU2Bhxqvu3mnEoPDlOq5O+zYRsGPJPY88p3KgUme8rx3I4+CRVht+rqpVITC0mh4PG9aB8GMojU8tGAMQYfccPu45ZFDBFYr+ftrVwWCECY3PLEcSYGK4DN8tiIOQgZZ7vs559NEAxPqOPxtmQcBjiP1/PMeS0FI3fH8N+RQAoUXrTp66hWFApGnt/yv2wiBTCG0fPTgzQHHG3A7eSaSA0PVqzl77BdGAk9ltnzxnUoBSh+y/HajDsIF2W56+mjUREKTKPi8blnHgU1jdTy0HwvBSF0xPDglUUKElux6OyrWhUJQ5vd88FwJAQug8/y1oY2Bhxqvu3mnEwODVKp5e+zYRsGOpPY88p3KgUmecnw3Y4/CBVgtuvqpVQSCkif4PG9bCEFMofR89GBMwYdccLv45dHDRBXr+fur10YB0CX2/PEcycFKn/M8tiKOggZZ7vs559PEAxPpuPxt2UeBTeP1/POei4FI3bH8d+RQQkUXbPq66hWFApGnt/yv2wiBTCG0PPTgzUGHG3A7eSaSA0PVKzl77BeGQc9ltnzyHYpBSh9y/HajD0JFmS46+mjUREKTKPi8blnHwU1jdTy0H4wBiF0xPDglUUKElqw6OyrWhUJQprd88NxJQQug8/y2IY3BxtnvO3mnU0ODVKp5e+0YhsGOpHY88p5LAUlecnw3Y9ACBVgtuvqp1QSCkif4PG9bCEFMofR89GBMwYdccLv45dHDRBXr+fur10YCECWAABJTklGSVhJTkc=');
           audio.play();
         }
 
@@ -279,14 +279,14 @@ const IngresoMercanciaDetalle = () => {
             variant="outline" 
             className="bg-gray-100"
             onClick={handleSave}
-            disabled={scannedItems.length === 0}
+            disabled={scannedItems.length === 0 || ingreso.estado === 'c'}
           >
             Guardar
           </Button>
           <Button 
             className="bg-ecommerce-500 hover:bg-ecommerce-600"
             onClick={handleCompletar}
-            disabled={scannedItems.length === 0}
+            disabled={scannedItems.length === 0 || ingreso.estado === 'c'}
           >
             Completar
           </Button>
@@ -365,6 +365,7 @@ const IngresoMercanciaDetalle = () => {
               onChange={(e) => setBarcode(e.target.value)}
               className="w-full"
               autoFocus
+              disabled={ingreso.estado === 'c'}
             />
           </form>
 
@@ -396,6 +397,7 @@ const IngresoMercanciaDetalle = () => {
                               setTotalScanned(prev => prev - 1);
                             }
                           }}
+                          disabled={ingreso.estado === 'c'}
                         >
                           -
                         </Button>
@@ -409,6 +411,7 @@ const IngresoMercanciaDetalle = () => {
                             setScannedItems(updatedItems);
                             setTotalScanned(prev => prev + 1);
                           }}
+                          disabled={ingreso.estado === 'c'}
                         >
                           +
                         </Button>
