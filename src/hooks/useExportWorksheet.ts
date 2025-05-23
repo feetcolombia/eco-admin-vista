@@ -6,7 +6,7 @@ export interface WorksheetData {
 }
 
 /**
- * A hook to prepare worksheet data and export it as an Excel file.
+ * A hook to prepare worksheet data and export it as a CSV file.
  * @returns exportWorksheet: function that accepts worksheet data, a desired filename,
  *         and an optional array of table header labels to use.
  */
@@ -14,14 +14,13 @@ export const useExportWorksheet = () => {
 
   /**
    * Prepares an array of arrays from the worksheet data.
-   * The first rows show header key/value pairs,
-   * then a blank row,
-   * then a table header row (using provided labels or keys from the first table row),
+   * The first rows show header key/value pairs (except trasferencia_total),
+   * then a blank row, then a table header row (using provided labels or keys from the first data row),
    * and finally all table rows.
-   * 
+   *
    * @param data The data object containing header and table.
    * @param tableHeaders Optional array of column labels for the table.
-   * @returns an array of arrays ready to be converted to a worksheet.
+   * @returns An array of arrays ready to be converted to a worksheet.
    */
   const prepareWorksheetData = (data: WorksheetData, tableHeaders?: string[]): any[][] => {
     const ws_data: any[][] = [];
@@ -40,7 +39,6 @@ export const useExportWorksheet = () => {
     if (tableHeaders && tableHeaders.length) {
       ws_data.push(tableHeaders);
     } else if (data.table.length > 0) {
-      // Use keys from the first data row as header if no tableHeaders are provided
       ws_data.push(Object.keys(data.table[0]));
     } else {
       ws_data.push([]);
@@ -63,7 +61,7 @@ export const useExportWorksheet = () => {
             }
           }
           const lowerLabel = label.toLowerCase();
-          if (lowerLabel === "bodega"  && data.header.hasOwnProperty("Tipo") === false) {
+          if (lowerLabel === "bodega" && data.header.hasOwnProperty("Tipo") === false) {
             return row["bodega_nombre"] || "";
           }
           return row[lowerLabel] || row[label] || "";
@@ -78,10 +76,10 @@ export const useExportWorksheet = () => {
   };
 
   /**
-   * Exports the provided worksheet data as an Excel file.
+   * Exports the provided worksheet data as a CSV file.
    *
    * @param data The worksheet data with header and table.
-   * @param fileName Desired filename for the exported Excel file.
+   * @param fileName Desired filename for the exported CSV file.
    * @param tableHeaders Optional array of column labels for the table.
    */
   const exportWorksheet = (
@@ -92,10 +90,9 @@ export const useExportWorksheet = () => {
     // Create first sheet using the primary table
     const ws_data = prepareWorksheetData(data, tableHeaders);
     const worksheet = XLSX.utils.aoa_to_sheet(ws_data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Hoja 1");
+    let csvOutput = XLSX.utils.sheet_to_csv(worksheet);
     
-    // If the header contains "tipo" and a secondary table (tableDos) exists, create a second sheet
+    // If the header contains "Tipo" and a secondary table (tableDos) exists, create a second CSV block
     if (data.header.hasOwnProperty("Tipo") && (data as any).tableDos) {
       const worksheetDataDos: WorksheetData = {
         header: data.header,
@@ -103,10 +100,25 @@ export const useExportWorksheet = () => {
       };
       const ws_data2 = prepareWorksheetData(worksheetDataDos, tableHeaders);
       const worksheet2 = XLSX.utils.aoa_to_sheet(ws_data2);
-      XLSX.utils.book_append_sheet(workbook, worksheet2, "Hoja 2");
+      const csvOutput2 = XLSX.utils.sheet_to_csv(worksheet2);
+      // Append a separator and the second sheet's CSV data
+      csvOutput += "\n\n" + csvOutput2;
     }
     
-    XLSX.writeFile(workbook, fileName);
+    // Download the CSV file
+    const blob = new Blob([csvOutput], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      // Ensure the filename has a .csv extension
+      const fileNameCSV = fileName.replace(/\.xlsx$/, "") + ".csv";
+      link.setAttribute("download", fileNameCSV);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   return { prepareWorksheetData, exportWorksheet };

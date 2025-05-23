@@ -370,10 +370,11 @@ const IngresoMercanciaDetalle = () => {
                   id="sound"
                   checked={soundEnabled}
                   onCheckedChange={setSoundEnabled}
+                  disabled={ingreso.estado === 'c' || ingreso?.es_masiva === 'si'}
                 />
               </div>
               <div className="w-48">
-                <Select value={selectedBodega} onValueChange={setSelectedBodega}>
+                <Select value={selectedBodega} onValueChange={setSelectedBodega} disabled={ingreso.estado === 'c' || ingreso?.es_masiva === 'si'}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a posição" />
                   </SelectTrigger>

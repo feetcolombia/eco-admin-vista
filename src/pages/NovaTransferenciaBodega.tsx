@@ -325,7 +325,7 @@ const NovaTransferenciaBodega = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Realizar carga masiva<span className="text-red-500">*</span>
+              Realizar Carga Masiva<span className="text-red-500">*</span>
             </label>
             <Select
               value={formData.cargaMasiva}
@@ -396,18 +396,28 @@ const NovaTransferenciaBodega = () => {
           {formData.cargaMasiva === 's' && (
             <>
               <div>
+                <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Archivo CSV<span className="text-red-500">*</span>
                 </label>
-                <Input
-                  type="file"
-                  id="arquivo"
-                  accept=".csv"
-                  onChange={(e) =>
-                    setFormData(prev => ({ ...prev, arquivo: e.target.files?.[0] || null }))
-                  }
-                  required
-                />
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    id="arquivo"
+                    accept=".csv"
+                    onChange={(e) =>
+                      setFormData(prev => ({ ...prev, arquivo: e.target.files?.[0] || null }))
+                    }
+                    required
+                  />
+                  <Button 
+                    variant="outline"
+                    onClick={() => window.open('/downloads/transferenciaBodega/transferencia_bodega_prueba.csv', '_blank')}
+                  >
+                    Descargar Plantilla CSV
+                  </Button>
+                </div>
+              </div>
               </div>
               <div className="mt-2">
                 <Button

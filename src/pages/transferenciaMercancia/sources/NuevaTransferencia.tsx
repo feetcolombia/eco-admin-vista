@@ -256,18 +256,26 @@ const NuevaTransferencia = () => {
         </div>
         {form.cargaMasiva === 'si' && (
           <>
-            <div>
+            <div className="space-y-2">
               <label className="block mb-1">
                 Archivo CSV<span className="text-red-500">*</span>
               </label>
-              <Input
-                type="file"
-                name="archivo"
-                onChange={(e) =>
-                  setForm(prev => ({ ...prev, archivo: e.target.files ? e.target.files[0] : null }))
-                }
-                required
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  name="archivo"
+                  onChange={(e) =>
+                    setForm(prev => ({ ...prev, archivo: e.target.files ? e.target.files[0] : null }))
+                  }
+                  required
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => window.open('/downloads/transferenciaSource/ingreso_source_prueba.csv', '_blank')}
+                >
+                  Descargar Plantilla CSV
+                </Button>
+              </div>
             </div>
             <div className="mt-2">
               <Button type="button" onClick={handleValidarGuardar} disabled={loading}>

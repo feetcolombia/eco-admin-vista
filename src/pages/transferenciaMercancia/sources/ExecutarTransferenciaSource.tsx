@@ -320,7 +320,7 @@ const handleCompletar = async () => {
           </Button>
           <Button
             onClick={handleSave}
-            className="bg-ecommerce-500 hover:bg-ecommerce-600"
+            variant="secondary"
             disabled={saving || !produtos.length}
           >
             {saving ? (
@@ -333,7 +333,8 @@ const handleCompletar = async () => {
             )}
           </Button>
           <Button
-            variant="secondary"
+            
+            className="bg-ecommerce-500 hover:bg-ecommerce-600"
             onClick={handleCompletar}
           >
             Completar

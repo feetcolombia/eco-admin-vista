@@ -254,19 +254,29 @@ const NuevoIngresoMercancia = () => {
                 <Label htmlFor="csvFile" className="text-sm font-medium">
                   Archivo CSV<span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  type="file"
-                  id="csvFile"
-                  accept=".csv"
-                  onChange={(e) => {
-                    setCsvFile(e.target.files?.[0] || null);
-                    setFormErrors(prev => ({
-                      ...prev,
-                      archivo: e.target.files && e.target.files[0] ? "" : "El archivo CSV es obligatorio"
-                    }));
-                  }}
-                  required
-                />
+                <div className="flex items-center gap-2">
+                 <Input
+                   type="file"
+                   id="csvFile"
+                   accept=".csv"
+                   onChange={(e) => {
+                     setCsvFile(e.target.files?.[0] || null);
+                     setFormErrors(prev => ({
+                       ...prev,
+                       archivo: e.target.files && e.target.files[0]
+                         ? ""
+                         : "El archivo CSV es obligatorio"
+                     }));
+                   }}
+                   required
+                 />
+                 <Button 
+                   variant="outline"
+                   onClick={() => window.open('/downloads/ingresoMercancia/ingreso_prueba.csv', '_blank')}
+                 >
+                   Descargar Plantilla CSV
+                 </Button>
+               </div>
                 {formErrors.archivo && (
                   <p className="text-red-500 text-sm mt-1">{formErrors.archivo}</p>
                 )}
