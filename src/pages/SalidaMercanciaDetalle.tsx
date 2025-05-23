@@ -359,10 +359,11 @@ const SalidaMercanciaDetalle = () => {
                   id="sound"
                   checked={soundEnabled}
                   onCheckedChange={setSoundEnabled}
+                  disabled={salida?.estado === 'c' || salida?.es_masiva === "si"}
                 />
               </div>
               <div className="w-48">
-                <Select value={selectedBodega} onValueChange={handleBodegaChange}>
+                <Select value={selectedBodega} onValueChange={handleBodegaChange} disabled={salida?.estado === 'c' || salida?.es_masiva === "si"}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccione la posición" />
                   </SelectTrigger>

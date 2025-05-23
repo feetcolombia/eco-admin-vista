@@ -276,13 +276,21 @@ const NuevoSalidaMercancia = () => {
                 <Label htmlFor="csvFile" className="text-sm font-medium">
                   Archivo CSV<span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  type="file"
-                  id="csvFile"
-                  accept=".csv"
-                  onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-                  required
-                />
+                <div className="flex items-center gap-2">
+                     <Input
+                       type="file"
+                       id="csvFile"
+                       accept=".csv"
+                       onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                       required
+                     />
+                     <Button 
+                       variant="outline"
+                       onClick={() => window.open('/downloads/salidaMercancia/salida_prueba.csv', '_blank')}
+                     >
+                       Descargar Plantilla CSV
+                     </Button>
+                   </div>
               </div>
               <div>
                 <Button

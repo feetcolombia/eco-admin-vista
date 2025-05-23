@@ -377,7 +377,7 @@ const ExecutarTransferenciaSourceIngreso = () => {
           </Button>
           <Button
             onClick={handleSave}
-            className="bg-ecommerce-500 hover:bg-ecommerce-600"
+            variant="secondary"
             disabled={saving || !produtos.length}
           >
             {saving ? (
@@ -389,8 +389,8 @@ const ExecutarTransferenciaSourceIngreso = () => {
               'Guardar'
             )}
           </Button>
-          <Button
-            variant="secondary"
+          <Button          
+            className="bg-ecommerce-500 hover:bg-ecommerce-600"
             onClick={handleCompletar}
           >
             Completar

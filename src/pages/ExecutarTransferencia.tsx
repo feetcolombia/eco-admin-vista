@@ -270,7 +270,7 @@ const ExecutarTransferencia = () => {
               {transferencia.es_masiva !== "s" && (
                 <Button
                   onClick={handleSave}
-                  className="bg-ecommerce-500 hover:bg-ecommerce-600"
+                  variant="secondary"
                   disabled={saving || !produtos.length}
                 >
                   {saving
@@ -284,8 +284,8 @@ const ExecutarTransferencia = () => {
                   }
                 </Button>
               )}
-              <Button
-                variant="secondary"
+              <Button        
+                className="bg-ecommerce-500 hover:bg-ecommerce-600"
                 onClick={handleCompletar}
                 disabled={produtos.length === 0}
               >
@@ -365,6 +365,7 @@ const ExecutarTransferencia = () => {
             id="sonido"
             checked={sonido}
             onCheckedChange={setSonido}
+            disabled={transferencia.es_masiva === "s" || transferencia.estado === 'f'}
           />
           <Label htmlFor="sonido">Sonido</Label>
         </div>
@@ -425,14 +426,14 @@ const ExecutarTransferencia = () => {
                       variant="outline" 
                       size="sm" 
                       onClick={() => decrementarQuantidade(produto.id)}
-                      disabled={transferencia.es_masiva === "s"}
+                      disabled={transferencia.es_masiva === "s" || transferencia.estado === 'f'}
                     >-</Button>
                     <span>{produto.quantidade}</span>
                     <Button 
                       variant="outline" 
                       size="sm" 
                       onClick={() => incrementarQuantidade(produto.id)}
-                      disabled={transferencia.es_masiva === "s"}
+                      disabled={transferencia.es_masiva === "s" || transferencia.estado === 'f'}
                     >+</Button>
                   </div>
                 </TableCell>
@@ -443,6 +444,7 @@ const ExecutarTransferencia = () => {
                     value={produto.observacion}
                     onChange={(e) => handleObservacionChange(produto.id, e.target.value)}
                     className="max-w-[200px]"
+                    disabled={transferencia.es_masiva === "s" || transferencia.estado === 'f'}
                   />
                 </TableCell>
                 <TableCell className="text-right">
