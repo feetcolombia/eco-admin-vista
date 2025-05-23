@@ -151,6 +151,13 @@ export const transferSourcesApi = {
       );
       return resp.data;
     },
+    exportTransferenciaExcel: async (id: number): Promise<any[]> => {
+      const resp = await apiClient.get<any[]>(
+        `/rest/V1/transferenciasource/excel/${id}`,
+        { headers: getAuthHeaders() }
+      );
+      return resp.data;
+    },
 
   importCsv: async (payload: {
       csv_file: string;
@@ -190,7 +197,6 @@ export const inventorySourcesApi = {
       return resp.data.items;
     }
   };
-
 
   export interface TransferenciaSourceDetail {
     transferencia_source_id: number;
