@@ -473,6 +473,35 @@ export const useIngresoMercanciaApi = () => {
       setLoading(false);
     }
   };
+  const exportIngresoExcel = async (ingresomercanciaId: number): Promise<any> => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${BASE_URL}/feetmercancia-ingreso/ingresomercancia/excel/${ingresomercanciaId}`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Error al exportar Excel");
+      }
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Error al exportar Excel.",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return {
     loading,
@@ -488,5 +517,6 @@ export const useIngresoMercanciaApi = () => {
     getBodegaById,
     updateBodega,
     validateCsv,
+    exportIngresoExcel
   };
 }; 

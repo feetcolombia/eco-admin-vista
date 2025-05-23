@@ -192,4 +192,12 @@ export const transferBodegasApi = {
       );
       return resp.data;
     },
+
+  exportTransferenciaExcel: async (id: number): Promise<any[]> => {
+      const resp = await apiClient.get<any[]>(
+        `/rest/V1/transferenciabodegas/excel/${id}`,
+        { headers: getAuthHeaders() }
+      );
+      return resp.data;
+    },
 };

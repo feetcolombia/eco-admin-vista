@@ -73,17 +73,39 @@ const NuevaTransferencia = () => {
              return newForm;
            });
           };
- const isValid =
-   Object.values(form).every(v => v) &&
-   Object.values(errors).every(msg => !msg);
+    const isValid =
+      form.source_origen &&
+      form.source_destino &&
+      form.fecha &&
+      form.descripcion &&
+      form.cargaMasiva &&
+      (form.cargaMasiva === 'si' ? form.archivo : true) &&
+      Object.values(errors).every(msg => !msg);
 
     const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isValid) {
-      alert('Corrige los errores antes de guardar.');
-      return;
-    }
-   console.log('Crear transferencia:', form);
+    if (
+        !form.source_origen ||
+        !form.source_destino ||
+        !form.fecha ||
+        !form.descripcion ||
+        !form.cargaMasiva
+      ) {
+        toast.error("Completar todos los campos obligatorios.");
+        return;
+      }
+    
+      // Si carga masiva es "si", validar que se haya subido un archivo .csv
+      if (form.cargaMasiva === "si") {
+        if (!form.archivo) {
+          toast.error("Debe cargar un archivo CSV para carga masiva.");
+          return;
+        }
+        if (form.archivo.type !== "text/csv") {
+          toast.error("El archivo debe ser un CSV válido.");
+          return;
+        }
+      }
    navigate(-1);
    try {
      const payload = {
@@ -101,13 +123,13 @@ const NuevaTransferencia = () => {
      navigate(`/transferenciaMercancia/sources/execute-transferencia-source/${result.transferencia_source_id}`);
    } catch (error) {
      console.error(error);
-     alert('Error al guardar ingreso de mercancía');
+     toast.error('Error al guardar ingreso de mercancía');
    }
   };
 
   const handleValidarGuardar = async () => {
     if (!form.archivo) {
-      alert("Archivo CSV es obligatorio.");
+      toast("Archivo CSV es obligatorio.");
       return;
     }
     setLoading(true);
@@ -156,7 +178,7 @@ const NuevaTransferencia = () => {
       <h1 className="text-2xl font-bold mb-4">Nueva Transferencia</h1>
       <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded shadow">
       <div>
-    <label className="block mb-1">Origen</label>
+    <label className="block mb-1">Origen<span className="text-red-500">*</span></label>
     <select
       name="source_origen"
       value={form.source_origen}
@@ -174,7 +196,7 @@ const NuevaTransferencia = () => {
     {errors.source_origen && <p className="text-red-500 text-sm mt-1">{errors.source_origen}</p>}
   </div>
   <div>
-    <label className="block mb-1">Destino</label>
+    <label className="block mb-1">Destino<span className="text-red-500">*</span></label>
     <select
       name="source_destino"
       value={form.source_destino}
@@ -196,7 +218,7 @@ const NuevaTransferencia = () => {
     {errors.source_destino && <p className="text-red-500 text-sm mt-1">{errors.source_destino}</p>}
     </div>
         <div>
-          <label className="block mb-1">Fecha</label>
+          <label className="block mb-1">Fecha<span className="text-red-500">*</span></label>
           <Input
             type="date"
             name="fecha"
@@ -208,7 +230,7 @@ const NuevaTransferencia = () => {
           {errors.fecha && <p className="text-red-500 text-sm mt-1">{errors.fecha}</p>}
         </div>
         <div>
-          <label className="block mb-1">Descripción</label>
+          <label className="block mb-1">Descripción<span className="text-red-500">*</span></label>
           <Input
             type="text"
             name="descripcion"
@@ -221,7 +243,7 @@ const NuevaTransferencia = () => {
         </div>
         {errors.descripcion && <p className="text-red-500 text-sm mt-1">{errors.descripcion}</p>}
         <div>
-          <label className="block mb-1">Carga Masiva</label>
+          <label className="block mb-1">Carga Masiva<span className="text-red-500">*</span></label>
           <select
             name="cargaMasiva"
             value={form.cargaMasiva}

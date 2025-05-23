@@ -278,6 +278,29 @@ export const useSalidaMercanciaApi = () => {
       setLoading(false);
     }
   };
+  const exportSalidaExcel = async (salidaId: number): Promise<any[]> => {
+    try {
+      const response = await fetch(
+        `${BASE_URL}/feetmercancia-salida/salidamercancia/excel/${salidaId}`,
+        {
+          method: "GET",
+          headers,
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Error al exportar Excel");
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Error al exportar Excel",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
 
   const saveProducts = async (payload: SaveProductsPayload) => {
     setLoading(true);
@@ -376,5 +399,6 @@ export const useSalidaMercanciaApi = () => {
     saveProducts,
     completarSalida,
     validateSalidaCSV,
+    exportSalidaExcel,
   };
 }; 

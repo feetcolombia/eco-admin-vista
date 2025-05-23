@@ -18,6 +18,8 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
+import { useExportWorksheet } from '@/hooks/useExportWorksheet';
+import { toast } from 'sonner';
 
 const estadoLabel = { c: 'Contando', n: 'Nuevo', f: 'Completo' };
 
@@ -29,6 +31,7 @@ const TransferenciaSources = () => {
   const { toast } = useToast();
   const [page, setPage] = useState(1);
   const pageSize = 10;
+  const { exportWorksheet } = useExportWorksheet();
 
   const fetchAll = async () => {
     try {
@@ -81,6 +84,61 @@ const TransferenciaSources = () => {
      }
    };
 
+   const handleExport = async (transferenciaId: number) => {
+    try {
+      const result = await transferSourcesApi.exportTransferenciaExcel(transferenciaId);
+      if (result && result.length > 0) {
+        const data = result[0];
+        // Transform the ingreso table. (You can adjust this transformation or combine
+        // table_ingreso and table_salida if needed.)
+        console.log("data", data.table_salida);
+        const transformedTableIngreso = data.table_ingreso.map((row: any) => ({
+          SKU: row.sku,
+          Cantidad: row.cantidad,
+          Bodega: row.bodega_nombre,
+        }));
+
+        const transformedTableSalida = data.table_salida.map((row: any) => ({
+          SKU: row.sku,
+          Cantidad: row.cantidad,
+          Bodega: row.bodega_nombre,
+        }));
+  
+        const worksheetData = {
+          header: { 
+            "Source": data.header.source_origen,
+            "Codigo": data.header.consecutivo,
+            "Responsable": data.header.nombre_responsable,
+            "Es másiva": data.header.es_masiva ? data.header.es_masiva : "",           
+            "Descripción": data.header.descripcion || "",
+            "Tipo": data.header.tipo == 'pf' ? 'Completo' : 'Contando'
+          },
+          table: transformedTableIngreso,
+          tableDos: transformedTableSalida,
+        };
+  
+        // Exporta usando el hook con las columnas deseadas.
+        exportWorksheet(worksheetData, `TransferenciaSource_${transferenciaId}.xlsx`, 
+          ["SKU", "Cantidad", "Bodega"]
+        );
+        toast({
+          title: "Éxito",
+          description: "Exportación exitosa"
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "No se encontraron datos para exportar"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Error al exportar"
+      });
+    }
+  };
+
   return (
     <div className="mx-auto">
       <div className="flex justify-between items-center mb-6">
@@ -111,6 +169,7 @@ const TransferenciaSources = () => {
               <TableHead>Fecha</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
+              <TableHead>Exportar</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -151,6 +210,28 @@ const TransferenciaSources = () => {
                   />
                 </Button>
               </TableCell>
+              <TableCell>
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       disabled={!(src.estado === "c" || src.estado === "f")}
+                       className={`flex items-center gap-1 text-green-600 hover:text-green-800 ${
+                         !(src.estado === "c" || src.estado === "f")
+                           ? "cursor-not-allowed opacity-50"
+                           : ""
+                       }`}
+                       onClick={(e) => {
+                         e.stopPropagation();
+                         handleExport(src.transferencia_source_id);
+                       }}
+                     >
+                       <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none"
+                         viewBox="0 0 24 24" stroke="currentColor">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                           d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12v9m0-9l-3 3m3-3l3 3M12 3v9" />
+                       </svg>
+                     </Button>
+                   </TableCell>
               </TableRow>
             ))}
           </TableBody>

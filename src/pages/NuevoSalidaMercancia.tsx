@@ -32,7 +32,12 @@ const NuevoSalidaMercancia = () => {
   const [cargaMasiva, setCargaMasiva] = useState<"si" | "no">("no");
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvValidationResult, setCsvValidationResult] = useState<{ message: string; error: boolean }[] | null>(null);
-  const [csvLoading, setCsvLoading] = useState(false);
+  const [csvLoading, setCsvLoading] = useState(false);  const [formErrors, setFormErrors] = useState({
+    selectedSource: "",
+    responsable: "",
+    descripcion: "",
+    csvFile: ""
+  });
 
   useEffect(() => {
     fetchSources();
@@ -45,12 +50,15 @@ const NuevoSalidaMercancia = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSource || !responsable || !descripcion) {
+    if (!selectedSource || !responsable || !descripcion || !cargaMasiva) {
       toast.error("Por favor complete todos los campos obligatorios");
       return;
     }
     // Si es carga masiva, se debe validar el CSV mediante el botón "Validar y Guardar"
-    if (cargaMasiva === "si") return;
+    if (cargaMasiva === "si" && !csvFile) {
+      toast.error("Debe cargar un archivo CSV");
+      return;
+    }
 
     try {
       const payload = {
@@ -73,7 +81,7 @@ const NuevoSalidaMercancia = () => {
 
   const handleValidateCsv = () => {
     if (!csvFile) {
-      alert("Debe cargar un archivo CSV.");
+      toast.error("Debe cargar un archivo CSV.");
       return;
     }
     setCsvLoading(true);
@@ -158,11 +166,20 @@ const NuevoSalidaMercancia = () => {
 
       <Card>
         <CardContent className="p-6 space-y-6">
-          <div className="space-y-2">
+                  <div className="space-y-2">
             <Label htmlFor="source" className="text-sm font-medium">
               Origen<span className="text-red-500">*</span>
             </Label>
-            <Select value={selectedSource} onValueChange={setSelectedSource}>
+            <Select 
+              value={selectedSource} 
+              onValueChange={(value) => {
+                setSelectedSource(value);
+                setFormErrors(prev => ({
+                  ...prev,
+                  selectedSource: value ? "" : "Debe seleccionar un origen"
+                }));
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Seleccione el origen" />
               </SelectTrigger>
@@ -174,8 +191,10 @@ const NuevoSalidaMercancia = () => {
                 ))}
               </SelectContent>
             </Select>
+            {formErrors.selectedSource && (
+              <p className="text-red-500 text-sm">{formErrors.selectedSource}</p>
+            )}
           </div>
-
           <div className="space-y-2">
             <Label htmlFor="fecha" className="text-sm font-medium">
               Fecha<span className="text-red-500">*</span>
@@ -187,7 +206,6 @@ const NuevoSalidaMercancia = () => {
               disabled
             />
           </div>
-
           <div className="space-y-2">
             <Label htmlFor="responsable" className="text-sm font-medium">
               Usuario Responsable<span className="text-red-500">*</span>
@@ -195,11 +213,19 @@ const NuevoSalidaMercancia = () => {
             <Input
               id="responsable"
               value={responsable}
-              onChange={(e) => setResponsable(e.target.value)}
+              onChange={(e) => {
+                setResponsable(e.target.value);
+                setFormErrors(prev => ({
+                  ...prev,
+                  responsable: e.target.value ? "" : "El usuario responsable es obligatorio"
+                }));
+              }}
               placeholder="Ingrese el nombre del responsable"
             />
+            {formErrors.responsable && (
+              <p className="text-red-500 text-sm">{formErrors.responsable}</p>
+            )}
           </div>
-
           <div className="space-y-2">
             <Label htmlFor="descripcion" className="text-sm font-medium">
               Descripción<span className="text-red-500">*</span>
@@ -207,17 +233,34 @@ const NuevoSalidaMercancia = () => {
             <Textarea
               id="descripcion"
               value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
+              onChange={(e) => {
+                setDescripcion(e.target.value);
+                setFormErrors(prev => ({
+                  ...prev,
+                  descripcion: e.target.value ? "" : "La descripción es obligatoria"
+                }));
+              }}
               placeholder="Ingrese la descripción"
               rows={4}
             />
+            {formErrors.descripcion && (
+              <p className="text-red-500 text-sm">{formErrors.descripcion}</p>
+            )}
           </div>
-
           <div className="space-y-2">
             <Label htmlFor="cargaMasiva" className="text-sm font-medium">
               Carga Masiva
             </Label>
-            <Select value={cargaMasiva} onValueChange={setCargaMasiva}>
+            <Select 
+              value={cargaMasiva} 
+              onValueChange={(value) => {
+                setCargaMasiva(value);
+                // Clear CSV file error when switching to "no"
+                if(value === "no"){
+                  setFormErrors(prev => ({ ...prev, csvFile: "" }));
+                }
+              }}
+            >
               <SelectTrigger id="cargaMasiva">
                 <SelectValue placeholder="Seleccione una opción" />
               </SelectTrigger>

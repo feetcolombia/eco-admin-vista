@@ -30,7 +30,9 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { transferBodegasApi,Source } from '@/api/transferBodegasApi';
+import { useExportWorksheet } from "@/hooks/useExportWorksheet";
 import { Loader2 } from 'lucide-react';
+import { toast } from "sonner";
 
 const TransferenciaBodegas = () => {
   const navigate = useNavigate();
@@ -43,6 +45,9 @@ const TransferenciaBodegas = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [totalCount, setTotalCount] = useState(0);
+  const { exportWorksheet } = useExportWorksheet();
+  const [catalogProducts, setCatalogProducts] = useState<any[]>([]);
+
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -211,8 +216,53 @@ const TransferenciaBodegas = () => {
     return matchesSearch && matchesStatus;
   });
 
-    const isSearching = searchTerm.trim().length > 0;
-    const displayed = filtered;  
+  const isSearching = searchTerm.trim().length > 0;
+  const displayed = filtered;  
+  const handleExport = async (transferenciaId: number) => {
+    try {
+      const result = await transferBodegasApi.exportTransferenciaExcel(transferenciaId);
+      if (result && result.length > 0) {
+        const data = result[0];
+        const transformedTable = data.table.map((row: any) => {
+          const product = catalogProducts.find(
+            (p: any) => Number(p.entity_id) === Number(row.id_producto)
+          );
+          return {
+            SKU: row.sku,
+            "Cantidad Transferir": row.cantidad_transferir,
+            "Cantidad Disponible": row.cantidad_disponible,
+            Observación: row.observacion,
+            "Bodega Origen": row.bodega_origen_nombre,
+            "Bodega Destino": row.bodega_destino_nombre,
+          };
+        });
+
+        const worksheetData = {
+          header: { 
+            "Source": data.header.soruce,
+            "Codigo": data.header.codigo,
+            "Responsable": data.header.nombre_responsable,
+            "Es másiva": data.es_masiva === 's' ? 'Sí' : 'No',           
+            "Descripción": data.header.descripcion || "",
+          },
+          table: transformedTable
+        };
+
+        // Pass the header names accordingly
+        exportWorksheet(
+          worksheetData,
+          `TransferenciaBodega_${transferenciaId}.xlsx`,
+          ["SKU", "Cantidad Transferir", "Cantidad Disponible", "Observación", "Bodega Origen", "Bodega Destino"]
+        );
+        toast.success("Exportación exitosa");
+      } else {
+        toast.error("No se encontraron datos para exportar");
+      }
+    } catch (error) {
+      console.error("Error al exportar:", error);
+      toast.error("Error al exportar");
+    }
+  };
 
   return (
     <div className="overflow-hidden">
@@ -263,6 +313,7 @@ const TransferenciaBodegas = () => {
               <TableHead>Es Masiva</TableHead>     
               <TableHead>Histórico</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
+              <TableHead>Exportar</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -297,6 +348,26 @@ const TransferenciaBodegas = () => {
                     <Eye className="h-4 w-4" />
                   </Button>
                 </TableCell>
+                <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!(transferencia.estado === "c" || transferencia.estado === "f")}
+                        className={`flex items-center gap-1 text-green-600 hover:text-green-800 ${
+                          !(transferencia.estado === "c" || transferencia.estado === "f") ? "cursor-not-allowed opacity-50" : ""
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleExport(Number(transferencia.transferencia_bodega_id));
+                        }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none"
+                          viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12v9m0-9l-3 3m3-3l3 3M12 3v9" />
+                        </svg>
+                      </Button>
+                    </TableCell>
               </TableRow>
                        ))
        )}

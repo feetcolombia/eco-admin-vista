@@ -109,6 +109,16 @@ const NovaTransferenciaBodega = () => {
       toast({ variant: 'destructive', title: 'Error', description: 'Seleccione si realizará carga masiva.' })
       return
     }
+    if (formData.cargaMasiva === 's') {
+      if (!formData.arquivo) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Archivo CSV es obligatorio para carga masiva.' });
+        return;
+      }
+      if (formData.arquivo.type !== 'text/csv') {
+        toast({ variant: 'destructive', title: 'Error', description: 'El archivo debe ser un CSV válido.' });
+        return;
+      }
+    }
     // si NO es carga masiva, validar bodegas
     if (formData.cargaMasiva === 'n') {
       if (!formData.bodegaOrigem) {

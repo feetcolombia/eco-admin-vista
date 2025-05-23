@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useSalidaMercanciaApi } from "@/hooks/useSalidaMercanciaApi";
 import { format } from "date-fns";
 import {
   Pagination,
@@ -22,6 +21,9 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { useExportWorksheet } from "@/hooks/useExportWorksheet";
+import { useSalidaMercanciaApi } from "@/hooks/useSalidaMercanciaApi";
+import { toast } from "sonner";
 
 interface Source {
   source_code: string;
@@ -38,10 +40,11 @@ const SalidaMercancia = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-  const { loading, getSalidaMercancia, getSources } = useSalidaMercanciaApi();
+  const { loading, getSalidaMercancia, getSources,exportSalidaExcel } = useSalidaMercanciaApi();
   const [salidas, setSalidas] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [sources, setSources] = useState<Source[]>([]);
+  const { exportWorksheet } = useExportWorksheet();
 
   useEffect(() => {
     fetchSalidas();
@@ -140,6 +143,33 @@ const SalidaMercancia = () => {
     );
   }
 
+  const handleExport = async (salidaId: number) => {
+    try {
+      const result = await exportSalidaExcel(salidaId);
+      if (result && result.length > 0) {
+        const data = result[0];
+        const worksheetData = {
+          header: {
+            "Source": data.header.source,
+            "Fecha": data.header.fecha,
+            "Consecutivo": data.header.consecutivo,
+            "Responsable": data.header.nombre_responsable,
+            "Descripción": data.header.descripcion || ""
+          },
+          table: data.table
+        };
+        // Use custom table headers (e.g. SKU, Cantidad, Bodega)
+        exportWorksheet(worksheetData, `SalidaMercancia_${salidaId}.xlsx`, ["SKU", "Cantidad", "Bodega"]);
+        toast.success("Exportación exitosa");
+      } else {
+        toast.error("No se encontraron datos para exportar");
+      }
+    } catch (error) {
+      console.error("Error al exportar:", error);
+      toast.error("Error al exportar");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -168,6 +198,8 @@ const SalidaMercancia = () => {
                 <TableHead>Responsable</TableHead>
                 <TableHead>Fecha</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead>Acciones</TableHead>
+                <TableHead>Exportar</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -201,6 +233,44 @@ const SalidaMercancia = () => {
                           : "Completado"}
                       </div>
                     </TableCell>
+                    <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/dashboard/salida-mercancia/${salida.salidamercancia_id}`);
+                      }}
+                    >
+                      {/* Replace the SVG below with your image if desired */}
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!(salida.estado === "c" || salida.estado === "p")}
+                      className={`flex items-center gap-1 text-green-600 hover:text-green-800 ${
+                        !(salida.estado === "c" || salida.estado === "p") ? "cursor-not-allowed opacity-50" : ""
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleExport(salida.salidamercancia_id);
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12v9m0-9l-3 3m3-3l3 3M12 3v9" />
+                      </svg>
+                    </Button>
+                  </TableCell>
                   </TableRow>
                 ))
               ) : (
