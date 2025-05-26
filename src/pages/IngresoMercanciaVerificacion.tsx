@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useIngresoMercanciaApi } from "@/hooks/useIngresoMercanciaApi";
 import { toast } from "sonner";
+import { useExportWorksheet } from "@/hooks/useExportWorksheet";
 
 interface ScannedItem {
   sku: string;
@@ -51,7 +52,7 @@ const IngresoMercanciaVerificacion = () => {
   const [scannedItems] = useState<ScannedItem[]>(location.state?.scannedItems || []);
   const [ingreso, setIngreso] = useState<IngresoMercancia | null>(null);
 
-  const { loading, getIngresoById, confirmarIngresoMercancia } = useIngresoMercanciaApi();
+  const { loading, getIngresoById, confirmarIngresoMercancia ,exportIngresoExcel} = useIngresoMercanciaApi();
 
   useEffect(() => {
     if (id) {
@@ -87,6 +88,34 @@ const IngresoMercanciaVerificacion = () => {
       navigate('/dashboard/ingreso-mercancia');
     }
   };
+   const { exportWorksheet } = useExportWorksheet();
+
+  const handleExport = async (ingresoId: number) => {
+    try {
+      const result = await exportIngresoExcel(ingresoId);
+      if (result && result.length > 0) {
+        const data = result[0];
+        const worksheetData = {
+          header: {
+            "Source": data.header.source,
+            "Fecha": data.header.fecha,
+            "Consecutivo": data.header.consecutivo,
+            "Responsable": data.header.nombre_responsable,
+            "Descripción": data.header.descripcion || ""
+          },
+          table: data.table
+        };
+        // Export the worksheet as an Excel file with custom table headers.
+        exportWorksheet(worksheetData, `IngresoMercancia_${ingresoId}.xlsx`, ["SKU", "Cantidad", "Bodega"]);
+        toast.success("Exportación exitosa");
+      } else {
+        toast.error("No se encontraron datos para exportar");
+      }
+    } catch (error) {
+      console.error("Error al exportar:", error);
+      toast.error("Error al exportar");
+    }
+  };
 
   if (loading || !ingreso) {
     return (
@@ -105,14 +134,21 @@ const IngresoMercanciaVerificacion = () => {
         <div className="flex gap-2">
           <Button 
             variant="outline" 
-            onClick={() => navigate('/dashboard/ingreso-mercancia')}
+            onClick={() => navigate('/dashboard/ingreso-mercancia/'+ingreso.ingresomercancia_id)}
           >
             Regresar
           </Button>
           <Button 
             variant="outline"
-            onClick={() => window.print()}
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleExport(Number(ingreso.ingresomercancia_id));
+            }}
           >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12v9m0-9l-3 3m3-3l3 3M12 3v9" />
+            </svg>
             Exportar a Excel
           </Button>
           <Button 
