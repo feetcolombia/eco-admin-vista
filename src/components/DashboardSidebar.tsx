@@ -89,74 +89,62 @@ const DashboardSidebar = () => {
       </div>
 
       <div className="px-3 pt-4 pb-2">
-        {!isCollapsed && <div className="text-xs text-gray-500 mb-2">PRODUTOS</div>}
+        {!isCollapsed && <div className="text-xs text-gray-500 mb-2">CATÁLOGO</div>}
         <nav className="space-y-1">
           <SidebarLink
             to="/dashboard/products"
             icon={<PackageSearch size={18} />}
-            label="Produtos"
+            label="Catálogo de Productos"
             isCollapsed={isCollapsed}
           />
           <SidebarLink
             to="/dashboard/curvas"
             icon={<LineChart size={18} />}
-            label="Curvas"
+            label="Plantillas de Curvas"
             isCollapsed={isCollapsed}
           />
+        </nav>
+      </div>
+
+      <div className="px-3 pt-4 pb-2">
+        {!isCollapsed && <div className="text-xs text-gray-500 mb-2">INVENTÁRIO</div>}
+        <nav className="space-y-1">
           <SidebarLink
             to="/dashboard/ingreso-mercancia"
             icon={<PackagePlus size={18} />}
-            label="Ingreso Mercancia"
+            label="Ingreso de Mercancía"
             isCollapsed={isCollapsed}
           />
           <SidebarLink
             to="/dashboard/salida-mercancia"
             icon={<PackageMinus size={18} />}
-            label="Salida Mercancia"
+            label="Salida de Mercancía"
             isCollapsed={isCollapsed}
           />
-        </nav>
-      </div>
-
-      <div className="px-3 pt-4 pb-2">
-        {!isCollapsed && <div className="text-xs text-gray-500 mb-2">TRANSFERENCIAS</div>}
-        <nav className="space-y-1">
           <SidebarLink
             to="/dashboard/transferencia-mercancia"
             icon={<Building2 size={18} />}
-            label="Entre Bodegas"
+            label="Transferencia entre Posiciones"
             isCollapsed={isCollapsed}
           />
           <SidebarLink
             to="/dashboard/transferencia-sources"
             icon={<Network size={18} />}
-            label="Entre Sources"
+            label="Transferencia entre Sources"
             isCollapsed={isCollapsed}
           />
         </nav>
       </div>
 
       <div className="px-3 pt-4 pb-2">
-        {!isCollapsed && <div className="text-xs text-gray-500 mb-2">BODEGAS</div>}
+        {!isCollapsed && <div className="text-xs text-gray-500 mb-2">WMS</div>}
         <nav className="space-y-1">
           <SidebarLink
             to="/dashboard/bodegas/listar"
             icon={<List size={18} />}
-            label="Listar Bodegas"
+            label="Listar Posiciones"
             isCollapsed={isCollapsed}
           />
-         {/*  <SidebarLink
-            to="/dashboard/bodegas/transferir"
-            icon={<MoveHorizontal size={18} />}
-            label="Transferir Bodegas"
-            isCollapsed={isCollapsed}
-          />
-          <SidebarLink
-            to="/dashboard/bodegas/reporte"
-            icon={<FileText size={18} />}
-            label="Reporte Bodegas"
-            isCollapsed={isCollapsed}
-          /> */}
         </nav>
       </div>
 
