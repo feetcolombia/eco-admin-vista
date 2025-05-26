@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useSalidaMercanciaApi } from "@/hooks/useSalidaMercanciaApi";
 import { toast } from "sonner";
+import { useExportWorksheet } from "@/hooks/useExportWorksheet";
 
 interface ProductoAgrupado {
   bodega_nombre: string;
@@ -21,7 +22,8 @@ const SalidaMercanciaConfirmar = () => {
   const [totalEscaneados, setTotalEscaneados] = useState(0);
   const [productosPorPosicion, setProductosPorPosicion] = useState<ProductoAgrupado[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
-  const { loading, getSalidaById, completarSalida } = useSalidaMercanciaApi();
+  const { loading, getSalidaById, completarSalida , exportSalidaExcel} = useSalidaMercanciaApi();
+  const { exportWorksheet } = useExportWorksheet();
 
   useEffect(() => {
     if (id) {
@@ -79,6 +81,32 @@ const SalidaMercanciaConfirmar = () => {
     );
   }
 
+  const handleExport = async (salidaId: number) => {
+    try {
+      const result = await exportSalidaExcel(salidaId);
+      if (result && result.length > 0) {
+        const data = result[0];
+        const worksheetData = {
+          header: {
+            "Source": data.header.source,
+            "Fecha": data.header.fecha,
+            "Consecutivo": data.header.consecutivo,
+            "Responsable": data.header.nombre_responsable,
+            "Descripción": data.header.descripcion || ""
+          },
+          table: data.table
+        };
+        exportWorksheet(worksheetData, `SalidaMercancia_${salidaId}.xlsx`, ["SKU", "Cantidad", "Bodega"]);
+        toast.success("Exportación exitosa");
+      } else {
+        toast.error("No se encontraron datos para exportar");
+      }
+    } catch (error) {
+      console.error("Error al exportar:", error);
+      toast.error("Error al exportar");
+    }
+  };
+
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
@@ -91,15 +119,19 @@ const SalidaMercanciaConfirmar = () => {
           >
             Regresar
           </Button>
-          <Button
-            variant="outline"
-            className="bg-gray-100"
-            onClick={() => {
-              // Implementar exportação para Excel
-            }}
-          >
-            Exportar a Excel
-          </Button>
+             <Button 
+               variant="outline"
+               size="sm"
+               onClick={(e) => {
+                 e.stopPropagation();
+                 handleExport(Number(id));
+               }}
+             >
+               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12v9m0-9l-3 3m3-3l3 3M12 3v9" />
+               </svg>
+               Exportar a Excel
+             </Button>
           <Button
             className="bg-ecommerce-500 hover:bg-ecommerce-600"
             onClick={handleConfirmar}
