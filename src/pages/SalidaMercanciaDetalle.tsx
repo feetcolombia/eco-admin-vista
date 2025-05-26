@@ -182,19 +182,24 @@ const SalidaMercanciaDetalle = () => {
 
       if (existingProductIndex !== -1) {
         // Se o produto já existe, apenas incrementa a quantidade
+        const existingProduct = products[existingProductIndex];
+        const newQuantity = Math.min(
+          existingProduct.quantity + 1,
+          response.transferencia_quantity
+        );
+
         setProducts(prev => prev.map((product, index) => {
           if (index === existingProductIndex) {
-            // Garantir que não ultrapasse o transferencia_quantity
-            const newQuantity = Math.min(
-              product.quantity + 1,
-              response.transferencia_quantity
-            );
             return { ...product, transferencia_quantity: response.transferencia_quantity, quantity: newQuantity };
           }
           return product;
         }));
 
-        playBeep(true);
+        if (newQuantity === response.transferencia_quantity && existingProduct.quantity < response.transferencia_quantity) {
+          playBeep(false); // Atingiu o limite
+        } else {
+          playBeep(true); // Incremento bem-sucedido
+        }
       } else {
         // Se o produto não existe, adiciona como novo
         const newProduct: ProductItem = {
@@ -453,10 +458,14 @@ const SalidaMercanciaDetalle = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => {
+                            const oldQuantity = product.quantity;
                             const newQuantity = Math.min(product.transferencia_quantity, product.quantity + 1);
                             setProducts(prev => prev.map((p, i) => 
                               i === index ? { ...p, quantity: newQuantity } : p
                             ));
+                            if (newQuantity === product.transferencia_quantity && oldQuantity < product.transferencia_quantity) {
+                              playBeep(false);
+                            }
                           }}
                           disabled={product.quantity >= product.transferencia_quantity || salida?.estado === 'c'}
                         >

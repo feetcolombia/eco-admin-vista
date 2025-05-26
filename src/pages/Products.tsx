@@ -167,6 +167,8 @@ const Products = () => {
 
   const handleEditSuccess = () => {
     handleSearch();
+    setChildProducts({});
+    setExpandedRows([]);
   };
 
   const totalPages = Math.ceil(totalCount / pageSize);
