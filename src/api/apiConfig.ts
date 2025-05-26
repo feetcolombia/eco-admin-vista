@@ -1,7 +1,6 @@
-
 import axios from 'axios';
 
-export const API_BASE_URL = 'https://stg.feetcolombia.com';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Create axios instance with base configuration
 export const apiClient = axios.create({

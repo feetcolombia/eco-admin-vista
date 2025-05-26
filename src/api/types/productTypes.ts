@@ -1,4 +1,3 @@
-
 export interface Product {
   id: number;
   sku: string;
@@ -19,6 +18,8 @@ export interface Product {
       position: number;
       category_id: string;
     }>;
+    os_barcode_data?: string[];
+    source_stock_data?: string[];
     configurable_product_options?: Array<{
       id: number;
       attribute_id: string;

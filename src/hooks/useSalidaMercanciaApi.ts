@@ -65,7 +65,7 @@ interface ProductQuantityResponse {
   barcode: string;
 }
 
-const BASE_URL = 'https://stg.feetcolombia.com/rest/V1';
+const BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/rest/V1`;
 
 interface CreateSalidaMercanciaPayload {
   salidaMercancia: {
@@ -106,7 +106,7 @@ export const useSalidaMercanciaApi = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        'https://stg.feetcolombia.com/rest/all/V1/inventory/sources',
+        `${import.meta.env.VITE_API_BASE_URL}/rest/all/V1/inventory/sources`,
         { headers }
       );
       return response.data.items || [];

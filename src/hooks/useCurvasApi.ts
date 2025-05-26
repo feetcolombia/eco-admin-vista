@@ -41,7 +41,7 @@ interface UpdateCurvaData {
   };
 }
 
-const BASE_URL = 'https://stg.feetcolombia.com/rest/V1';
+const BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/rest/V1`;
 
 export const useCurvasApi = () => {
   const [loading, setLoading] = useState(false);

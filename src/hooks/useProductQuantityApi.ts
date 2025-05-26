@@ -20,7 +20,7 @@ export const useProductQuantityApi = () => {
     setError(null);
     try {
       const response = await axios.get(
-        `https://stg.feetcolombia.com/rest/V1/feetmercancia-salida/productquantity`,
+        `${import.meta.env.VITE_API_BASE_URL}/rest/V1/feetmercancia-salida/productquantity`,
         {
           params: {
             source: 'default',

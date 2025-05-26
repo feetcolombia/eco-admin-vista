@@ -54,7 +54,7 @@ const TransferenciaBodegaDetalhes = () => {
     const fetchTransferenciaDetalhes = async () => {
       try {
         const response = await fetch(
-          `https://stg.feetcolombia.com/rest/V1/transferenciabodegas/${id}`,
+          `${import.meta.env.VITE_API_BASE_URL}/rest/V1/transferenciabodegas/${id}`,
           {
             headers: {
               'Authorization': `Bearer ${token}`,

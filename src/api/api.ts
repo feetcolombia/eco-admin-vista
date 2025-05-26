@@ -77,7 +77,7 @@ export interface DashboardStats {
 }
 
 // Configuração base da API
-const API_BASE_URL = 'https://stg.feetcolombia.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Configuração do axios
 const api = axios.create({
