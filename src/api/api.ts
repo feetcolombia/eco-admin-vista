@@ -1,5 +1,10 @@
 import { toast } from "@/hooks/use-toast";
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
+
+// Estender a interface AxiosRequestConfig para incluir a propriedade _retry
+interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
+  _retry?: boolean;
+}
 
 // Tipos para a API
 export interface ApiResponse<T> {
@@ -87,6 +92,25 @@ const api = axios.create({
   }
 });
 
+// Armazenar credenciais de forma segura (cifradas em base64 simples para este exemplo)
+// Em produção, considere usar uma solução mais segura
+const saveCredentials = (credentials: LoginCredentials) => {
+  const encoded = btoa(JSON.stringify(credentials));
+  sessionStorage.setItem('auth_credentials', encoded);
+};
+
+const getStoredCredentials = (): LoginCredentials | null => {
+  const encoded = sessionStorage.getItem('auth_credentials');
+  if (!encoded) return null;
+  
+  try {
+    return JSON.parse(atob(encoded));
+  } catch (e) {
+    console.error('Erro ao recuperar credenciais', e);
+    return null;
+  }
+};
+
 // Interceptor para adicionar o token em todas as requisições
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('auth_token');
@@ -95,6 +119,81 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Interceptor para lidar com respostas e reautenticar quando necessário
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config as ExtendedAxiosRequestConfig;
+    
+    // Verifica se o erro é de autenticação (401) e não é uma tentativa de login ou já uma tentativa de retry
+    if (error.response?.status === 401 && 
+        !originalRequest._retry && 
+        !originalRequest.url.includes('/integration/admin/token')) {
+      
+      originalRequest._retry = true;
+      
+      // Notificar o usuário que estamos reautenticando
+      toast({
+        title: "Sessão expirada",
+        description: "Reconectando automaticamente...",
+        variant: "default",
+      });
+      
+      // Tenta reautenticar
+      const credentials = getStoredCredentials();
+      if (credentials) {
+        try {
+          console.log('Token expirado. Tentando reautenticar...');
+          const response = await api.post('/rest/V1/integration/admin/token', {
+            username: credentials.email,
+            password: credentials.password
+          });
+          
+          const newToken = response.data;
+          localStorage.setItem('auth_token', newToken);
+          
+          // Notifica o usuário sobre o sucesso
+          toast({
+            title: "Reconectado",
+            description: "Sua sessão foi restaurada com sucesso",
+            variant: "default",
+          });
+          
+          // Atualiza o token na requisição original e tenta novamente
+          originalRequest.headers = originalRequest.headers || {};
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return api(originalRequest);
+        } catch (refreshError) {
+          console.error('Falha na reautenticação:', refreshError);
+          
+          // Notifica o usuário sobre a falha
+          toast({
+            title: "Falha na reconexão",
+            description: "Por favor, faça login novamente",
+            variant: "destructive",
+          });
+          
+          // Se a reautenticação falhar, redirecionar para login
+          window.location.href = '/login';
+          return Promise.reject(refreshError);
+        }
+      } else {
+        // Notifica o usuário que é necessário fazer login novamente
+        toast({
+          title: "Sessão expirada",
+          description: "Por favor, faça login novamente",
+          variant: "destructive",
+        });
+        
+        // Se não temos credenciais salvas, redirecionar para login
+        window.location.href = '/login';
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 // Função para lidar com erros de API de forma consistente
 const handleApiError = (error: any): ApiError => {
@@ -147,6 +246,9 @@ export const authApi = {
       // Salva o token no localStorage
       localStorage.setItem("auth_token", token);
       
+      // Salva as credenciais de forma segura para reautenticação futura
+      saveCredentials(credentials);
+      
       return {
         success: true,
         data: token,
@@ -161,6 +263,7 @@ export const authApi = {
   logout: async (): Promise<ApiResponse<null>> => {
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user");
+    sessionStorage.removeItem("auth_credentials");
     
     return {
       success: true,

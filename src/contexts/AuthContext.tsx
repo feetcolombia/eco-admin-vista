@@ -19,12 +19,80 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Tempo de inatividade em milissegundos (1 hora)
+  const INACTIVITY_TIMEOUT = 60 * 60 * 1000;
+  
+  // Definir logout antes do useEffect que o utiliza
+  const logout = async () => {
+    try {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('last_activity');
+      sessionStorage.removeItem('auth_credentials');
+      setToken(null);
+      navigate("/login");
+      toast({
+        title: "Logout",
+        description: "Você saiu com sucesso.",
+      });
+    } catch (error) {
+      console.error("Logout error", error);
+    }
+  };
+  
+  useEffect(() => {
+    // Função para verificar quando foi a última atividade do usuário
+    const checkUserActivity = () => {
+      const lastActivity = localStorage.getItem('last_activity');
+      
+      if (lastActivity && token) {
+        const now = new Date().getTime();
+        const lastActivityTime = parseInt(lastActivity, 10);
+        
+        // Se passou mais tempo que o timeout desde a última atividade
+        if (now - lastActivityTime > INACTIVITY_TIMEOUT) {
+          console.log('Sessão expirada por inatividade');
+          logout();
+        }
+      }
+      
+      // Atualiza o timestamp da última atividade
+      localStorage.setItem('last_activity', new Date().getTime().toString());
+    };
+    
+    // Verificar atividade a cada 5 minutos
+    const activityInterval = setInterval(checkUserActivity, 5 * 60 * 1000);
+    
+    // Atualizar timestamp de atividade em interações do usuário
+    const updateActivity = () => {
+      localStorage.setItem('last_activity', new Date().getTime().toString());
+    };
+    
+    // Adicionar listeners para detectar atividade do usuário
+    window.addEventListener('mousedown', updateActivity);
+    window.addEventListener('keydown', updateActivity);
+    window.addEventListener('touchstart', updateActivity);
+    window.addEventListener('scroll', updateActivity);
+    
+    // Verificar imediatamente ao montar o componente
+    checkUserActivity();
+    
+    return () => {
+      clearInterval(activityInterval);
+      window.removeEventListener('mousedown', updateActivity);
+      window.removeEventListener('keydown', updateActivity);
+      window.removeEventListener('touchstart', updateActivity);
+      window.removeEventListener('scroll', updateActivity);
+    };
+  }, [token, navigate]);
+
   useEffect(() => {
     const initializeAuth = async () => {
       try {
         const storedToken = localStorage.getItem('auth_token');
         if (storedToken) {
           setToken(storedToken);
+          // Inicializa o timestamp de última atividade ao carregar a página
+          localStorage.setItem('last_activity', new Date().getTime().toString());
         }
       } catch (error) {
         console.error("Failed to initialize authentication", error);
@@ -57,20 +125,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error;
     } finally {
       setLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    try {
-      localStorage.removeItem('auth_token');
-      setToken(null);
-      navigate("/login");
-      toast({
-        title: "Logout",
-        description: "Você saiu com sucesso.",
-      });
-    } catch (error) {
-      console.error("Logout error", error);
     }
   };
 
