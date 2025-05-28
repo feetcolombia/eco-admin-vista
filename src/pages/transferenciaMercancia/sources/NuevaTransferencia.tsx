@@ -269,11 +269,18 @@ const NuevaTransferencia = () => {
                   }
                   required
                 />
-                <Button
-                  variant="outline"
-                  onClick={() => window.open('/downloads/transferenciaSource/ingreso_source_prueba.csv', '_blank')}
-                >
-                  Descargar Plantilla CSV
+                 <Button 
+                    variant="outline"
+                    onClick={() => {
+                      const link = document.createElement("a");
+                      link.href = "/downloads/transferenciaSource/ingreso_source_prueba.csv";
+                      link.download = "transferenciaSources_plantilla.csv";
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                  >
+                    Descargar Plantilla CSV
                 </Button>
               </div>
             </div>

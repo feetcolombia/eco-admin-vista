@@ -285,11 +285,18 @@ const NuevoSalidaMercancia = () => {
                        required
                      />
                      <Button 
-                       variant="outline"
-                       onClick={() => window.open('/downloads/salidaMercancia/salida_prueba.csv', '_blank')}
-                     >
-                       Descargar Plantilla CSV
-                     </Button>
+                        variant="outline"
+                        onClick={() => {
+                          const link = document.createElement("a");
+                          link.href = "/downloads/salidaMercancia/salida_prueba.csv";
+                          link.download = "salidaMecancia_plantilla.csv";
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                      >
+                        Descargar Plantilla CSV
+                    </Button>
                    </div>
               </div>
               <div>

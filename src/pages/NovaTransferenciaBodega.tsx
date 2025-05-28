@@ -411,10 +411,17 @@ const NovaTransferenciaBodega = () => {
                     required
                   />
                   <Button 
-                    variant="outline"
-                    onClick={() => window.open('/downloads/transferenciaBodega/transferencia_bodega_prueba.csv', '_blank')}
-                  >
-                    Descargar Plantilla CSV
+                      variant="outline"
+                      onClick={() => {
+                        const link = document.createElement("a");
+                        link.href = "/downloads/transferenciaBodega/transferencia_bodega_prueba.csv";
+                        link.download = "transferenciaBodega_plantilla.csv";
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                    >
+                      Descargar Plantilla CSV
                   </Button>
                 </div>
               </div>

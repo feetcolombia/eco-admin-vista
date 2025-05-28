@@ -55,6 +55,7 @@ const ExecutarTransferencia = () => {
   const [error, setError] = useState('');
   const [produtos, setProdutos] = useState([]);
   const [sources, setSources] = useState<Source[]>([]);
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   useEffect(() => {
     fetchTransferencia();
@@ -153,13 +154,16 @@ const ExecutarTransferencia = () => {
                       observacion: ''
                     }
                   ];
+                  playBeep(true);
                 });
                 setError('');
                 setBarcode('');
               } else {
                 setError('Producto no encontrado');
+                playBeep(false);
               }
            } catch (error) {
+              playBeep(false);
              console.error('Error al validar producto:', error);
              setError('Error al validar producto');
            }
@@ -251,6 +255,32 @@ const ExecutarTransferencia = () => {
         p.id === id ? { ...p, observacion } : p
       )
     );
+  };
+
+  const playBeep = (success: boolean) => {
+    if (!soundEnabled) return;
+    
+    try {
+      // Criar um contexto de áudio
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      // Configurar o som
+      oscillator.type = success ? 'sine' : 'square';
+      oscillator.frequency.setValueAtTime(success ? 800 : 400, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(0.8, audioContext.currentTime);
+      
+      // Conectar os nós
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Tocar o som
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (error) {
+      console.log('Erro ao reproduzir som:', error);
+    }
   };
   
 
@@ -362,9 +392,9 @@ const ExecutarTransferencia = () => {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
           <Switch
-            id="sonido"
-            checked={sonido}
-            onCheckedChange={setSonido}
+            id="sound"
+            checked={soundEnabled}
+            onCheckedChange={setSoundEnabled}
             disabled={transferencia.es_masiva === "s" || transferencia.estado === 'f'}
           />
           <Label htmlFor="sonido">Sonido</Label>

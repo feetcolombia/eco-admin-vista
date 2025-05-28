@@ -72,6 +72,7 @@ const ExecutarTransferenciaSource = () => {
   const [produtos, setProdutos] = useState([]);
   const [bodegas, setBodegas] = useState<Bodega[]>([]);
   const [selectedBodega, setSelectedBodega] = useState<string>("");
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
    const { getBodegas} = useIngresoMercanciaApi();
 
@@ -137,6 +138,7 @@ const ExecutarTransferenciaSource = () => {
           const bodegaId = bodegas.find(b => b.bodega_nombre === selectedBodega)?.bodega_id;
           if (!bodegaId) {
             setError('Selecciona una bodega');
+            playBeep(false);
             return;
           }
     
@@ -147,6 +149,7 @@ const ExecutarTransferenciaSource = () => {
           );
     
           if (items.length === 0 || (items[0].errors?.length ?? 0) > 0) {
+            playBeep(false);
             setError('Producto no encontrado o con errores');
           } else {
             const item = items[0];
@@ -178,7 +181,7 @@ const ExecutarTransferenciaSource = () => {
                 ];
               }
             });
-    
+            playBeep(true);
             setError('');
             setBarcode('');
             setTotalEscaneado(prev => prev + 1);
@@ -186,6 +189,7 @@ const ExecutarTransferenciaSource = () => {
         } catch (err) {
           console.error('Error lookupBarcode:', err);
           setError('Error al validar producto');
+          playBeep(false);
         }
   };
 
@@ -306,6 +310,32 @@ const handleCompletar = async () => {
     return <div>Carregando...</div>;
   }
 
+  const playBeep = (success: boolean) => {
+    if (!soundEnabled) return;
+    
+    try {
+      // Criar um contexto de áudio
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      // Configurar o som
+      oscillator.type = success ? 'sine' : 'square';
+      oscillator.frequency.setValueAtTime(success ? 800 : 400, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(0.8, audioContext.currentTime);
+      
+      // Conectar os nós
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Tocar o som
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (error) {
+      console.log('Erro ao reproduzir som:', error);
+    }
+  };
+
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
@@ -390,9 +420,9 @@ const handleCompletar = async () => {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
           <Switch
-            id="sonido"
-            checked={sonido}
-            onCheckedChange={setSonido}
+            id="sound"
+            checked={soundEnabled}
+            onCheckedChange={setSoundEnabled}
           />
           <Label htmlFor="sonido">Sonido</Label>
         </div>
