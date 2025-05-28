@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/table";
 import productApi, { Product, TallaOption, ProductDetail } from '@/api/productApi';
 import { useToast } from "@/components/ui/use-toast";
+import JsBarcode from 'jsbarcode';
 
 interface CreateBoxDialogProps {
   open: boolean;
@@ -44,6 +45,7 @@ export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialo
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const [autoSelectedMessage, setAutoSelectedMessage] = useState('');
   const [skuError, setSkuError] = useState('');
+  const barcodeRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -138,6 +140,45 @@ export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialo
     }
   };
 
+  // Função para calcular o dígito verificador EAN-8
+  function calcularDigitoVerificadorEAN8(numeros: string) {
+    if (numeros.length !== 7) return '';
+    let soma = 0;
+    for (let i = 0; i < 7; i++) {
+      soma += parseInt(numeros[i]) * (i % 2 === 0 ? 3 : 1);
+    }
+    const digito = (10 - (soma % 10)) % 10;
+    return digito.toString();
+  }
+
+  // Função para gerar EAN-8 válido
+  function gerarEAN8() {
+    let numeros = '';
+    for (let i = 0; i < 7; i++) {
+      numeros += Math.floor(Math.random() * 10).toString();
+    }
+    const digito = calcularDigitoVerificadorEAN8(numeros);
+    return numeros + digito;
+  }
+
+  // Gerar código e atualizar imagem
+  const handleGerarCodigo = () => {
+    const novoCodigo = gerarEAN8();
+    setBarcode(novoCodigo);
+  };
+
+  // Atualizar imagem do código de barras sempre que barcode mudar
+  useEffect(() => {
+    if (barcode && barcodeRef.current) {
+      JsBarcode(barcodeRef.current, barcode, {
+        format: 'CODE128',
+        displayValue: true,
+        fontSize: 16,
+        height: 60,
+      });
+    }
+  }, [barcode]);
+
   const handleSave = async () => {
     try {
       setLoading(true);
@@ -225,11 +266,21 @@ export function CreateBoxDialog({ open, onClose, parentProduct }: CreateBoxDialo
             </div>
             <div className="space-y-2">
               <label>Código de Barras</label>
-              <Input
-                value={barcode}
-                onChange={(e) => setBarcode(e.target.value)}
-                placeholder="Ingrese el código de barras"
-              />
+              <div className="flex gap-2 items-center">
+                <Input
+                  value={barcode}
+                  onChange={(e) => setBarcode(e.target.value)}
+                  placeholder="Ingrese el código de barras"
+                />
+                <Button type="button" onClick={handleGerarCodigo} variant="secondary">
+                  Gerar código
+                </Button>
+              </div>
+              {barcode && (
+                <div className="mt-2">
+                  <svg ref={barcodeRef}></svg>
+                </div>
+              )}
             </div>
           </div>
 

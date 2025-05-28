@@ -1,4 +1,4 @@
-import { apiClient, getAuthHeaders } from './apiConfig';
+import { api } from './api';
 import { Product, ProductsResponse, TallaOption, BoxProduct, ProductDetail } from './types/productTypes';
 
 interface AttributeOption {
@@ -9,17 +9,15 @@ interface AttributeOption {
 export const productsApi = {
   getProducts: async (page: number = 1, pageSize: number = 15): Promise<ProductsResponse> => {
     try {
-      const response = await apiClient.get<ProductsResponse>('/rest/V1/products', {
+      const response = await api.get<ProductsResponse>('/rest/V1/products', {
         params: {
           'searchCriteria[filter_groups][0][filters][0][field]': 'type_id',
           'searchCriteria[filter_groups][0][filters][0][value]': 'configurable',
           'searchCriteria[filter_groups][0][filters][0][condition_type]': 'eq',
           'searchCriteria[currentPage]': page,
           'searchCriteria[pageSize]': pageSize
-        },
-        headers: getAuthHeaders()
+        }
       });
-
       return response.data;
     } catch (error) {
       console.error('Erro ao buscar produtos:', error);
@@ -29,11 +27,9 @@ export const productsApi = {
 
   getProductChildren: async (productSku: string): Promise<Product[]> => {
     try {
-      const response = await apiClient.get<Product[]>(
-        `/rest/V1/configurable-products/${encodeURIComponent(productSku)}/children`, 
-        { headers: getAuthHeaders() }
+      const response = await api.get<Product[]>(
+        `/rest/V1/configurable-products/${encodeURIComponent(productSku)}/children`
       );
-
       return response.data;
     } catch (error) {
       console.error('Erro ao buscar produtos filhos:', error);
@@ -43,11 +39,9 @@ export const productsApi = {
 
   getTallaOptions: async (): Promise<TallaOption[]> => {
     try {
-      const response = await apiClient.get<TallaOption[]>(
-        '/rest/V1/products/attributes/talla/options', 
-        { headers: getAuthHeaders() }
+      const response = await api.get<TallaOption[]>(
+        '/rest/V1/products/attributes/talla/options'
       );
-
       return response.data;
     } catch (error) {
       console.error('Erro ao buscar opções de tamanho:', error);
@@ -57,9 +51,7 @@ export const productsApi = {
 
   createBox: async (boxData: BoxProduct): Promise<void> => {
     try {
-      await apiClient.post('/rest/V1/products', boxData, { 
-        headers: getAuthHeaders() 
-      });
+      await api.post('/rest/V1/products', boxData);
     } catch (error) {
       console.error('Erro ao criar caixa:', error);
       throw error;
@@ -68,9 +60,9 @@ export const productsApi = {
 
   setAsChild: async (parentSku: string, childSku: string): Promise<void> => {
     try {
-      await apiClient.post(`/rest/V1/configurable-products/${parentSku}/child`, {
+      await api.post(`/rest/V1/configurable-products/${parentSku}/child`, {
         childSku
-      }, { headers: getAuthHeaders() });
+      });
     } catch (error) {
       console.error('Erro ao definir produto filho:', error);
       throw error;
@@ -79,9 +71,9 @@ export const productsApi = {
 
   saveBoxDetails: async (boxSku: string, details: ProductDetail[]): Promise<void> => {
     try {
-      await apiClient.post(`/rest/V1/product/${boxSku}/details`, {
+      await api.post(`/rest/V1/product/${boxSku}/details`, {
         productDetails: details
-      }, { headers: getAuthHeaders() });
+      });
     } catch (error) {
       console.error('Erro ao salvar detalhes da caixa:', error);
       throw error;
@@ -90,9 +82,8 @@ export const productsApi = {
 
   getMarcaOptions: async (): Promise<AttributeOption[]> => {
     try {
-      const response = await apiClient.get<AttributeOption[]>(
-        '/rest/V1/products/attributes/marca/options',
-        { headers: getAuthHeaders() }
+      const response = await api.get<AttributeOption[]>(
+        '/rest/V1/products/attributes/marca/options'
       );
       return response.data;
     } catch (error) {
@@ -103,9 +94,8 @@ export const productsApi = {
 
   getColorOptions: async (): Promise<AttributeOption[]> => {
     try {
-      const response = await apiClient.get<AttributeOption[]>(
-        '/rest/V1/products/attributes/color/options',
-        { headers: getAuthHeaders() }
+      const response = await api.get<AttributeOption[]>(
+        '/rest/V1/products/attributes/color/options'
       );
       return response.data;
     } catch (error) {
@@ -116,9 +106,8 @@ export const productsApi = {
 
   getMaterialOptions: async (): Promise<AttributeOption[]> => {
     try {
-      const response = await apiClient.get<AttributeOption[]>(
-        '/rest/V1/products/attributes/material/options',
-        { headers: getAuthHeaders() }
+      const response = await api.get<AttributeOption[]>(
+        '/rest/V1/products/attributes/material/options'
       );
       return response.data;
     } catch (error) {
@@ -129,9 +118,8 @@ export const productsApi = {
 
   getEstiloOptions: async (): Promise<AttributeOption[]> => {
     try {
-      const response = await apiClient.get<AttributeOption[]>(
-        '/rest/V1/products/attributes/estilo/options',
-        { headers: getAuthHeaders() }
+      const response = await api.get<AttributeOption[]>(
+        '/rest/V1/products/attributes/estilo/options'
       );
       return response.data;
     } catch (error) {
@@ -142,16 +130,12 @@ export const productsApi = {
 
   getProductBySku: async (sku: string): Promise<Product | null> => {
     try {
-      const response = await apiClient.get<Product>(
-        `/rest/V1/products/${encodeURIComponent(sku)}`,
-        { headers: getAuthHeaders() }
-      );
+      const response = await api.get<Product>(`/rest/V1/products/${encodeURIComponent(sku)}`);
       return response.data;
     } catch (error: any) {
-      if (error.response?.status === 404) {
+      if (error.response && error.response.status === 404) {
         return null;
       }
-      console.error('Error al buscar producto por SKU:', error);
       throw error;
     }
   }

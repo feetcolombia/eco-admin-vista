@@ -124,6 +124,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    console.log("Interceptor acionado. Status:", error.response?.status, "URL:", error.config?.url);
     const originalRequest = error.config as ExtendedAxiosRequestConfig;
     
     // Verifica se o erro é de autenticação (401) e não é uma tentativa de login ou já uma tentativa de retry
@@ -142,6 +143,7 @@ api.interceptors.response.use(
       
       // Tenta reautenticar
       const credentials = getStoredCredentials();
+      console.log("Credenciais recuperadas:", credentials);
       if (credentials) {
         try {
           console.log('Token expirado. Tentando reautenticar...');
@@ -151,6 +153,7 @@ api.interceptors.response.use(
           });
           
           const newToken = response.data;
+          console.log("Novo token recebido:", newToken);
           localStorage.setItem('auth_token', newToken);
           
           // Notifica o usuário sobre o sucesso
@@ -163,6 +166,8 @@ api.interceptors.response.use(
           // Atualiza o token na requisição original e tenta novamente
           originalRequest.headers = originalRequest.headers || {};
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          console.log("Headers da requisição original após atualização:", originalRequest.headers);
+          console.log("Refazendo requisição original com novo token...");
           return api(originalRequest);
         } catch (refreshError) {
           console.error('Falha na reautenticação:', refreshError);
@@ -465,3 +470,5 @@ export const dashboardApi = {
     }
   }
 };
+
+export { api };
