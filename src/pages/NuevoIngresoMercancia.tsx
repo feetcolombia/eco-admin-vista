@@ -270,12 +270,19 @@ const NuevoIngresoMercancia = () => {
                    }}
                    required
                  />
-                 <Button 
-                   variant="outline"
-                   onClick={() => window.open('/downloads/ingresoMercancia/ingreso_prueba.csv', '_blank')}
-                 >
-                   Descargar Plantilla CSV
-                 </Button>
+                <Button 
+                    variant="outline"
+                    onClick={() => {
+                      const link = document.createElement("a");
+                      link.href = "/downloads/ingresoMercancia/ingreso_prueba.csv";
+                      link.download = "ingresoMercancia_plantilla.csv";
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                  >
+                    Descargar Plantilla CSV
+                </Button>
                </div>
                 {formErrors.archivo && (
                   <p className="text-red-500 text-sm mt-1">{formErrors.archivo}</p>
