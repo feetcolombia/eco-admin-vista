@@ -161,6 +161,7 @@ export const useIngresoMercanciaApi = () => {
     creador: number;
     fecha: string;
     nombre_responsable: string;
+    descripcion: string;
   }): Promise<IngresoMercancia | null> => {
     setLoading(true);
     try {
@@ -174,7 +175,8 @@ export const useIngresoMercanciaApi = () => {
               source: data.source,
               creador: data.creador,
               fecha: data.fecha,
-              nombre_responsable: data.nombre_responsable
+              nombre_responsable: data.nombre_responsable,
+              descripcion: data.descripcion
             }
           })
         }

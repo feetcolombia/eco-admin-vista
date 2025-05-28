@@ -5,7 +5,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Eye, Trash } from 'lucide-react';
+import { Edit, Trash } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { transferSourcesApi, TransferSource } from '@/api/transferSourcesApi';
 import { useToast } from '@/components/ui/use-toast';
@@ -21,7 +21,7 @@ import {
 import { useExportWorksheet } from '@/hooks/useExportWorksheet';
 import { toast } from 'sonner';
 
-const estadoLabel = { c: 'Contando', n: 'Nuevo', f: 'Completo' };
+const estadoLabel = { c: 'Procesando', n: 'Nuevo', f: 'Completado' };
 
 const TransferenciaSources = () => {
   const { token } = useAuth();
@@ -118,7 +118,7 @@ const TransferenciaSources = () => {
         };
   
         // Exporta usando el hook con las columnas deseadas.
-        exportWorksheet(worksheetData, `TransferenciaSource_${transferenciaId}.xlsx`, 
+        exportWorksheet(worksheetData, `TransferenciaSource_${data.header.consecutivo}.xlsx`, 
           ["SKU", "Cantidad", "Bodega"]
         );
         toast({
@@ -181,16 +181,30 @@ const TransferenciaSources = () => {
                 <TableCell>{src.descripcion}</TableCell>
                 <TableCell>{src.nombre_responsable}</TableCell>
                 <TableCell>{src.fecha}</TableCell>
-                <TableCell>{estadoLabel[src.estado]}</TableCell>
+                <TableCell><div
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                          src.estado === "n"
+                            ? "bg-blue-100 text-blue-800"
+                            : src.estado === "c"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
+                        {src.estado === "n"
+                          ? "Nuevo"
+                          : src.estado === "c"
+                          ? "Procesando"
+                          : "Completado"}
+                      </div></TableCell>
                 <TableCell className="text-right space-x-2">
-                          <Button
-            variant="ghost"
-            size="sm"
-            title="Ver registro"
-            onClick={() => handleView(src)}
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
+                <Button
+                  variant="ghost" 
+                  size="sm"
+                  title="Ver registro"
+                  onClick={() => handleView(src)}
+                >
+                  <Edit className="h-4 w-4" />
+              </Button>
                 <Button
                   variant="ghost"
                   size="sm"

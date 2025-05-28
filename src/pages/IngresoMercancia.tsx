@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Edit } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -13,9 +13,18 @@ import {
 } from "@/components/ui/table";
 import { useIngresoMercanciaApi } from "@/hooks/useIngresoMercanciaApi";
 import { format } from "date-fns";
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { toast } from "sonner";
 import { useExportWorksheet } from "@/hooks/useExportWorksheet";
+
 interface Source {
   source_code: string;
   name: string;
@@ -31,20 +40,41 @@ const IngresoMercancia = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-  const { loading, getIngresoMercancia, getSources,exportIngresoExcel } = useIngresoMercanciaApi();
+  const { loading, getIngresoMercancia, getSources, exportIngresoExcel } = useIngresoMercanciaApi();
   const [ingresos, setIngresos] = useState<any[]>([]);
+  const [allIngresos, setAllIngresos] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [sources, setSources] = useState<Source[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterEstado, setFilterEstado] = useState("all");
+  // New date range filters
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const { exportWorksheet } = useExportWorksheet();
 
+  // Fetch paginated records
   useEffect(() => {
-    fetchIngresos();
+    if (!searchTerm && filterEstado === "all" && !startDate && !endDate) {
+      fetchIngresos();
+    }
+  }, [currentPage, searchTerm, filterEstado, startDate, endDate]);
+
+  // Fetch all records for search/filtering purposes.
+  useEffect(() => {
+    fetchAllIngresos();
     fetchSources();
-  }, [currentPage]);
+  }, []);
 
   const fetchIngresos = async () => {
     const response = await getIngresoMercancia(currentPage, pageSize);
     setIngresos(response.items);
     setTotalCount(response.total_count);
+  };
+
+  const fetchAllIngresos = async () => {
+    // Fetch all records using a large pageSize
+    const response = await getIngresoMercancia(1, 10000);
+    setAllIngresos(response.items);
   };
 
   const fetchSources = async () => {
@@ -53,12 +83,12 @@ const IngresoMercancia = () => {
   };
 
   const getSourceName = (sourceCode: string) => {
-    const source = sources.find(s => s.source_code === sourceCode);
+    const source = sources.find((s) => s.source_code === sourceCode);
     return source ? source.name : sourceCode;
   };
 
   const handleNewClick = () => {
-    navigate('/dashboard/ingreso-mercancia/nuevo');
+    navigate("/dashboard/ingreso-mercancia/nuevo");
   };
 
   const totalPages = Math.ceil(totalCount / pageSize);
@@ -67,101 +97,80 @@ const IngresoMercancia = () => {
     setCurrentPage(page);
   };
 
-  const handleExport = async (ingresoId: number) => {
-   try {
-    const result = await exportIngresoExcel(ingresoId);
-     if (result && result.length > 0) {
-       const data = result[0];
-       const worksheetData = {
-         header: {
-           "Source": data.header.source,
-           "Fecha": data.header.fecha,
-           "Consecutivo": data.header.consecutivo,
-           "Responsable": data.header.nombre_responsable,
-           //"Estado": data.header.estado,
-           "Descripción": data.header.descripcion || ""
-         },
-         table: data.table
-       };
-       // Call the hook's exportWorksheet function with custom table headers.
-       exportWorksheet(worksheetData, `IngresoMercancia_${ingresoId}.xlsx`, ["SKU", "Cantidad", "Bodega"]);
-       toast.success("Exportación exitosa");
-     } else {
-       toast.error("No se encontraron datos para exportar");
-     }
-   } catch (error) {
-     console.error("Error al exportar:", error);
-     toast.error("Error al exportar");
-   }
- };
-
   const renderPaginationItems = () => {
     const items = [];
-    const maxVisiblePages = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    if (startPage > 1) {
-      items.push(
-        <PaginationItem key="1">
-          <PaginationLink onClick={() => handlePageChange(1)}>1</PaginationLink>
-        </PaginationItem>
-      );
-      if (startPage > 2) {
-        items.push(
-          <PaginationItem key="ellipsis-start">
-            <PaginationEllipsis />
-          </PaginationItem>
-        );
-      }
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
+    for (let i = 1; i <= totalPages; i++) {
       items.push(
         <PaginationItem key={i}>
-          <PaginationLink
-            onClick={() => handlePageChange(i)}
-            isActive={currentPage === i}
-          >
+          <PaginationLink onClick={() => handlePageChange(i)} active={i === currentPage}>
             {i}
           </PaginationLink>
         </PaginationItem>
       );
     }
-
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) {
-        items.push(
-          <PaginationItem key="ellipsis-end">
-            <PaginationEllipsis />
-          </PaginationItem>
-        );
-      }
-      items.push(
-        <PaginationItem key={totalPages}>
-          <PaginationLink onClick={() => handlePageChange(totalPages)}>
-            {totalPages}
-          </PaginationLink>
-        </PaginationItem>
-      );
-    }
-
     return items;
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="w-8 h-8 border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-  const { exportWorksheet } = useExportWorksheet();
-  
+  // Determine which ingresos to show:
+  // If any filters (search, estado or date range) are active use the full list
+  const filteredIngresos =
+    searchTerm || filterEstado !== "all" || startDate || endDate
+      ? allIngresos.filter((ingreso) => {
+          // Filter by search and estado
+          const matchSearch =
+            ingreso.consecutivo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            ingreso.nombre_responsable.toLowerCase().includes(searchTerm.toLowerCase());
+          const matchEstado = filterEstado === "all" || ingreso.estado === filterEstado;
+          let matchDate = true;
+          // Date filtering: convert ingreso.fecha ("YYYY-MM-DD HH:mm:ss") to valid ISO format
+          const ingresoDate = new Date(ingreso.fecha.replace(" ", "T"));
+          const ingresoDateOnly = ingresoDate.toISOString().split("T")[0];
+          
+          // Validate that the start date is not greater than the end date
+          if (startDate && endDate && startDate > endDate) {
+            matchDate = false;
+          }
+          if (startDate) {
+            matchDate = matchDate && ingresoDateOnly >= startDate;
+          }
+          if (endDate) {
+            matchDate = matchDate && ingresoDateOnly <= endDate;
+          }
+
+          return matchSearch && matchEstado && matchDate;
+        })
+      : ingresos;
+
+  const handleExport = async (ingresoId: number) => {
+    try {
+      const result = await exportIngresoExcel(ingresoId);
+      if (result && result.length > 0) {
+        const data = result[0];
+        const worksheetData = {
+          header: {
+            "Source": data.header.source,
+            "Fecha": data.header.fecha,
+            "Consecutivo": data.header.consecutivo,
+            "Responsable": data.header.nombre_responsable,
+            "Descripción": data.header.descripcion || ""
+          },
+          table: data.table,
+        };
+        exportWorksheet(
+          worksheetData,
+          `IngresoMercancia_${data.header.consecutivo}.xlsx`,
+          ["SKU", "Cantidad", "Bodega"]
+        );
+        toast.success("Exportación exitosa");
+      } else {
+        toast.error("No se encontraron datos para exportar");
+      }
+    } catch (error) {
+      console.error("Error al exportar:", error);
+      toast.error("Error al exportar");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -171,15 +180,60 @@ const IngresoMercancia = () => {
             Gestione el ingreso de mercancías en el sistema
           </p>
         </div>
-        <Button 
-          className="bg-ecommerce-500 hover:bg-ecommerce-600"
-          onClick={handleNewClick}
+        <div>
+          <Button
+            className="bg-ecommerce-500 hover:bg-ecommerce-600"
+            onClick={handleNewClick}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nuevo Ingreso
+          </Button>
+        </div>
+      </div>
+      {/* Search, estado and date filters */}
+      <div className="flex gap-4 items-center mt-4">
+        <input
+          type="text"
+          placeholder="Buscar por consecutivo o responsable"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="border rounded p-2"
+        />
+        <select
+          value={filterEstado}
+          onChange={(e) => setFilterEstado(e.target.value)}
+          className="border rounded p-2"
         >
-          <Plus className="w-4 h-4 mr-2" />
-          Nuevo Ingreso
+          <option value="all">Todos los estados</option>
+          <option value="n">Nuevo</option>
+          <option value="p">Procesando</option>
+          <option value="c">Completado</option>
+        </select>
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className="border rounded p-2"
+        />
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          className="border rounded p-2"
+        />
+        <Button
+          variant="outline"
+          onClick={() => {
+            setSearchTerm("");
+            setFilterEstado("all");
+            setStartDate("");
+            setEndDate("");
+          }}
+          className="border rounded p-2"
+        >
+          Reiniciar filtros
         </Button>
       </div>
-
       <Card>
         <CardContent className="p-6">
           <Table>
@@ -196,102 +250,104 @@ const IngresoMercancia = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {ingresos.length > 0 ? (
-                ingresos.map((ingreso) => (
+              {filteredIngresos.length > 0 ? (
+                filteredIngresos.map((ingreso) => (
                   <TableRow
-                      key={ingreso.ingresomercancia_id}
-                      className="hover:bg-gray-50"
-                    >
-                      <TableCell>{ingreso.consecutivo}</TableCell>
-                      <TableCell>{getSourceName(ingreso.source)}</TableCell>
-                      <TableCell>{ingreso.nombre_responsable}</TableCell>
-                      <TableCell>{ingreso.descripcion || '-'}</TableCell>
-                      <TableCell>
-                        {format(new Date(ingreso.fecha), "dd/MM/yyyy")}
-                      </TableCell>
-                      <TableCell>
-                        <div
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                            ingreso.estado === "n"
-                              ? "bg-blue-100 text-blue-800"
-                              : ingreso.estado === "p"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-green-100 text-green-800"
-                          }`}
-                        >
-                          {ingreso.estado === "n"
-                            ? "Nuevo"
+                    key={ingreso.ingresomercancia_id}
+                    className="hover:bg-gray-50"
+                  >
+                    <TableCell>{ingreso.consecutivo}</TableCell>
+                    <TableCell>{getSourceName(ingreso.source)}</TableCell>
+                    <TableCell>{ingreso.nombre_responsable}</TableCell>
+                    <TableCell>{ingreso.descripcion || "-"}</TableCell>
+                    <TableCell>{format(new Date(ingreso.fecha), "dd/MM/yyyy")}</TableCell>
+                    <TableCell>
+                      <div
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                          ingreso.estado === "n"
+                            ? "bg-blue-100 text-blue-800"
                             : ingreso.estado === "p"
-                            ? "Procesando"
-                            : "Completado"}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Button 
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/dashboard/ingreso-mercancia/${ingreso.ingresomercancia_id}`);
-                          }}
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
+                        {ingreso.estado === "n"
+                          ? "Nuevo"
+                          : ingreso.estado === "p"
+                          ? "Procesando"
+                          : "Completado"}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost" 
+                        size="sm"
+                        title="Ver registro"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/dashboard/ingreso-mercancia/${ingreso.ingresomercancia_id}`);
+                        }}
+                      >
+                       <Edit className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!(ingreso.estado === "c" || ingreso.estado === "p")}
+                        className={`flex items-center gap-1 text-green-600 hover:text-green-800 ${
+                          !(ingreso.estado === "c" || ingreso.estado === "p") ? "cursor-not-allowed opacity-50" : ""
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleExport(ingreso.ingresomercancia_id);
+                        }}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </Button>
-                      </TableCell>
-                      <TableCell>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          disabled={!(ingreso.estado === "c" || ingreso.estado === "p")} 
-                          className={`flex items-center gap-1 text-green-600 hover:text-green-800 ${
-                            !(ingreso.estado === "c" || ingreso.estado === "p") ? "cursor-not-allowed opacity-50" : ""
-                          }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleExport(ingreso.ingresomercancia_id);
-                          }}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12v9m0-9l-3 3m3-3l3 3M12 3v9" />
-                          </svg>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12v9m0-9l-3 3m3-3l3 3M12 3v9" />
+                        </svg>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4">
+                  <TableCell colSpan={8} className="text-center py-4">
                     No se encontraron ingresos
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
-
-          {totalPages > 1 && (
-            <div className="mt-4 flex justify-center">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                      className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                    />
-                  </PaginationItem>
-                  {renderPaginationItems()}
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          )}
+          {!(searchTerm || filterEstado !== "all" || startDate || endDate) &&
+            totalPages > 1 && (
+              <div className="mt-4 flex justify-center">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                    {renderPaginationItems()}
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
         </CardContent>
       </Card>
     </div>
