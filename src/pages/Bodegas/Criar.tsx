@@ -128,7 +128,6 @@ const CriarBodega = () => {
                   step="0.1"
                   value={formData.bodega_altura}
                   onChange={handleChange}
-                  required
                 />
               </div>
 
@@ -141,7 +140,6 @@ const CriarBodega = () => {
                   step="0.1"
                   value={formData.bodega_largo}
                   onChange={handleChange}
-                  required
                 />
               </div>
 
@@ -154,7 +152,6 @@ const CriarBodega = () => {
                   step="0.1"
                   value={formData.bodega_profundidad}
                   onChange={handleChange}
-                  required
                 />
               </div>
 
@@ -166,7 +163,6 @@ const CriarBodega = () => {
                   type="number"
                   value={formData.bodega_limite}
                   onChange={handleChange}
-                  required
                 />
               </div>
             </div>
