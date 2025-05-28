@@ -10,7 +10,7 @@ import { toast } from "sonner";
 const CriarBodega = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { getSources, createBodega } = useIngresoMercanciaApi();
+  const { getSources, createBodega, getBodegas } = useIngresoMercanciaApi();
   const [sources, setSources] = useState([]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -44,6 +44,18 @@ const CriarBodega = () => {
     setLoading(true);
 
     try {
+      // Buscar todas as posições da source selecionada
+      const bodegas = await getBodegas(formData.bodega_source);
+      // Verificar duplicidade de nome (case-insensitive, trim)
+      const nomeNovo = formData.bodega_nombre.trim().toLowerCase();
+      const nomeDuplicado = bodegas.some(
+        (b) => b.bodega_nombre.trim().toLowerCase() === nomeNovo
+      );
+      if (nomeDuplicado) {
+        toast.error("Já existe uma posição com esse nome nesta source!");
+        setLoading(false);
+        return;
+      }
       const bodegaData = {
         bodega: {
           ...formData,
@@ -53,7 +65,6 @@ const CriarBodega = () => {
           bodega_limite: parseInt(formData.bodega_limite)
         }
       };
-
       await createBodega(bodegaData);
       toast.success("Bodega criada com sucesso!");
       navigate("/dashboard/bodegas/listar");
