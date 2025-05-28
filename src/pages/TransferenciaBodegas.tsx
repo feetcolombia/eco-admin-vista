@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { TransferenciaBodega, TransferenciaBodegaResponse } from '@/api/types/transferTypes';
-import { Plus, Eye } from 'lucide-react';
+import { Plus, Edit } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Pagination,
@@ -128,9 +128,9 @@ const TransferenciaBodegas = () => {
       case 'n':
         return 'Nuevo';
       case 'f':
-        return 'Finalizado';
+        return 'Completado';
       case 'c':
-        return 'Contando';
+        return 'Procesando';
       default:
         return 'Desconhecido';
     }
@@ -251,7 +251,7 @@ const TransferenciaBodegas = () => {
         // Pass the header names accordingly
         exportWorksheet(
           worksheetData,
-          `TransferenciaBodega_${transferenciaId}.xlsx`,
+          `TransferenciaBodega_${data.header.codigo}.xlsx`,
           ["SKU", "Cantidad Transferir", "Cantidad Disponible", "Observación", "Bodega Origen", "Bodega Destino"]
         );
         toast.success("Exportación exitosa");
@@ -343,9 +343,10 @@ const TransferenciaBodegas = () => {
                   <Button 
                     variant="ghost" 
                     size="sm"
+                    title="Ver registro"
                     onClick={() => handleViewDetails(transferencia.transferencia_bodega_id)}
                   >
-                    <Eye className="h-4 w-4" />
+                    <Edit className="h-4 w-4" />
                   </Button>
                 </TableCell>
                 <TableCell>

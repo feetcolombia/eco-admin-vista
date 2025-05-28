@@ -170,7 +170,7 @@ const IngresoMercanciaDetalle = () => {
       // Configurar o som
       oscillator.type = success ? 'sine' : 'square';
       oscillator.frequency.setValueAtTime(success ? 800 : 400, audioContext.currentTime);
-      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(0.8, audioContext.currentTime);
       
       // Conectar os nós
       oscillator.connect(gainNode);
