@@ -70,7 +70,7 @@ const CriarBodega = () => {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Nueva Posición</h1>
-          <p className="text-muted-foreground">Criar uma nova bodega no sistema</p>
+          <p className="text-muted-foreground">Crear una nueva Posición en el sistema</p>
         </div>
       </div>
 

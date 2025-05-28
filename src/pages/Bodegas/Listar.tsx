@@ -201,8 +201,8 @@ const ListarBodegas = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Bodegas</h1>
-          <p className="text-muted-foreground">Administre as bodegas do sistema</p>
+          <h1 className="text-2xl font-bold">Posiciones</h1>
+          <p className="text-muted-foreground">Administre las ubicaciones físicas del inventario dentro del sistema.</p>
         </div>
         <Button 
           className="flex items-center gap-2"
