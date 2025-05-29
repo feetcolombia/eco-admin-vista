@@ -15,6 +15,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { transferSourcesApi } from '@/api/transferSourcesApi';
 
 interface IngresoMercanciaProducto {
   ingreso_mercancia_producto_id: string;
@@ -102,8 +103,7 @@ const IngresoMercanciaDetalle = () => {
   const [scannedItems, setScannedItems] = useState<ScannedItem[]>([]);
   const [totalScanned, setTotalScanned] = useState(0);
   const [sources, setSources] = useState<Source[]>([]);
-
-  const { loading, getIngresoById, getBodegas, getBarcodeData, saveIngresoMercanciaProductos, getSources } = useIngresoMercanciaApi();
+  const { loading, getIngresoById, getBodegas, getBarcodeData, saveIngresoMercanciaProductos, getSources,getBarcodeSourceData } = useIngresoMercanciaApi();
 
   useEffect(() => {
     if (id) {
@@ -143,7 +143,8 @@ const IngresoMercanciaDetalle = () => {
       const data = await getBodegas(ingreso.source);
       setBodegas(data);
       if (data.length > 0) {
-        setSelectedBodega(data[0].bodega_nombre);
+        //setSelectedBodega(data[0].bodega_nombre);
+        setSelectedBodega(String(data[0].bodega_id));
       }
     }
   };
@@ -189,39 +190,49 @@ const IngresoMercanciaDetalle = () => {
     if (!barcode.trim()) return;
 
     try {
-      const response = await getBarcodeData(barcode);
-      
-      // Verificar se o produto já existe com o mesmo SKU e mesma posição
-      const existingItemIndex = scannedItems.findIndex(
-        item => item.sku === response.product_sku && item.position === selectedBodega
-      );
+        const response = await transferSourcesApi.lookupBarcode(
+            barcode,
+            ingreso.source,
+            selectedBodega,
+            true,
+        );
+        // Verificar si la respuesta contiene errores
+        if (response[0].errors && response[0].errors.length > 0) {
+            toast.error(response[0].errors.join(", "));
+            playBeep(false);
+            return;
+        }
+        // Buscar la bodega seleccionada para obtener su nombre
+        const selectedBodegaObj = bodegas.find(b => String(b.bodega_id) === selectedBodega);
+        const bodegaName = selectedBodegaObj ? selectedBodegaObj.bodega_nombre : selectedBodega;
 
-      if (existingItemIndex !== -1) {
-        // Se o produto já existe, apenas incrementa a quantidade
-        setScannedItems(prev => prev.map((item, index) => {
-          if (index === existingItemIndex) {
-            return { ...item, quantity: item.quantity + 1 };
+        const existingItemIndex = scannedItems.findIndex(
+            item => item.sku === response[0].product_sku && item.position === bodegaName
+        );
+        if (existingItemIndex !== -1) {
+            // Si el producto ya existe, incrementar la cantidad
+            setScannedItems(prev => prev.map((item, index) => {
+                if (index === existingItemIndex) {
+                    return { ...item, quantity: item.quantity + 1 };
+                }
+                return item;
+            }));
+            playBeep(true);
+        } else {
+          // Si el producto no existe, agregarlo como nuevo
+          const newItem: ScannedItem = {
+            sku: response[0].product_sku,
+            position: bodegaName,
+            quantity: 1
+          };
+          setScannedItems(prev => [...prev, newItem]);
+            playBeep(true);
           }
-          return item;
-        }));
-        playBeep(true);
-      } else {
-        // Se o produto não existe, adiciona como novo
-        const newItem: ScannedItem = {
-          sku: response.product_sku,
-          position: selectedBodega,
-          quantity: 1
-        };
-        setScannedItems(prev => [...prev, newItem]);
-        playBeep(true);
+          setTotalScanned(prev => prev + 1);
+              setBarcode("");
+      } catch (error) {
+        playBeep(false);
       }
-
-      setTotalScanned(prev => prev + 1);
-      setBarcode("");
-    } catch (error) {
-      playBeep(false);
-      // O toast de erro já é mostrado no hook
-    }
   };
 
   const handleRemoveItem = (sku: string, position: string) => {
@@ -374,18 +385,18 @@ const IngresoMercanciaDetalle = () => {
                 />
               </div>
               <div className="w-48">
-                <Select value={selectedBodega} onValueChange={setSelectedBodega} disabled={ingreso.estado === 'c' || ingreso?.es_masiva === 'si'}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a posição" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {bodegas.map((bodega) => (
-                      <SelectItem key={bodega.bodega_id} value={bodega.bodega_nombre}>
-                        {bodega.bodega_nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <Select value={selectedBodega} onValueChange={setSelectedBodega} disabled={ingreso.estado === 'c' || ingreso?.es_masiva === 'si'}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccione una posición" />
+              </SelectTrigger>
+              <SelectContent>
+                {bodegas.map((bodega) => (
+                  <SelectItem key={bodega.bodega_id} value={String(bodega.bodega_id)}>
+                    {bodega.bodega_nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
               </div>
             </div>
             <div className="text-lg font-bold">

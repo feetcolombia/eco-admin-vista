@@ -203,7 +203,8 @@ const ExecutarTransferenciaSourceIngreso = () => {
           const items = await transferSourcesApi.lookupBarcode(
             barcode,
             transferencia.source_origen,
-            bodegaId
+            bodegaId,
+            false
           );
     
           if (items.length === 0 || (items[0].errors?.length ?? 0) > 0) {
@@ -367,7 +368,7 @@ const ExecutarTransferenciaSourceIngreso = () => {
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Ejecutar Transferencia</h1>
-        <span className="text-sm text-gray-500">(Ingreso de productos Source):<strong>{transferencia.source_destino}</strong> </span>
+        <span className="text-sm text-gray-500">(Ingreso de productos Source):<strong>{transferencia.source_destino_name}</strong> </span>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -402,12 +403,8 @@ const ExecutarTransferenciaSourceIngreso = () => {
         <div className="grid grid-cols-2 gap-6">
           <div>
             <div className="mb-4">
-              <Label className="text-sm text-gray-500">ID</Label>
-              <div className="font-medium">{transferencia.transferencia_source_id}</div>
-            </div>
-            <div className="mb-4">
               <Label className="text-sm text-gray-500">Source Origen</Label>
-              <div className="font-medium">{transferencia.source_origen}</div>
+              <div className="font-medium">{transferencia.source_origen_name}</div>
             </div>
             <div className="mb-4">
               <Label className="text-sm text-gray-500">Usuario Responsable</Label>
@@ -425,7 +422,7 @@ const ExecutarTransferenciaSourceIngreso = () => {
             </div>
             <div className="mb-4">
               <Label className="text-sm text-gray-500">Source Destino</Label>
-              <div className="font-medium">{transferencia.source_destino}</div>
+              <div className="font-medium">{transferencia.source_destino_name}</div>
             </div>
             <div className="mb-4">
               <Label className="text-sm text-gray-500">Estado</Label>

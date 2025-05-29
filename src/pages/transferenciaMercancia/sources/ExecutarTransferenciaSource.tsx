@@ -145,7 +145,8 @@ const ExecutarTransferenciaSource = () => {
           const items = await transferSourcesApi.lookupBarcode(
             barcode,
             transferencia.source_origen,
-            bodegaId
+            bodegaId,
+            false // normal: false para buscar en productos de ingreso
           );
     
           if (items.length === 0 || (items[0].errors?.length ?? 0) > 0) {
@@ -340,7 +341,7 @@ const handleCompletar = async () => {
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Ejecutar Transferencia</h1>
-        <span className="text-sm text-gray-500">(Salida de productos Source):<strong>{transferencia.source_origen}</strong> </span>
+        <span className="text-sm text-gray-500">(Salida de productos Source):<strong>{transferencia.source_origen_name}</strong> </span>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -376,12 +377,8 @@ const handleCompletar = async () => {
         <div className="grid grid-cols-2 gap-6">
           <div>
             <div className="mb-4">
-              <Label className="text-sm text-gray-500">ID</Label>
-              <div className="font-medium">{transferencia.transferencia_source_id}</div>
-            </div>
-            <div className="mb-4">
               <Label className="text-sm text-gray-500">Source Origen</Label>
-              <div className="font-medium">{transferencia.source_origen}</div>
+              <div className="font-medium">{transferencia.source_origen_name}</div>
             </div>
             <div className="mb-4">
               <Label className="text-sm text-gray-500">Usuario Responsable</Label>
@@ -391,6 +388,10 @@ const handleCompletar = async () => {
               <Label className="text-sm text-gray-500">Descripción</Label>
               <div className="font-medium">{transferencia.descripcion}</div>
             </div>
+            <div>
+              <Label className="text-sm text-gray-500">Es másiva</Label>
+              <div className="font-medium">{transferencia.es_masiva === 's' ? 'Si' : 'No'}</div>
+            </div>
           </div>
           <div>
             <div className="mb-4">
@@ -399,7 +400,7 @@ const handleCompletar = async () => {
             </div>
             <div className="mb-4">
               <Label className="text-sm text-gray-500">Source Destino</Label>
-              <div className="font-medium">{transferencia.source_destino}</div>
+              <div className="font-medium">{transferencia.source_destino_name}</div>
             </div>
             <div className="mb-4">
               <Label className="text-sm text-gray-500">Estado</Label>
@@ -411,7 +412,7 @@ const handleCompletar = async () => {
             </div>
             <div className="mb-4">
               <Label className="text-sm text-gray-500">Fecha</Label>
-              <div className="font-medium">{transferencia.fecha}</div>
+              <div className="font-medium"> {transferencia.fecha ? transferencia.fecha.split(" ")[0] : 'N/A'}</div>
             </div>
           </div>
         </div>
@@ -451,7 +452,7 @@ const handleCompletar = async () => {
           <div className="flex gap-4 items-center max-w-xl">
             <Input
               type="text"
-              placeholder="Escanear o ingresar código de barras"
+              placeholder="Escanear o ingresar código de barras o Sku del producto"
               value={barcode}
               onChange={(e) => setBarcode(e.target.value)}
               className="flex-1"

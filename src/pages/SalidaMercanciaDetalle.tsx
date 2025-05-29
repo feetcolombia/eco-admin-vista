@@ -389,7 +389,7 @@ const SalidaMercanciaDetalle = () => {
 
           <form onSubmit={handleBarcodeSubmit} className="w-full">
             <Input
-              placeholder="Escanear o digitar código de barras"
+              placeholder="Escanear o digitar código de barras o Sku del producto"
               value={barcode}
               onChange={(e) => setBarcode(e.target.value)}
               onKeyDown={async (e: React.KeyboardEvent<HTMLInputElement>) => {

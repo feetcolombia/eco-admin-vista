@@ -83,6 +83,7 @@ export const transferBodegasApi = {
       id_bodega_destino: number;
       descripcion: string;
       estado: string;
+      trasferencia_total: number;
     };
   }): Promise<TransferenciaBodegaResponse[]> => {
     const resp = await apiClient.post<TransferenciaBodegaResponse[]>(
