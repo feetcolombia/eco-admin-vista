@@ -294,6 +294,31 @@ export const useIngresoMercanciaApi = () => {
     }
   };
 
+  const getBarcodeSourceData = async (barcode: string): Promise<BarcodeResponse | null> => {
+      setLoading(true);
+      try {
+        const url = `${BASE_URL}/transferencia-source/barcode-lookup?barcode=${barcode}&sourceOrigen=default&bodegaId=667`;
+        const response = await fetch(url, {
+          method: "POST",
+          headers
+        });
+        
+        if (!response.ok) throw new Error('Erro ao buscar dados do código de barras');
+        
+        const data = await response.json();
+        return data && data.length > 0 ? data[0] : null;
+      } catch (error) {
+        toast({
+          title: "Erro",
+          description: "Erro ao buscar dados do código de barras. Tente novamente.",
+          variant: "destructive",
+        });
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    };
+
   const saveIngresoMercanciaProductos = async (productos: IngresoMercanciaProductoPayload[]): Promise<boolean> => {
     setLoading(true);
     try {
@@ -519,6 +544,7 @@ export const useIngresoMercanciaApi = () => {
     getBodegaById,
     updateBodega,
     validateCsv,
-    exportIngresoExcel
+    exportIngresoExcel,
+    getBarcodeSourceData,
   };
 }; 

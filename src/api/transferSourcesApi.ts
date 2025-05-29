@@ -87,12 +87,13 @@ export const transferSourcesApi = {
       lookupBarcode: async (
         barcode: string,
         sourceOrigen: string,
-        bodegaId: number | string
+        bodegaId: number | string,
+        normal:boolean
       ): Promise<BarcodeLookupItem[]> => {
         const resp = await apiClient.get<BarcodeLookupItem[]>(
           '/rest/V1/transferencia-source/barcode-lookup',
           {
-            params: { barcode, sourceOrigen, bodegaId },
+            params: { barcode, sourceOrigen, bodegaId, normal },
             headers: getAuthHeaders()
           }
         );

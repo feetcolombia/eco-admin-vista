@@ -51,11 +51,14 @@ const NovaTransferenciaBodega = () => {
   const [formData, setFormData] = useState({
     origem: '',
     descricao: '',
+    transferenciaMultiple: '', // New field: placeholder will force selection
     cargaMasiva: 'n',
+    usuarioResponsable: '', // New field for Usuario responsable
     arquivo: null as File | null,
     bodegaOrigem: '',
     bodegaDestino: '',
   });
+
   const [csvValidationResult, setCsvValidationResult] = useState<{ sku: string; error: string }[] | null>(null);
 
   useEffect(() => {
@@ -120,7 +123,8 @@ const NovaTransferenciaBodega = () => {
       }
     }
     // si NO es carga masiva, validar bodegas
-    if (formData.cargaMasiva === 'n') {
+    console.log('formData.cargaMasiva', formData.transferenciaMultiple);
+    if (formData.cargaMasiva === 'n' && formData.transferenciaMultiple === '0')  {
       if (!formData.bodegaOrigem) {
         toast({ variant: 'destructive', title: 'Error', description: 'Bodega origen es obligatoria.' })
         return
@@ -140,14 +144,15 @@ const NovaTransferenciaBodega = () => {
           soruce: formData.origem,
           source: formData.origem,
           responsable: "1",
-          nombre_responsable: "admin",
+          nombre_responsable: formData.usuarioResponsable,
           id_bodega_origen: formData.cargaMasiva === 'n' ? parseInt(formData.bodegaOrigem) : 0,
           id_bodega_destino: formData.cargaMasiva === 'n' ? parseInt(formData.bodegaDestino) : 0,
           descripcion: formData.descricao,
           estado: "n",
           es_masiva: formData.cargaMasiva,
           created_at: format(date, "yyyy-MM-dd HH:mm:ss"),
-          historico: "n"
+          historico: "n",
+          trasferencia_total: formData.transferenciaMultiple,
         }
       };
 
@@ -193,7 +198,7 @@ const NovaTransferenciaBodega = () => {
           const data = {
             csv_file: csvText,
             source: formData.origem,
-            nombre_responsable: "admin",
+            nombre_responsable: formData.usuarioResponsable,
             fecha: format(date, "yyyy-MM-dd HH:mm:ss"),
             descripcion: formData.descricao,
             responsable: 1
@@ -310,6 +315,19 @@ const NovaTransferenciaBodega = () => {
               </PopoverContent>
             </Popover>
           </div>
+          
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Usuario responsable<span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="text"
+              value={formData.usuarioResponsable}
+              onChange={(e) => setFormData(prev => ({ ...prev, usuarioResponsable: e.target.value }))}
+              placeholder="Ingresar usuario responsable"
+              required
+            />
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -322,75 +340,96 @@ const NovaTransferenciaBodega = () => {
               className="min-h-[100px]"
             />
           </div>
-
-          <div>
+          
+          <div className="mt-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Realizar Carga Masiva<span className="text-red-500">*</span>
+              Transferencia Multiple<span className="text-red-500">*</span>
             </label>
             <Select
-              value={formData.cargaMasiva}
-              onValueChange={(value) => setFormData(prev => ({ 
-                ...prev, 
-                cargaMasiva: value,
-                bodegaOrigem: '',
-                bodegaDestino: '',
-              }))}
+              value={formData.transferenciaMultiple}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, transferenciaMultiple: value }))}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Seleccione una opción" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="s">Si</SelectItem>
-                <SelectItem value="n">No</SelectItem>
+                <SelectItem value="1">Si</SelectItem>
+                <SelectItem value="0">No</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          {formData.origem && formData.cargaMasiva === 'n' && (
+          {formData.transferenciaMultiple === '0' && (
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bodega origen<span className="text-red-500">*</span>
+                  Realizar Carga Masiva<span className="text-red-500">*</span>
                 </label>
                 <Select
-                  value={formData.bodegaOrigem}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, bodegaOrigem: value }))}
+                  value={formData.cargaMasiva}
+                  onValueChange={(value) => setFormData(prev => ({ 
+                    ...prev, 
+                    cargaMasiva: value,
+                    bodegaOrigem: '',
+                    bodegaDestino: '',
+                  }))}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seleccionar bodega origen" />
+                    <SelectValue placeholder="Seleccione una opción" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="0">Ninguna</SelectItem>
-                    {bodegas.map((bodega) => (
-                      <SelectItem key={bodega.bodega_id} value={String(bodega.bodega_id)}>
-                        {bodega.bodega_nombre}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="s">Si</SelectItem>
+                    <SelectItem value="n">No</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bodega destino<span className="text-red-500">*</span>
-                </label>
-                <Select
-                  value={formData.bodegaDestino}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, bodegaDestino: value }))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seleccionar bodega destino" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">Ninguna</SelectItem>
-                    {bodegas
-                      .filter(bodega => String(bodega.bodega_id) !== formData.bodegaOrigem)
-                      .map((bodega) => (
-                        <SelectItem key={bodega.bodega_id} value={String(bodega.bodega_id)}>
-                          {bodega.bodega_nombre}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {formData.cargaMasiva === 'n' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Bodega origen<span className="text-red-500">*</span>
+                    </label>
+                    <Select
+                      value={formData.bodegaOrigem}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, bodegaOrigem: value }))}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Seleccionar bodega origen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Ninguna</SelectItem>
+                        {bodegas.map((bodega) => (
+                          <SelectItem key={bodega.bodega_id} value={String(bodega.bodega_id)}>
+                            {bodega.bodega_nombre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Bodega destino<span className="text-red-500">*</span>
+                    </label>
+                    <Select
+                      value={formData.bodegaDestino}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, bodegaDestino: value }))}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Seleccionar bodega destino" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Ninguna</SelectItem>
+                        {bodegas
+                          .filter(bodega => String(bodega.bodega_id) !== formData.bodegaOrigem)
+                          .map((bodega) => (
+                            <SelectItem key={bodega.bodega_id} value={String(bodega.bodega_id)}>
+                              {bodega.bodega_nombre}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
             </>
           )}
           {formData.cargaMasiva === 's' && (
