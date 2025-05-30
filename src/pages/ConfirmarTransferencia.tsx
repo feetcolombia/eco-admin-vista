@@ -130,8 +130,8 @@ const ConfirmarTransferencia = () => {
               <p className="font-medium">{transferencia.es_masiva === "s" ? "-" : transferencia.nombre_bodega_destino}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">ID Transferencia:</p>
-              <p className="font-medium">{transferencia.transferencia_bodega_id}</p>
+              <p className="text-sm text-gray-500">Consecutivo:</p>
+              <p className="font-medium">{transferencia.codigo}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Es masiva:</p>
