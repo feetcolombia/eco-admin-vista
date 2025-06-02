@@ -6,15 +6,19 @@ import { useToast } from '@/components/ui/use-toast';
 import { transferBodegasApi, Source } from '@/api/transferBodegasApi';
 
 interface Produto {
-  transferencia_productos_id: string;
+  transferencia_productos_id?: string;
   cantidad_transferir: string;
   cantidad_disponible: string;
   observacion: string;
-  created_at: string;
-  transferencia_bodega_id: string;
-  id_producto: string;
+  created_at?: string;
+  transferencia_bodega_id?: string;
+  id_producto?: string;
   sku: string;
+  // Campo adicional para secciones
+  bodega?: string;
+  bodega_destino?: string;
 }
+
 const ConfirmarTransferencia = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -22,6 +26,7 @@ const ConfirmarTransferencia = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [transferencia, setTransferencia] = useState<any>(null);
+  const [sections, setSections] = useState<Produto[][]>([]);
 
   useEffect(() => {
     fetchTransferencia();
@@ -31,7 +36,37 @@ const ConfirmarTransferencia = () => {
     try {
       const data = await transferBodegasApi.getTransferencia(id!, token);
       if (data) {
-        setTransferencia(data[1]);
+        const t = data[1];
+        setTransferencia(t);
+        
+        // Si la transferencia es total, se extraen las secciones de productos
+        if (t.trasferencia_total === "1") {
+          const _sections: Produto[][] = [];
+          // Recorrer cada propiedad del objeto t para identificar secciones
+          Object.entries(t).forEach(([key, value]) => {
+            if (key.startsWith("productos_seccion_") && value && typeof value === 'object') {
+              // En este caso, value es un objeto que contiene claves numéricas para los productos
+              const sectionProducts: Produto[] = [];
+              Object.entries(value).forEach(([k, v]) => {
+                // Si la clave es numérica, se trata de un producto
+                if (!isNaN(parseInt(k))) {
+                  sectionProducts.push({
+                    sku: v.sku,
+                    cantidad_transferir: v.cantidad_transferir,
+                    cantidad_disponible: v.cantidad_disponible,
+                    bodega: value.nombre_bodega_origen || "",
+                    bodega_destino: value.nombre_bodega_destino || ""
+                  });
+                }
+              });
+              // Sólo agregamos la sección si tiene productos
+              if (sectionProducts.length) {
+                _sections.push(sectionProducts);
+              }
+            }
+          });
+          setSections(_sections);
+        }
       }
     } catch (error) {
       toast({
@@ -46,16 +81,24 @@ const ConfirmarTransferencia = () => {
 
   const handleConfirmar = async () => {
     try {
+      // Preparar el payload; si es transferencia total, limpiamos el array de productos
+      const payloadData: any = {
+        ...transferencia,
+        estado: 'f',
+        transferencia_id: transferencia.transferencia_bodega_id,
+      };
+  
+      if (transferencia.trasferencia_total === "1") {
+        payloadData.productos = [];
+      }
+  
       await transferBodegasApi.updateTransferenciaPut({
-          data: {
-            ...transferencia,
-            estado: 'f',
-            transferencia_id: transferencia.transferencia_bodega_id,
-          }
-        });
+        data: payloadData
+      });
+  
       toast({
         title: "Datos guardados",
-        description: "Transferencia finaliza correctamente.",
+        description: "Transferencia finalizada correctamente.",
       });
       navigate('/dashboard/transferencia-mercancia');
     } catch (error) {
@@ -80,10 +123,7 @@ const ConfirmarTransferencia = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Verificación - Confirmar Proceso de Transferencia</h1>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => navigate(-1)}
-          >
+          <Button variant="outline" onClick={() => navigate(-1)}>
             Regresar
           </Button>
           <Button
@@ -100,34 +140,36 @@ const ConfirmarTransferencia = () => {
           </Button>
           <Button
             onClick={() => {
-              const ok = window.confirm(
-                'Esta acción finalizará el proceso y no podrá ser revertida.'
-              )
-              if (!ok) return
-              handleConfirmar()
+              const ok = window.confirm('Esta acción finalizará el proceso y no podrá ser revertida.');
+              if (!ok) return;
+              handleConfirmar();
             }}
             className="bg-ecommerce-500 hover:bg-ecommerce-600"
           >
             Confirmar
-         </Button>
+          </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-6 mb-6">
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold mb-4">Total de Elementos Escaneados</h2>
-          <p className="text-4xl font-bold">{transferencia.productos.length}</p>
+          <p className="text-4xl font-bold">
+            {transferencia.trasferencia_total === "1"
+              ? sections.reduce((total, sec) => total + sec.length, 0)
+              : transferencia.productos.length}
+          </p>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold mb-4">Información de Transferencia</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-gray-500">Bodega Origen:</p>
-              <p className="font-medium">{transferencia.es_masiva === "s" ? "-" : transferencia.nombre_bodega_origen}</p>
+              <p className="font-medium">{transferencia.es_masiva === "s" || transferencia.trasferencia_total === "1" ? "-" : transferencia.nombre_bodega_origen}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Bodega Destino:</p>
-              <p className="font-medium">{transferencia.es_masiva === "s" ? "-" : transferencia.nombre_bodega_destino}</p>
+              <p className="font-medium">{transferencia.es_masiva === "s" || transferencia.trasferencia_total === "1" ? "-" : transferencia.nombre_bodega_destino}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Consecutivo:</p>
@@ -135,34 +177,74 @@ const ConfirmarTransferencia = () => {
             </div>
             <div>
               <p className="text-sm text-gray-500">Es masiva:</p>
-              <p className="font-medium">{transferencia.es_masiva == 's' ? 'Si' : 'No'}</p>
+              <p className="font-medium">{transferencia.es_masiva === 's' ? 'Si' : 'No'}</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad Disponible</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad Transferir</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {transferencia.productos.map((produto) => (
-              <tr key={produto.transferencia_productos_id}>
-                <td className="px-6 py-4 whitespace-nowrap">{produto.sku}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{produto.cantidad_disponible}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{produto.cantidad_transferir}</td>
+      {transferencia.trasferencia_total === "1" ? (
+        <>
+          {sections.map((section, index) => (
+            <div key={index} className="bg-white rounded-lg shadow overflow-hidden mb-6">
+              <h2 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Sección {index}
+              </h2>
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad Disponible</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad Transferir</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bodega Origen</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bodega Destino</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {section.map((produto, i) => (
+                    <tr key={i}>
+                      <td className="px-6 py-4 whitespace-nowrap">{produto.sku}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{produto.cantidad_disponible}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{produto.cantidad_transferir}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{produto.bodega}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{produto.bodega_destino}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+        </>
+      ) : (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  SKU
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Cantidad Disponible
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Cantidad Transferir
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {transferencia.productos.map((produto: Produto) => (
+                <tr key={produto.transferencia_productos_id}>
+                  <td className="px-6 py-4 whitespace-nowrap">{produto.sku}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{produto.cantidad_disponible}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{produto.cantidad_transferir}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
 
-export default ConfirmarTransferencia; 
+export default ConfirmarTransferencia;

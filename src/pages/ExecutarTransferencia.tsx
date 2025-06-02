@@ -151,74 +151,38 @@ const ExecutarTransferencia = () => {
                 // Cuando trasferencia_total es "1", se separan los productos por secciones
                 if (t.trasferencia_total === "1") {
                     const sections: TransferSection[] = [];
-                    // Primero, recorrer las secciones adicionales (productos_seccion_1, productos_seccion_2, etc.)
+                    // Recorrer cada propiedad en t que comience con "productos_seccion_"
                     Object.entries(t).forEach(([key, value]) => {
-                        if (key.startsWith("productos_seccion_")) {
-                            const sectionIndex = parseInt(key.replace("productos_seccion_", ""), 10);
-                            // Ignorar la sección 0, ya que se usará para la primera posición
-                            if (sectionIndex === 0) {
-                                return;
+                        if (key.startsWith("productos_seccion_") && value && typeof value === 'object') {
+                            // Extraer las claves numéricas (los productos)
+                            const numericKeys = Object.keys(value).filter(k => !isNaN(Number(k)));
+                            if (numericKeys.length > 0) {
+                                const sectionProducts: Producto[] = numericKeys.map(k => {
+                                    const p = value[k];
+                                    return {
+                                        id: p.id_producto,
+                                        sku: p.sku,
+                                        quantidade: parseInt(p.cantidad_transferir, 10),
+                                        quantidadeDisponivel: parseInt(p.cantidad_disponible, 10),
+                                        observacion: p.observacion || ''
+                                    };
+                                });
+                                // Tomar el id de la bodega origen y destino desde el primer producto de la sección
+                                const firstProduct = value[numericKeys[0]];
+                                const posicionOrigen = firstProduct.id_bodega_origen || "";
+                                const posicionDestino = firstProduct.id_bodega_destino || "";
+                                sections.push({
+                                    barcode: "",
+                                    error: "",
+                                    produtos: sectionProducts,
+                                    soundEnabled: true,
+                                    totalEscaneado: sectionProducts.reduce((sum, p) => sum + p.quantidade, 0),
+                                    posicionOrigen,
+                                    posicionDestino,
+                                });
                             }
-                            const rawProducts: any[] = Array.isArray(value) ? value : [];
-                            const sectionProducts: Producto[] = rawProducts.map(p => ({
-                                id: p.id_producto,
-                                sku: p.sku,
-                                quantidade: parseInt(p.cantidad_transferir),
-                                quantidadeDisponivel: parseInt(p.cantidad_disponible),
-                                observacion: p.observacion || ''
-                            }));
-                            const posicionOrigen = rawProducts[0]?.id_bodega_origen || "";
-                            const posicionDestino = rawProducts[0]?.id_bodega_destino || "";
-                            sections.push({
-                                barcode: "",
-                                error: "",
-                                produtos: sectionProducts,
-                                soundEnabled: true,
-                                totalEscaneado: sectionProducts.reduce((sum, p) => sum + p.quantidade, 0),
-                                posicionOrigen,
-                                posicionDestino,
-                            });
                         }
                     });
-                    // Ahora, utilizar el array de productos_seccion_0 para la primera sección
-                    if (t["productos_seccion_0"]?.length > 0) {
-                        const rawProducts = Array.isArray(t["productos_seccion_0"]) ? t["productos_seccion_0"] : [];
-                        const mapped: Producto[] = rawProducts.map((p: any) => ({
-                            id: p.id_producto,
-                            sku: p.sku,
-                            quantidade: parseInt(p.cantidad_transferir),
-                            quantidadeDisponivel: parseInt(p.cantidad_disponible),
-                            observacion: p.observacion || ''
-                        }));
-                        // Colocar esta sección en la primera posición
-                        sections.unshift({
-                            barcode: "",
-                            error: "",
-                            produtos: mapped,
-                            soundEnabled: true,
-                            totalEscaneado: mapped.reduce((sum, p) => sum + p.quantidade, 0),
-                            posicionOrigen: rawProducts[0]?.id_bodega_origen || "",
-                            posicionDestino: rawProducts[0]?.id_bodega_destino || ""
-                        });
-                    } else if (t.productos?.length > 0) {
-                        // Si no existe productos_seccion_0, se utiliza el array de productos principal
-                        const mapped: Producto[] = t.productos.map((p: any) => ({
-                            id: p.id_producto,
-                            sku: p.sku,
-                            quantidade: parseInt(p.cantidad_transferir),
-                            quantidadeDisponivel: parseInt(p.cantidad_disponible),
-                            observacion: p.observacion || ''
-                        }));
-                        sections.unshift({
-                            barcode: "",
-                            error: "",
-                            produtos: mapped,
-                            soundEnabled: true,
-                            totalEscaneado: mapped.reduce((sum, p) => sum + p.quantidade, 0),
-                            posicionOrigen: t.id_bodega_origen || "",
-                            posicionDestino: t.id_bodega_destino || ""
-                        });
-                    }
                     if (sections.length > 0) {
                         setTransferSections(sections);
                     }
@@ -348,7 +312,7 @@ const ExecutarTransferencia = () => {
     
             // Si transferencia_total es "1", se toman los id seleccionados para Posición Origen y Destino
             if (transferencia.trasferencia_total === "1") {
-                // Reemplazar la bodega principal con la seleccionada en los selects
+                // Reemplazar la bodega principal con la seleccionada en los selects, convirtiéndolos a número
                 baseData.id_bodega_origen = parseInt(posicionOrigenMain);
                 baseData.id_bodega_destino = parseInt(posicionDestinoMain);
                 
@@ -362,12 +326,10 @@ const ExecutarTransferencia = () => {
                         observacion: p.observacion,
                         sku: p.sku,
                         session: sessionNumber,
-                        id_bodega_origen: section.posicionOrigen,
-                        id_bodega_destino: section.posicionDestino
+                        // Convertir a número el valor de las bodegas de la sección
+                        id_bodega_origen: parseInt(section.posicionOrigen),
+                        id_bodega_destino: parseInt(section.posicionDestino)
                     }));
-                    // Agregar las bodegas seleccionadas para cada sección usando claves dinámicas
-                    // baseData[`id_bodega_origen_sesion_${sessionNumber}`] = section.posicionOrigen;
-                    // baseData[`id_bodega_destino_sesion_${sessionNumber}`] = section.posicionDestino;
                 });
             }
     
@@ -511,8 +473,7 @@ const ExecutarTransferencia = () => {
                                 </Button>
                             )}
                             <Button className="bg-ecommerce-500 hover:bg-ecommerce-600"
-                                onClick={handleCompletar} disabled={!hasDataForCompletar}   >
-                                  
+                                onClick={handleCompletar} disabled={!hasDataForCompletar}>
                                 Completar
                             </Button>
                         </>
@@ -579,135 +540,106 @@ const ExecutarTransferencia = () => {
                 </div>
             </div>
 
-            {/* Sección principal: Sonido, Total Escaneado y selects de bodegas */}
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                    <Switch id="sound" checked={soundEnabled} onCheckedChange={setSoundEnabled}
-                        disabled={transferencia.es_masiva === "s" || transferencia.estado === 'f'} />
-                    <Label htmlFor="sound">Sonido</Label>
-                </div>
-                <div className="text-sm text-gray-500">
-                    Total Escaneado: <span className="font-bold">{totalEscaneado}</span>
-                </div>
-            </div>
-
-            {/* Renderizar selects de bodega solo para transferencia total */}
-            {transferencia.trasferencia_total === "1" && (
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div>
-                        <Label className="text-sm text-gray-500">Posición Origen</Label>
-                        <Select value={posicionOrigenMain} onValueChange={setPosicionOrigenMain}>
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Seleccionar posición origen" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {bodegasForSource.map(b => (
-                                    <SelectItem key={b.bodega_id} value={String(b.bodega_id)}>
-                                        {b.bodega_nombre}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div>
-                        <Label className="text-sm text-gray-500">Posición Destino</Label>
-                        <Select value={posicionDestinoMain} onValueChange={setPosicionDestinoMain}>
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Seleccionar posición destino" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {bodegasForSource.map(b => (
-                                    <SelectItem key={b.bodega_id} value={String(b.bodega_id)}>
-                                        {b.bodega_nombre}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-            )}
-
-            {/* Sección principal: Transferencia de productos (se oculta si ya existe productos_seccion_0) */}
+            {/* Si transferencia no es total, se muestra el bloque de Sonido y la tabla de productos principal */}
             {transferencia.trasferencia_total !== "1" && (
-                <div className="bg-white rounded-lg shadow p-6 mb-6">
-                    <h2 className="text-lg font-semibold mb-4">Transferencia de productos</h2>
-                    <form onSubmit={handleBarcodeSubmit} className="mb-6">
-                        <div className="flex gap-4 items-center max-w-xl">
-                            <Input
-                                type="text"
-                                placeholder="Escanear o ingresar código de barras o SKU del producto"
-                                value={barcode}
-                                onChange={(e) => setBarcode(e.target.value)}
-                                className="flex-1"
-                                autoFocus
-                                disabled={transferencia.estado === 'f' || transferencia.es_masiva === "s"}
-                            />
-                            <Button type="submit" variant="secondary"
-                                disabled={transferencia.estado === 'f' || transferencia.es_masiva === "s"}>
-                                Adicionar
-                            </Button>
+                <>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-2">
+                            <Switch id="sound" checked={soundEnabled} onCheckedChange={setSoundEnabled}
+                                disabled={transferencia.es_masiva === "s" || transferencia.estado === 'f'} />
+                            <Label htmlFor="sound">Sonido</Label>
                         </div>
-                    </form>
-                    {error && <div className="text-red-500 mb-4">{error}</div>}
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>ID Producto</TableHead>
-                                <TableHead>SKU</TableHead>
-                                <TableHead>Cantidad Disponible</TableHead>
-                                <TableHead>Cantidad a Transferir</TableHead>
-                                <TableHead>Observación</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {produtos.map(p => (
-                                <TableRow key={p.id}>
-                                    <TableCell>{p.id}</TableCell>
-                                    <TableCell>{p.sku}</TableCell>
-                                    <TableCell>{p.quantidadeDisponivel}</TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <Button variant="outline" size="sm"
-                                                onClick={() => decrementarQuantidade(p.id)}
-                                                disabled={transferencia.es_masiva === "s" || transferencia.estado === 'f'}>
-                                                -
-                                            </Button>
-                                            <span>{p.quantidade}</span>
-                                            <Button variant="outline" size="sm"
-                                                onClick={() => incrementarQuantidade(p.id)}
-                                                disabled={transferencia.es_masiva === "s" || transferencia.estado === 'f'}>
-                                                +
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Input
-                                            type="text"
-                                            placeholder="Agregar observación"
-                                            value={p.observacion}
-                                            onChange={(e) => handleObservacionChange(p.id, e.target.value)}
-                                            className="max-w-[200px]"
-                                            disabled={transferencia.es_masiva === "s" || transferencia.estado === 'f'}
-                                        />
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm"
-                                            onClick={() => removerProduto(p.id)}
-                                            disabled={transferencia.estado === 'f' || transferencia.es_masiva === "s"}>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </TableCell>
+                        <div className="text-sm text-gray-500">
+                            Total Escaneado: <span className="font-bold">{totalEscaneado}</span>
+                        </div>
+                    </div>
+                    <div className="bg-white rounded-lg shadow p-6 mb-6">
+                        <h2 className="text-lg font-semibold mb-4">Transferencia de productos</h2>
+                        <form onSubmit={handleBarcodeSubmit} className="mb-6">
+                            <div className="flex gap-4 items-center max-w-xl">
+                                <Input
+                                    type="text"
+                                    placeholder="Escanear o ingresar código de barras o SKU del producto"
+                                    value={barcode}
+                                    onChange={(e) => setBarcode(e.target.value)}
+                                    className="flex-1"
+                                    autoFocus
+                                    disabled={transferencia.estado === 'f' || transferencia.es_masiva === "s"}
+                                />
+                                <Button type="submit" variant="secondary"
+                                    disabled={transferencia.estado === 'f' || transferencia.es_masiva === "s"}>
+                                    Adicionar
+                                </Button>
+                            </div>
+                        </form>
+                        {error && <div className="text-red-500 mb-4">{error}</div>}
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>ID Producto</TableHead>
+                                    <TableHead>SKU</TableHead>
+                                    <TableHead>Cantidad Disponible</TableHead>
+                                    <TableHead>Cantidad a Transferir</TableHead>
+                                    <TableHead>Observación</TableHead>
+                                    <TableHead>Actions</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
+                            </TableHeader>
+                            <TableBody>
+                                {produtos.map(p => (
+                                    <TableRow key={p.id}>
+                                        <TableCell>{p.id}</TableCell>
+                                        <TableCell>{p.sku}</TableCell>
+                                        <TableCell>{p.quantidadeDisponivel}</TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <Button variant="outline" size="sm"
+                                                    onClick={() => decrementarQuantidade(p.id)}
+                                                    disabled={transferencia.es_masiva === "s" || transferencia.estado === 'f'}>
+                                                    -
+                                                </Button>
+                                                <span>{p.quantidade}</span>
+                                                <Button variant="outline" size="sm"
+                                                    onClick={() => incrementarQuantidade(p.id)}
+                                                    disabled={transferencia.es_masiva === "s" || transferencia.estado === 'f'}>
+                                                    +
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Input
+                                                type="text"
+                                                placeholder="Agregar observación"
+                                                value={p.observacion}
+                                                onChange={(e) => handleObservacionChange(p.id, e.target.value)}
+                                                className="max-w-[200px]"
+                                                disabled={transferencia.es_masiva === "s" || transferencia.estado === 'f'}
+                                            />
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="ghost" size="sm"
+                                                onClick={() => removerProduto(p.id)}
+                                                disabled={transferencia.estado === 'f' || transferencia.es_masiva === "s"}>
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </>
             )}
 
-            {/* Secciones adicionales */}
+            {/* Secciones adicionales: se muestran para transferencia total */}
             {transferencia.trasferencia_total === "1" && (
                 <>
+                    {totalEscaneado > 0 && (
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="text-sm text-gray-500">
+                                Total Escaneado: <span className="font-bold">{totalEscaneado}</span>
+                            </div>
+                        </div>
+                    )}
                     <div className="mt-8">
                         {transferSections.map((section, index) => (
                              <div key={index} className="bg-white rounded-lg shadow p-6 mb-6 mt-4 relative">
@@ -722,19 +654,12 @@ const ExecutarTransferencia = () => {
                              <h2 className="text-lg font-semibold mb-4">
                                  Transferencia de productos - Sección Adicional {index}
                              </h2>
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center space-x-2">
-                                        <Switch 
-                                            id={`sound-add-${index}`} 
-                                            checked={section.soundEnabled}
-                                            onCheckedChange={(checked) => updateSection(index, { soundEnabled: checked })}
-                                        />
-                                        <Label htmlFor={`sound-add-${index}`}>Sonido</Label>
-                                    </div>
-                                    <div className="text-sm text-gray-500">
-                                        Total Escaneado: <span className="font-bold">{section.totalEscaneado}</span>
-                                    </div>
-                                </div>
+                             {/* En cada sección adicional se muestra siempre el bloque Total Escaneado */}
+                             <div className="flex items-center justify-between mb-4">
+                                 <div className="text-sm text-gray-500">
+                                     Total Escaneado: <span className="font-bold">{section.totalEscaneado}</span>
+                                 </div>
+                             </div>
                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                     {["posicionOrigen", "posicionDestino"].map((field) => (
                                         <div key={field}>
