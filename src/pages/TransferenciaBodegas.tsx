@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { TransferenciaBodega, TransferenciaBodegaResponse } from '@/api/types/transferTypes';
-import { Plus, Edit } from 'lucide-react';
+import { Plus, Edit,Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Pagination,
@@ -33,6 +33,7 @@ import { transferBodegasApi,Source } from '@/api/transferBodegasApi';
 import { useExportWorksheet } from "@/hooks/useExportWorksheet";
 import { Loader2 } from 'lucide-react';
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 const TransferenciaBodegas = () => {
   const navigate = useNavigate();
@@ -82,21 +83,26 @@ const TransferenciaBodegas = () => {
        }
      }, [currentPage]);
 
-  const fetchTransferencias = async () => {
-    try {
-    const [success, data] = await transferBodegasApi.list(currentPage, 10);
-    if (success) {
-      setTransferencias(data.items);
-      setTotalCount(data.total_count);
-      setTotalPages(Math.ceil(data.total_count / data.page_size));
-    }
-    } catch (error) {
-      console.error('Erro ao buscar transferências:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
+     const fetchTransferencias = async () => {
+      try {
+        const [success, data] = await transferBodegasApi.list(currentPage, 10);
+        if (success) {
+          // Si se selecciona un estado distinto de "all", filtramos en el cliente,
+          // pero usamos el total_count de la API para la paginación.
+          let items = data.items;
+          if (selectedStatus !== "all") {
+            items = items.filter(item => item.estado.toLowerCase() === selectedStatus);
+          }
+          setTransferencias(items);
+          setTotalCount(data.total_count); // Usamos el total_count que provee la API
+          setTotalPages(Math.ceil(data.total_count / 10)); // Fijamos 10 registros por página
+        }
+      } catch (error) {
+        console.error("Erro ao buscar transferências:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
   const fetchAllTransferencias = async () => {
       try {
@@ -131,6 +137,8 @@ const TransferenciaBodegas = () => {
         return 'Completado';
       case 'c':
         return 'Procesando';
+      case 'p':
+      return 'Procesando';
       default:
         return 'Desconhecido';
     }
@@ -292,10 +300,10 @@ const TransferenciaBodegas = () => {
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="all">Todos los estados</SelectItem>
             <SelectItem value="n">Nuevo</SelectItem>
-            <SelectItem value="f">Finalizado</SelectItem>
-            <SelectItem value="c">Contando</SelectItem>
+            <SelectItem value="f">Completado</SelectItem>
+            <SelectItem value="c">Procesando</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -304,14 +312,16 @@ const TransferenciaBodegas = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Código</TableHead>
-              <TableHead>Source</TableHead>
-              <TableHead>Estado</TableHead>
+              <TableHead>Código</TableHead>             
+              <TableHead>Fecha</TableHead>
+              <TableHead>Responsable</TableHead> 
+              <TableHead>Origen</TableHead>            
               <TableHead>Bodega Origen</TableHead>
               <TableHead>Bodega Destino</TableHead>
-              <TableHead>Responsable</TableHead>
+              <TableHead>Descripción</TableHead>
               <TableHead>Es Masiva</TableHead>     
               <TableHead>Histórico</TableHead>
+              <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
               <TableHead>Exportar</TableHead>
             </TableRow>
@@ -328,17 +338,19 @@ const TransferenciaBodegas = () => {
          displayed.map((transferencia) => (
               <TableRow key={transferencia.transferencia_bodega_id}>
                 <TableCell className="font-medium">{transferencia.codigo}</TableCell>
-                <TableCell>{transferencia.soruce}</TableCell>
+                <TableCell>{format(new Date(transferencia.fecha), "dd/MM/yyyy")}</TableCell>
+                <TableCell>{transferencia.nombre_responsable}</TableCell>
+                <TableCell>{transferencia.soruce}</TableCell>               
+                <TableCell>{transferencia.nombre_bodega_origen}</TableCell>
+                <TableCell>{transferencia.nombre_bodega_destino}</TableCell>
+                <TableCell>{transferencia.descripcion}</TableCell>   
+                <TableCell>{transferencia.es_masiva == 'n' ? 'No' : 'Si'}</TableCell>          
+                <TableCell>{transferencia.historico === 'n' || transferencia.historico == null ? 'No' : 'Si'}</TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(transferencia.estado)}`}>
                     {getStatusText(transferencia.estado)}
                   </span>
                 </TableCell>
-                <TableCell>{transferencia.nombre_bodega_origen}</TableCell>
-                <TableCell>{transferencia.nombre_bodega_destino}</TableCell>
-                <TableCell>{transferencia.nombre_responsable}</TableCell>
-                <TableCell>{transferencia.es_masiva == 'n' ? 'No' : 'Si'}</TableCell>          
-                <TableCell>{transferencia.historico === 'n' || transferencia.historico == null ? 'No' : 'Si'}</TableCell>
                 <TableCell className="text-right">
                   <Button 
                     variant="ghost" 
@@ -348,14 +360,45 @@ const TransferenciaBodegas = () => {
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    title="Eliminar transferencia"
+                    disabled={!(transferencia.estado === "p" || transferencia.estado === "n")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm("¿Está seguro de eliminar esta transferencia?")) {
+                        transferBodegasApi.deleteTransferenciaBodega(Number(transferencia.transferencia_bodega_id))
+                          .then((success) => {
+                            if (success) {
+                              toast.success("Transferencia eliminada exitosamente");
+                              fetchTransferencias();
+                            } else {
+                              toast.error("Error al eliminar transferencia");
+                            }
+                          })
+                          .catch((error) => {
+                            console.error("Error al eliminar transferencia:", error);
+                            toast.error("Error al eliminar transferencia");
+                          });
+                      }
+                    }}
+                  >
+                  <Trash2
+                    className="h-4 w-4 text-red-500"
+                    style={{
+                      opacity: !(transferencia.estado === "p" || transferencia.estado === "n") ? 0.5 : 1
+                    }}
+                  />
+                  </Button>
                 </TableCell>
                 <TableCell>
                       <Button
                         variant="outline"
                         size="sm"
-                        disabled={!(transferencia.estado === "c" || transferencia.estado === "f")}
+                        disabled={!(transferencia.estado === "p" || transferencia.estado === "f")}
                         className={`flex items-center gap-1 text-green-600 hover:text-green-800 ${
-                          !(transferencia.estado === "c" || transferencia.estado === "f") ? "cursor-not-allowed opacity-50" : ""
+                          !(transferencia.estado === "p" || transferencia.estado === "f") ? "cursor-not-allowed opacity-50" : ""
                         }`}
                         onClick={(e) => {
                           e.stopPropagation();

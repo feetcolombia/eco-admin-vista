@@ -381,11 +381,11 @@ const IngresoMercanciaDetalle = () => {
                   id="sound"
                   checked={soundEnabled}
                   onCheckedChange={setSoundEnabled}
-                  disabled={ingreso.estado === 'c' || ingreso?.es_masiva === 'si'}
+                  disabled={ingreso.estado === 'c'}
                 />
               </div>
               <div className="w-48">
-              <Select value={selectedBodega} onValueChange={setSelectedBodega} disabled={ingreso.estado === 'c' || ingreso?.es_masiva === 'si'}>
+              <Select value={selectedBodega} onValueChange={setSelectedBodega} disabled={ingreso.estado === 'c'}>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccione una posición" />
               </SelectTrigger>
@@ -411,7 +411,7 @@ const IngresoMercanciaDetalle = () => {
               onChange={(e) => setBarcode(e.target.value)}
               className="w-full"
               autoFocus
-              disabled={ingreso.estado === 'c' || ingreso?.es_masiva === 'si'}
+              disabled={ingreso.estado === 'c'}
             />
           </form>
 
@@ -443,7 +443,7 @@ const IngresoMercanciaDetalle = () => {
                               setTotalScanned(prev => prev - 1);
                             }
                           }}
-                          disabled={ingreso.estado === 'c' || ingreso?.es_masiva === 'si'}
+                          disabled={ingreso.estado === 'c'}
                         >
                           -
                         </Button>
@@ -457,7 +457,7 @@ const IngresoMercanciaDetalle = () => {
                             setScannedItems(updatedItems);
                             setTotalScanned(prev => prev + 1);
                           }}
-                          disabled={ingreso.estado === 'c'  || ingreso?.es_masiva === 'si'}
+                          disabled={ingreso.estado === 'c'}
                         >
                           +
                         </Button>
@@ -468,7 +468,7 @@ const IngresoMercanciaDetalle = () => {
                         variant="destructive"
                         size="sm"
                         onClick={() => handleRemoveItem(item.sku, item.position)}
-                        disabled={ingreso.estado === 'c' || ingreso?.es_masiva === 'si'}
+                        disabled={ingreso.estado === 'c'}
                       >
                         Remover
                       </Button>

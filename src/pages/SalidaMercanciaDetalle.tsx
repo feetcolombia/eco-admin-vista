@@ -33,6 +33,7 @@ interface SalidaMercancia {
     sku: string;
     cantidad: string;
     bodega_id: string;
+    cantidad_disponible: number; 
     bodega_nombre: string;
   }[];
 }
@@ -52,6 +53,7 @@ interface ProductItem {
   sku: string;
   bodega_nombre: string;
   transferencia_quantity: number;
+  cantidad_disponible: number;
   quantity: number;
 }
 
@@ -98,14 +100,24 @@ const SalidaMercanciaDetalle = () => {
     if (!id || isNaN(Number(id))) return;
     const data = await getSalidaById(Number(id));
     if (data) {
-      setSalida(data);
-      if (data.productos && data.productos.length > 0) {
-        const existingProducts = data.productos.map(product => ({
+      const transformedData = {
+        ...data,
+        productos: data.productos
+          ? data.productos.map(product => ({
+              ...product,
+              cantidad_disponible: product.cantidad_disponible ? parseInt(product.cantidad_disponible) : 0
+            }))
+          : []
+      };
+      setSalida(transformedData);
+      if (transformedData.productos && transformedData.productos.length > 0) {
+        const existingProducts = transformedData.productos.map(product => ({
           barcode: product.sku,
           sku: product.sku,
           bodega_nombre: product.bodega_nombre,
           transferencia_quantity: parseInt(product.cantidad),
-          quantity: parseInt(product.cantidad)
+          quantity: parseInt(product.cantidad),
+          cantidad_disponible: product.cantidad_disponible
         }));
         setProducts(existingProducts);
         setTotalScanned(existingProducts.length);
@@ -364,11 +376,11 @@ const SalidaMercanciaDetalle = () => {
                   id="sound"
                   checked={soundEnabled}
                   onCheckedChange={setSoundEnabled}
-                  disabled={salida?.estado === 'c' || salida?.es_masiva === "si"}
+                  disabled={salida?.estado === 'c'}
                 />
               </div>
               <div className="w-48">
-                <Select value={selectedBodega} onValueChange={handleBodegaChange} disabled={salida?.estado === 'c' || salida?.es_masiva === "si"}>
+                <Select value={selectedBodega} onValueChange={handleBodegaChange} disabled={salida?.estado === 'c'}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccione la posición" />
                   </SelectTrigger>
@@ -399,7 +411,7 @@ const SalidaMercanciaDetalle = () => {
               }}
               className="w-full"
               autoFocus
-              disabled={salida?.estado === 'c' || salida?.es_masiva === "si"}
+              disabled={salida?.estado === 'c'}
             />
           </form>
 
@@ -419,7 +431,7 @@ const SalidaMercanciaDetalle = () => {
                   <tr key={index} className="border-b">
                     <td className="py-2">{product.sku}</td>
                     <td className="py-2">{product.bodega_nombre}</td>
-                    <td className="py-2">{product.transferencia_quantity}</td>
+                    <td className="py-2">{product.cantidad_disponible}</td>
                     <td className="py-2">
                       <div className="flex items-center gap-2">
                         <Button
@@ -437,38 +449,39 @@ const SalidaMercanciaDetalle = () => {
                           -
                         </Button>
                         <Input
-                          type="number"
-                          value={product.quantity}
-                          onChange={(e) => {
-                            const newQuantity = Math.min(
-                              Math.max(1, parseInt(e.target.value) || 0),
-                              product.transferencia_quantity
-                            );
-                            setProducts(prev => prev.map((p, i) => 
-                              i === index ? { ...p, quantity: newQuantity } : p
-                            ));
-                          }}
-                          className="w-20 text-center"
-                          min={1}
-                          max={product.transferencia_quantity}
-                          disabled={salida?.estado === 'c'}
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const oldQuantity = product.quantity;
-                            const newQuantity = Math.min(product.transferencia_quantity, product.quantity + 1);
-                            setProducts(prev => prev.map((p, i) => 
-                              i === index ? { ...p, quantity: newQuantity } : p
-                            ));
-                            if (newQuantity === product.transferencia_quantity && oldQuantity < product.transferencia_quantity) {
-                              playBeep(false);
-                            }
-                          }}
-                          disabled={product.quantity >= product.transferencia_quantity || salida?.estado === 'c'}
-                        >
+                            type="number"
+                            value={product.quantity}
+                            onChange={(e) => {
+                              const newQuantity = Math.min(
+                                Math.max(1, parseInt(e.target.value) || 0),
+                                product.cantidad_disponible
+                              );
+                              setProducts(prev =>
+                                prev.map((p, i) => (i === index ? { ...p, quantity: newQuantity } : p))
+                              );
+                            }}
+                            className="w-20 text-center"
+                            min={1}
+                            max={product.cantidad_disponible}
+                            disabled={salida?.estado === 'c'}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newQuantity = Math.min(product.cantidad_disponible, product.quantity + 1);
+                              setProducts(prev =>
+                                prev.map((p, i) => (i === index ? { ...p, quantity: newQuantity } : p))
+                              );
+                              if (newQuantity === product.cantidad_disponible && product.quantity < newQuantity) {
+                                playBeep(false);
+                              } else {
+                                playBeep(true);
+                              }
+                            }}
+                            disabled={product.quantity >= product.cantidad_disponible || salida?.estado === 'c'}
+                                                  >
                           +
                         </Button>
                       </div>
@@ -481,7 +494,7 @@ const SalidaMercanciaDetalle = () => {
                           setProducts(prev => prev.filter((_, i) => i !== index));
                           setTotalScanned(prev => prev - 1);
                         }}
-                        disabled={salida?.estado === 'c' || salida?.es_masiva === "si"}
+                        disabled={salida?.estado === 'c'}
                       >
                         Remover
                       </Button>

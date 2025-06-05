@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus,Edit } from "lucide-react";
+import { Plus,Edit,Trash2} from "lucide-react";
 import {
   Table,
   TableBody,
@@ -41,7 +41,7 @@ const SalidaMercancia = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-  const { loading, getSalidaMercancia, getSources, exportSalidaExcel } = useSalidaMercanciaApi();
+  const { loading, getSalidaMercancia, getSources, exportSalidaExcel,deleteSalidaMercancia } = useSalidaMercanciaApi();
   const [salidas, setSalidas] = useState<any[]>([]);
   const [allSalidas, setAllSalidas] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -274,10 +274,12 @@ const SalidaMercancia = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Consecutivo</TableHead>
-                    <TableHead>Origen</TableHead>
-                    <TableHead>Responsable</TableHead>
-                    <TableHead>Fecha</TableHead>
+                    <TableHead>Código</TableHead>
+                    <TableHead>Fecha</TableHead>                    
+                    <TableHead>Responsable</TableHead> 
+                    <TableHead>Origen</TableHead>  
+                    <TableHead>Es másiva</TableHead> 
+                    <TableHead>Descripción</TableHead>                   
                     <TableHead>Estado</TableHead>
                     <TableHead>Acciones</TableHead>
                     <TableHead>Exportar</TableHead>
@@ -291,9 +293,11 @@ const SalidaMercancia = () => {
                         className="hover:bg-gray-50"
                       >
                         <TableCell>{salida.consecutivo}</TableCell>
-                        <TableCell>{getSourceName(salida.source)}</TableCell>
-                        <TableCell>{salida.nombre_responsable}</TableCell>
                         <TableCell>{format(new Date(salida.fecha), "dd/MM/yyyy")}</TableCell>
+                        <TableCell>{salida.nombre_responsable}</TableCell>  
+                        <TableCell>{getSourceName(salida.source)}</TableCell> 
+                        <TableCell>{salida.es_masiva == 'n' || salida.es_masiva == null || salida.es_masiva == 'no' ? 'No' : 'Si'}</TableCell>  
+                        <TableCell>{salida.descripcion || "-"}</TableCell>                                              
                         <TableCell>
                           <div
                             className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
@@ -312,17 +316,53 @@ const SalidaMercancia = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost" 
-                            size="sm"
-                            title="Ver registro"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/dashboard/salida-mercancia/${salida.salidamercancia_id}`);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              title="Ver registro"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/dashboard/salida-mercancia/${salida.salidamercancia_id}`);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              title="Eliminar salida"
+                              disabled={!(salida.estado === "p" || salida.estado === "n")}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (
+                                  window.confirm("¿Está seguro de eliminar este registro de salida?")
+                                ) {
+                                  deleteSalidaMercancia(salida.salidamercancia_id)
+                                    .then((success) => {
+                                      if (success) {
+                                        toast.success("Salida eliminada exitosamente");
+                                        fetchSalidas();
+                                        fetchAllSalidas();
+                                      } else {
+                                        toast.error("Error al eliminar salida");
+                                      }
+                                    })
+                                    .catch((error) => {
+                                      console.error("Error al eliminar salida:", error);
+                                      toast.error("Error al eliminar salida");
+                                    });
+                                }
+                              }}
+                            >
+                        <Trash2
+                              className="h-4 w-4 text-red-500"
+                              style={{
+                                opacity: !(salida.estado === "p" || salida.estado === "n") ? 0.5 : 1
+                              }}
+                            />
+                        </Button>
+                      </div>
                         </TableCell>
                         <TableCell>
                           <Button
@@ -330,15 +370,23 @@ const SalidaMercancia = () => {
                             size="sm"
                             disabled={!(salida.estado === "c" || salida.estado === "p")}
                             className={`flex items-center gap-1 text-green-600 hover:text-green-800 ${
-                              !(salida.estado === "c" || salida.estado === "p") ? "cursor-not-allowed opacity-50" : ""
+                              !(salida.estado === "c" || salida.estado === "p")
+                                ? "cursor-not-allowed opacity-50"
+                                : ""
                             }`}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleExport(salida.salidamercancia_id);
                             }}
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none"
-                              viewBox="0 0 24 24" stroke="currentColor">
+                            {/* Ícono de exportar */}
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="w-4 h-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -349,14 +397,14 @@ const SalidaMercancia = () => {
                           </Button>
                         </TableCell>
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-4">
-                        No se encontraron salidas
-                      </TableCell>
-                    </TableRow>
-                  )}
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-4">
+                            No se encontraron salidas
+                          </TableCell>
+                        </TableRow>
+                      )}
                 </TableBody>
               </Table>
               {computedTotalPages > 1 && (
@@ -389,3 +437,4 @@ const SalidaMercancia = () => {
 };
 
 export default SalidaMercancia;
+

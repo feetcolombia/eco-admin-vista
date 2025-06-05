@@ -201,4 +201,12 @@ export const transferBodegasApi = {
       );
       return resp.data;
     },
+    
+    deleteTransferenciaBodega: async (id: number): Promise<boolean> => {
+      const resp = await apiClient.delete<boolean>(
+        `/rest/V1/transferenciabodegas/${id}`,
+        { headers: getAuthHeaders() }
+      );
+      return resp.data === true;
+    },
 };

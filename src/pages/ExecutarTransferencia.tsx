@@ -17,6 +17,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Trash2, Loader2, X } from 'lucide-react';
 import { transferBodegasApi, Source } from '@/api/transferBodegasApi';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { format } from 'date-fns';
 
 interface TransferenciaDetalle {
     transferencia_bodega_id: string;
@@ -67,7 +68,13 @@ const processScanResults = (
     if (index > -1) {
         const current = existing[index];
         if (current.quantidade + 1 > qtyAvailable) {
-            throw new Error("La cantidad disponible del producto es menor a la cantidad a escanear");
+            playBeep(false);
+            toast({ 
+                variant: "destructive", 
+                title: "Error", 
+                description: "La cantidad disponible del producto es menor a la cantidad a escanear" 
+            });
+            return existing;
         }
         return existing.map(p =>
             p.id === scanned.id_producto ? { ...p, quantidade: p.quantidade + 1 } : p
@@ -85,23 +92,6 @@ const processScanResults = (
     ];
 };
 
-// Función para escanear producto y actualizar lista
-const handleScan = async (
-    barcode: string,
-    bodegaOrigen: string,
-    bodegaDestino: string,
-    soruce: string,
-    updateFn: (prev: Producto[]) => Producto[]
-) => {
-    const data = await transferBodegasApi.scanBarcode(barcode, bodegaOrigen, bodegaDestino, soruce, 1);
-    if (!Array.isArray(data) || !data[0]?.success) {
-        throw new Error("Producto no encontrado");
-    }
-    const result = data[0];
-    const qtyAvailable = parseInt(result.cantidad_disponible, 10);
-    return updateFn(processScanResults([], result, qtyAvailable));
-};
-
 const ExecutarTransferencia = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -116,16 +106,17 @@ const ExecutarTransferencia = () => {
     const [sources, setSources] = useState<Source[]>([]);
     const [soundEnabled, setSoundEnabled] = useState(true);
     const [bodegasForSource, setBodegasForSource] = useState<any[]>([]);
-
-    // Estados para la sección principal (cuando trasferencia_total === "1")
+    // Estados para la sección principal (para transferencias totales)
     const [posicionOrigenMain, setPosicionOrigenMain] = useState<string>('');
     const [posicionDestinoMain, setPosicionDestinoMain] = useState<string>('');
-
     // Secciones adicionales
     const [transferSections, setTransferSections] = useState<TransferSection[]>([]);
     const [saving, setSaving] = useState(false);
+    // Estado que indica que se ha guardado exitosamente
+    const [saved, setSaved] = useState(false);
+    // Nuevo estado que se actualiza cada vez que se consuma el API y se verifique que el array de productos no esté vacío
+    const [hasProductosResponse, setHasProductosResponse] = useState(false);
 
-    // Carga de datos
     const fetchTransferencia = useCallback(async () => {
         try {
             const data = await transferBodegasApi.getTransferencia(id!, token);
@@ -133,7 +124,7 @@ const ExecutarTransferencia = () => {
                 const t = data[1];
                 setTransferencia(t);
         
-                // Si no es transferencia_total === "1", se procesan los productos de forma tradicional
+                // Si no es transferencia total, se usan los productos directamente
                 if (t.productos?.length > 0 && t.trasferencia_total !== "1") {
                     const mapped: Producto[] = t.productos.map((p: any) => ({
                         id: p.id_producto,
@@ -143,18 +134,18 @@ const ExecutarTransferencia = () => {
                         observacion: p.observacion || ''
                     }));
                     setProdutos(mapped);
-                } else if (t.trasferencia_total === "1") {
-                    // Si es transferencia_total === "1", se limpia el array de productos
+                    setHasProductosResponse(true);
+                } else if (t.trasferencia_total !== "1") {
                     setProdutos([]);
+                    setHasProductosResponse(false);
                 }
         
-                // Cuando trasferencia_total es "1", se separan los productos por secciones
+                // Si es transferencia total, se procesan las secciones
                 if (t.trasferencia_total === "1") {
+                    setProdutos([]);
                     const sections: TransferSection[] = [];
-                    // Recorrer cada propiedad en t que comience con "productos_seccion_"
                     Object.entries(t).forEach(([key, value]) => {
                         if (key.startsWith("productos_seccion_") && value && typeof value === 'object') {
-                            // Extraer las claves numéricas (los productos)
                             const numericKeys = Object.keys(value).filter(k => !isNaN(Number(k)));
                             if (numericKeys.length > 0) {
                                 const sectionProducts: Producto[] = numericKeys.map(k => {
@@ -167,7 +158,6 @@ const ExecutarTransferencia = () => {
                                         observacion: p.observacion || ''
                                     };
                                 });
-                                // Tomar el id de la bodega origen y destino desde el primer producto de la sección
                                 const firstProduct = value[numericKeys[0]];
                                 const posicionOrigen = firstProduct.id_bodega_origen || "";
                                 const posicionDestino = firstProduct.id_bodega_destino || "";
@@ -185,6 +175,10 @@ const ExecutarTransferencia = () => {
                     });
                     if (sections.length > 0) {
                         setTransferSections(sections);
+                        const flag = sections.some(section => section.produtos?.length > 0);
+                        setHasProductosResponse(flag);
+                    } else {
+                        setHasProductosResponse(false);
                     }
                 }
             }
@@ -233,7 +227,7 @@ const ExecutarTransferencia = () => {
         return src?.name || code;
     };
 
-    // Manejo de escaneo en la sección principal
+    // Manejo del escaneo en sección principal
     const handleBarcodeSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!barcode.trim()) return;
@@ -249,13 +243,14 @@ const ExecutarTransferencia = () => {
             setError('');
             setBarcode('');
         } catch (err: any) {
+            console.error('Error al escanear código de barras:', err.response.data.message || err.message);
             setError(err.message);
             playBeep(false);
-            toast({ variant: "destructive", title: "Error", description: err.message });
+            toast({ variant: "destructive", title: "Error", description: err.response.data.message || err.message });
         }
     };
 
-    // Manejo de escaneo en secciones adicionales
+    // Manejo del escaneo en secciones adicionales
     const handleBarcodeSubmitAdd = async (e: React.FormEvent, index: number) => {
         e.preventDefault();
         const section = transferSections[index];
@@ -285,6 +280,7 @@ const ExecutarTransferencia = () => {
         }
     };
 
+    // handleSave guarda la transferencia y marca saved en true en caso de éxito.
     const handleSave = async () => {
         if (!transferencia) return;
         setSaving(true);
@@ -294,7 +290,6 @@ const ExecutarTransferencia = () => {
                 soruce: transferencia.soruce,
                 responsable: transferencia.responsable,
                 nombre_responsable: transferencia.nombre_responsable,
-                // Por defecto se toman de la transferencia, pero se sobreescriben si trasferencia_total es "1"
                 id_bodega_origen: parseInt(transferencia.id_bodega_origen),
                 id_bodega_destino: parseInt(transferencia.id_bodega_destino),
                 descripcion: transferencia.descripcion,
@@ -310,14 +305,11 @@ const ExecutarTransferencia = () => {
                 }))
             };
     
-            // Si transferencia_total es "1", se toman los id seleccionados para Posición Origen y Destino
             if (transferencia.trasferencia_total === "1") {
-                // Reemplazar la bodega principal con la seleccionada en los selects, convirtiéndolos a número
                 baseData.id_bodega_origen = parseInt(posicionOrigenMain);
                 baseData.id_bodega_destino = parseInt(posicionDestinoMain);
-                
                 transferSections.forEach((section, index) => {
-                    const sessionNumber = index; // Comienza en 0
+                    const sessionNumber = index;
                     baseData[`productos_sesion_${sessionNumber}`] = section.produtos.map(p => ({
                         producto: "",
                         id_producto: p.id,
@@ -326,7 +318,6 @@ const ExecutarTransferencia = () => {
                         observacion: p.observacion,
                         sku: p.sku,
                         session: sessionNumber,
-                        // Convertir a número el valor de las bodegas de la sección
                         id_bodega_origen: parseInt(section.posicionOrigen),
                         id_bodega_destino: parseInt(section.posicionDestino)
                     }));
@@ -335,10 +326,10 @@ const ExecutarTransferencia = () => {
     
             const payload = { data: baseData };
             console.log('Payload para guardar transferencia:', payload);
-    
             const [success, updatedId] = await transferBodegasApi.updateTransferenciaPut(payload);
             if (!success) throw new Error('Error al guardar la transferencia');
             toast({ title: "Éxito", description: `Transferencia actualizada correctamente con ID: ${updatedId}` });
+            setSaved(true);
         } catch (e) {
             console.error('Error al guardar transferencia:', e);
             toast({ variant: "destructive", title: "Error", description: "No se pudo guardar la transferencia" });
@@ -347,13 +338,22 @@ const ExecutarTransferencia = () => {
         }
     };
 
-    const handleCompletar = () => {
+    // La condición para habilitar "Completar" se basa en que se haya guardado (saved) y el último response tenga productos.
+   const hasDataForCompletar = hasProductosResponse || saved;
+
+   const handleCompletar = () => {
+        const currentRecordsExist = transferencia.trasferencia_total === "1"
+            ? transferSections.some(section => section.produtos && section.produtos.length > 0)
+            : produtos.length > 0;
+        if (!currentRecordsExist) {
+            toast({ variant: "destructive", title: "Advertencia", description: "Por favor registre al menos un registro en la tabla" });
+            return;
+        }
         if (transferencia) {
             navigate(`/dashboard/transferencia-mercancia/${transferencia.transferencia_bodega_id}/confirmar`);
         }
     };
-
-    // Actualización inmutable de productos
+    // Actualización inmutable de productos en la sección principal
     const incrementarQuantidade = (id: string) => {
         setProdutos(prev => prev.map(p =>
             p.id === id && p.quantidade < p.quantidadeDisponivel
@@ -413,14 +413,12 @@ const ExecutarTransferencia = () => {
         toast({ title: "Sección agregada", description: "Sección de transferencia adicional agregada." });
     };
 
-    // Función para actualizar una sección adicional
     const updateSection = (index: number, updates: Partial<TransferSection>) => {
         setTransferSections(prev =>
             prev.map((section, i) => i === index ? { ...section, ...updates } : section)
         );
     };
 
-    // Función para actualizar posición en una sección adicional
     const updateSectionPosition = (index: number, field: 'posicionOrigen' | 'posicionDestino', value: string) => {
         const conflict = transferSections.some((sec, i) => i !== index && sec[field] === value);
         if (conflict) {
@@ -448,9 +446,6 @@ const ExecutarTransferencia = () => {
     }
 
     const totalEscaneado = produtos.reduce((sum, p) => sum + p.quantidade, 0);
-    const hasDataForCompletar = transferencia.trasferencia_total === "1" 
-        ? transferSections.some(section => section.produtos.length > 0)
-        : produtos.length > 0;
 
     return (
         <div className="mx-auto py-6 relative">
@@ -463,7 +458,7 @@ const ExecutarTransferencia = () => {
                     {transferencia.estado !== 'f' && (
                         <>
                             {transferencia.es_masiva !== "s" && (
-                                <Button onClick={handleSave} variant="secondary" disabled={saving || (!produtos.length && transferencia.trasferencia_total !== "1")}>
+                                <Button onClick={handleSave} variant="secondary" disabled={saving}>
                                     {saving ? (
                                         <>
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -500,7 +495,7 @@ const ExecutarTransferencia = () => {
                         <div className="mb-4">
                             <Label className="text-sm text-gray-500">Bodega Origen</Label>
                             <div className="font-medium">
-                                {transferencia.es_masiva === "s" || transferencia.trasferencia_total === '1' ? "-" : transferencia.nombre_bodega_origen}
+                                {transferencia.trasferencia_total === "1" ? "-" : transferencia.nombre_bodega_origen}
                             </div>
                         </div>
                     </div>
@@ -511,7 +506,7 @@ const ExecutarTransferencia = () => {
                         </div>
                         <div className="mb-4">
                             <Label className="text-sm text-gray-500">Fecha</Label>
-                            <div className="font-medium">{transferencia.fecha ? transferencia.fecha.split(" ")[0] : 'N/A'}</div>
+                            <div className="font-medium">{transferencia.fecha ? format(new Date(transferencia.fecha), "dd/MM/yyyy") : 'N/A'}</div>
                         </div>
                         <div className="mb-4">
                             <Label className="text-sm text-gray-500">Estado</Label>
@@ -529,7 +524,7 @@ const ExecutarTransferencia = () => {
                         <div>
                             <Label className="text-sm text-gray-500">Bodega Destino</Label>
                             <div className="font-medium">
-                                {transferencia.es_masiva === "s" || transferencia.trasferencia_total === '1' ? "-" : transferencia.nombre_bodega_destino}
+                                {transferencia.trasferencia_total === "1" ? "-" : transferencia.nombre_bodega_destino}
                             </div>
                         </div>
                     </div>
@@ -540,13 +535,13 @@ const ExecutarTransferencia = () => {
                 </div>
             </div>
 
-            {/* Si transferencia no es total, se muestra el bloque de Sonido y la tabla de productos principal */}
+            {/* Sección principal (no total) */}
             {transferencia.trasferencia_total !== "1" && (
                 <>
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-2">
                             <Switch id="sound" checked={soundEnabled} onCheckedChange={setSoundEnabled}
-                                disabled={transferencia.es_masiva === "s" || transferencia.estado === 'f'} />
+                                disabled={transferencia.estado === 'f'} />
                             <Label htmlFor="sound">Sonido</Label>
                         </div>
                         <div className="text-sm text-gray-500">
@@ -564,10 +559,10 @@ const ExecutarTransferencia = () => {
                                     onChange={(e) => setBarcode(e.target.value)}
                                     className="flex-1"
                                     autoFocus
-                                    disabled={transferencia.estado === 'f' || transferencia.es_masiva === "s"}
+                                    disabled={transferencia.estado === 'f'}
                                 />
                                 <Button type="submit" variant="secondary"
-                                    disabled={transferencia.estado === 'f' || transferencia.es_masiva === "s"}>
+                                    disabled={transferencia.estado === 'f'}>
                                     Adicionar
                                 </Button>
                             </div>
@@ -594,13 +589,13 @@ const ExecutarTransferencia = () => {
                                             <div className="flex items-center gap-2">
                                                 <Button variant="outline" size="sm"
                                                     onClick={() => decrementarQuantidade(p.id)}
-                                                    disabled={transferencia.es_masiva === "s" || transferencia.estado === 'f'}>
+                                                    disabled={transferencia.estado === 'f'}>
                                                     -
                                                 </Button>
                                                 <span>{p.quantidade}</span>
                                                 <Button variant="outline" size="sm"
                                                     onClick={() => incrementarQuantidade(p.id)}
-                                                    disabled={transferencia.es_masiva === "s" || transferencia.estado === 'f'}>
+                                                    disabled={transferencia.estado === 'f'}>
                                                     +
                                                 </Button>
                                             </div>
@@ -612,13 +607,13 @@ const ExecutarTransferencia = () => {
                                                 value={p.observacion}
                                                 onChange={(e) => handleObservacionChange(p.id, e.target.value)}
                                                 className="max-w-[200px]"
-                                                disabled={transferencia.es_masiva === "s" || transferencia.estado === 'f'}
+                                                disabled={transferencia.estado === 'f'}
                                             />
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="ghost" size="sm"
                                                 onClick={() => removerProduto(p.id)}
-                                                disabled={transferencia.estado === 'f' || transferencia.es_masiva === "s"}>
+                                                disabled={transferencia.estado === 'f'}>
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </TableCell>
@@ -630,7 +625,7 @@ const ExecutarTransferencia = () => {
                 </>
             )}
 
-            {/* Secciones adicionales: se muestran para transferencia total */}
+            {/* Secciones adicionales para transferencia total */}
             {transferencia.trasferencia_total === "1" && (
                 <>
                     {totalEscaneado > 0 && (
@@ -654,7 +649,6 @@ const ExecutarTransferencia = () => {
                              <h2 className="text-lg font-semibold mb-4">
                                  Transferencia de productos - Sección Adicional {index}
                              </h2>
-                             {/* En cada sección adicional se muestra siempre el bloque Total Escaneado */}
                              <div className="flex items-center justify-between mb-4">
                                  <div className="text-sm text-gray-500">
                                      Total Escaneado: <span className="font-bold">{section.totalEscaneado}</span>
@@ -795,3 +789,61 @@ const ExecutarTransferencia = () => {
 };
 
 export default ExecutarTransferencia;
+
+function playBeep(success: boolean) {
+    try {
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        oscillator.type = success ? 'sine' : 'square';
+        oscillator.frequency.setValueAtTime(success ? 800 : 400, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0.8, audioContext.currentTime);
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (error) {
+        console.error("Error playing beep:", error);
+    }
+}
+
+function toast({ variant, title, description }: { variant: string; title: string; description: string; }) {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.style.position = 'fixed';
+        container.style.bottom = '20px';
+        container.style.right = '20px';
+        container.style.zIndex = '1000';
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.gap = '10px';
+        document.body.appendChild(container);
+    }
+    const toastEl = document.createElement('div');
+    toastEl.style.minWidth = '200px';
+    toastEl.style.padding = '10px 15px';
+    toastEl.style.borderRadius = '4px';
+    toastEl.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
+    toastEl.style.color = '#fff';
+    toastEl.style.fontFamily = 'sans-serif';
+    toastEl.style.opacity = '0';
+    toastEl.style.transition = 'opacity 0.3s ease-in-out';
+    if (variant === 'destructive') {
+        toastEl.style.backgroundColor = '#e53e3e';
+    } else {
+        toastEl.style.backgroundColor = '#48bb78';
+    }
+    toastEl.innerHTML = `<strong>${title}</strong><div>${description}</div>`;
+    container.appendChild(toastEl);
+    requestAnimationFrame(() => {
+        toastEl.style.opacity = '1';
+    });
+    setTimeout(() => {
+        toastEl.style.opacity = '0';
+        toastEl.addEventListener('transitionend', () => {
+            container && container.removeChild(toastEl);
+        }, { once: true });
+    }, 3000);
+}

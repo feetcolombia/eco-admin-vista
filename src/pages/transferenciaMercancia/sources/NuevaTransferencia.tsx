@@ -4,19 +4,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { inventorySourcesApi, InventorySource,transferSourcesApi } from '@/api/transferSourcesApi';
 import { toast } from "sonner";
+import { format } from 'date-fns';
 
 const NuevaTransferencia = () => {
   const navigate = useNavigate();
   const [sources, setSources] = useState<InventorySource[]>([]);
+  const today = new Date().toISOString().split('T')[0];
   const [form, setForm] = useState({
       source_origen: '',
       source_destino: '',
-      fecha: '',
+      fecha: today,
       descripcion: '',
       cargaMasiva: 'no',
       archivo: null,
     });
-  const today = new Date().toISOString().split('T')[0];
+
   const [errors, setErrors] = useState<Record<string,string>>({});
 
   useEffect(() => {
@@ -217,18 +219,10 @@ const NuevaTransferencia = () => {
     </select>
     {errors.source_destino && <p className="text-red-500 text-sm mt-1">{errors.source_destino}</p>}
     </div>
-        <div>
-          <label className="block mb-1">Fecha<span className="text-red-500">*</span></label>
-          <Input
-            type="date"
-            name="fecha"
-            value={form.fecha}
-            onChange={handleChange}
-            required
-            max={today}
-          />
-          {errors.fecha && <p className="text-red-500 text-sm mt-1">{errors.fecha}</p>}
-        </div>
+    <div className="space-y-2"> 
+      <label htmlFor="fecha" className="text-sm font-medium">Fecha<span className="text-red-500">*</span></label>
+      <Input id="fecha" type="text" value={form.fecha} disabled />
+    </div>
         <div>
           <label className="block mb-1">Descripción<span className="text-red-500">*</span></label>
           <Input
