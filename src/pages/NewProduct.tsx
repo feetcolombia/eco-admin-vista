@@ -88,14 +88,17 @@ const NewProduct = () => {
     // Se o valor for vazio, retorna vazio
     if (!numericValue) return '';
     
-    // Converte para número e formata
+    // Converte para número e aplica limite máximo de 10 bilhões
     const number = parseInt(numericValue, 10);
+    const MAX_PRICE = 10000000000; // 10 bilhões
+    const limitedNumber = Math.min(number, MAX_PRICE);
+    
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(number);
+    }).format(limitedNumber);
   };
 
   // Função para converter o preço formatado de volta para número
@@ -262,7 +265,17 @@ const NewProduct = () => {
 
   // Atualiza o handler do preço
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formattedValue = formatPrice(e.target.value);
+    const inputValue = e.target.value;
+    const numericValue = inputValue.replace(/[^\d]/g, '');
+    const number = parseInt(numericValue || '0', 10);
+    const MAX_PRICE = 10000000000; // 10 bilhões
+    
+    // Verifica se o valor excede o limite e mostra aviso
+    if (number > MAX_PRICE) {
+      toast.error(`O valor máximo permitido é COP ${new Intl.NumberFormat('es-CO').format(MAX_PRICE)}`);
+    }
+    
+    const formattedValue = formatPrice(inputValue);
     setFormData(prev => ({ ...prev, price: unformatPrice(formattedValue) }));
   };
 
@@ -408,9 +421,9 @@ const NewProduct = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Novo Produto</h1>
+          <h1 className="text-2xl font-bold">Nuevo Producto</h1>
           <p className="text-muted-foreground">
-            Cadastre um novo produto no sistema
+          Registra un nuevo producto en el sistema.
           </p>
         </div>
       </div>
@@ -449,6 +462,9 @@ const NewProduct = () => {
                   required
                   placeholder="COP 0"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Valor máximo: COP 10.000.000.000
+                </p>
               </div>
 
               <div className="space-y-2">
