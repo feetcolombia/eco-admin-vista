@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LoginCredentials, authApi } from "../api/api";
+import { LoginCredentials, authApi, setLogoutCallback } from "../api/api";
+import { setFetchLogoutCallback } from "../api/apiConfig";
 import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
@@ -38,6 +39,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Logout error", error);
     }
   };
+  
+  // Registrar o callback de logout na API ao montar o componente
+  useEffect(() => {
+    setFetchLogoutCallback(logout);
+  }, [logout]);
   
   useEffect(() => {
     // Função para verificar quando foi a última atividade do usuário

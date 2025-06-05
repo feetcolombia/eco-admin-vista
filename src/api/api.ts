@@ -6,6 +6,13 @@ interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
   _retry?: boolean;
 }
 
+// Callback para logout quando token expirar
+let logoutCallback: (() => void) | null = null;
+
+export const setLogoutCallback = (callback: () => void) => {
+  logoutCallback = callback;
+};
+
 // Tipos para a API
 export interface ApiResponse<T> {
   data: T;
@@ -172,18 +179,30 @@ api.interceptors.response.use(
         } catch (refreshError) {
           console.error('Falha na reautenticação:', refreshError);
           
+          // Limpar credenciais inválidas
+          localStorage.removeItem('auth_token');
+          sessionStorage.removeItem('auth_credentials');
+          
           // Notifica o usuário sobre a falha
           toast({
-            title: "Falha na reconexão",
-            description: "Por favor, faça login novamente",
+            title: "Sessão expirada",
+            description: "Suas credenciais expiraram. Por favor, faça login novamente.",
             variant: "destructive",
           });
           
-          // Se a reautenticação falhar, redirecionar para login
-          window.location.href = '/login';
+          // Use o callback do AuthContext se disponível, caso contrário use window.location
+          if (logoutCallback) {
+            logoutCallback();
+          } else {
+            window.location.href = '/login';
+          }
           return Promise.reject(refreshError);
         }
       } else {
+        // Limpar dados de autenticação
+        localStorage.removeItem('auth_token');
+        sessionStorage.removeItem('auth_credentials');
+        
         // Notifica o usuário que é necessário fazer login novamente
         toast({
           title: "Sessão expirada",
@@ -191,8 +210,12 @@ api.interceptors.response.use(
           variant: "destructive",
         });
         
-        // Se não temos credenciais salvas, redirecionar para login
-        window.location.href = '/login';
+        // Use o callback do AuthContext se disponível, caso contrário use window.location
+        if (logoutCallback) {
+          logoutCallback();
+        } else {
+          window.location.href = '/login';
+        }
       }
     }
     

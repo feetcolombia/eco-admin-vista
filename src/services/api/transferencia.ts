@@ -1,3 +1,5 @@
+import { authenticatedFetch } from '../../api/apiConfig';
+
 interface Produto {
   transferencia_productos_id: string;
   cantidad_transferir: string;
@@ -30,17 +32,9 @@ const BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/rest/V1`;
 
 export const transferenciaApi = {
   // Buscar transferência por ID
-  getTransferencia: async (id: string, token: string): Promise<TransferenciaData | null> => {
+  getTransferencia: async (id: string): Promise<TransferenciaData | null> => {
     try {
-      const response = await fetch(
-        `${BASE_URL}/transferenciabodegas/${id}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const response = await authenticatedFetch(`${BASE_URL}/transferenciabodegas/${id}`);
       const [success, data] = await response.json();
       return success ? data : null;
     } catch (error) {
@@ -50,16 +44,12 @@ export const transferenciaApi = {
   },
 
   // Salvar transferência
-  saveTransferencia: async (transferencia: TransferenciaData, token: string) => {
+  saveTransferencia: async (transferencia: TransferenciaData) => {
     try {
-      const response = await fetch(
+      const response = await authenticatedFetch(
         `${BASE_URL}/transferenciabodegas`,
         {
           method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({
             data: {
               ...transferencia,
@@ -76,16 +66,12 @@ export const transferenciaApi = {
   },
 
   // Confirmar transferência
-  confirmarTransferencia: async (transferencia: TransferenciaData, token: string) => {
+  confirmarTransferencia: async (transferencia: TransferenciaData) => {
     try {
-      const response = await fetch(
+      const response = await authenticatedFetch(
         `${BASE_URL}/transferenciabodegas`,
         {
           method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({
             data: {
               transferencia_id: transferencia.transferencia_bodega_id,
@@ -96,7 +82,7 @@ export const transferenciaApi = {
               id_bodega_destino: transferencia.id_bodega_destino,
               descripcion: transferencia.descripcion,
               estado: 'f',
-              productos: transferencia.productos,
+                              productos: transferencia.productos,
               transferencia_total: 0
             }
           })
@@ -110,16 +96,12 @@ export const transferenciaApi = {
   },
 
   // Escanear código de barras
-  scanBarcode: async (barcode: string, transferencia: TransferenciaData, token: string) => {
+  scanBarcode: async (barcode: string, transferencia: TransferenciaData) => {
     try {
-      const response = await fetch(
+      const response = await authenticatedFetch(
         `${BASE_URL}/transferenciabarcode`,
         {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({
             barcode,
             idBodegaOrigen: parseInt(transferencia.id_bodega_origen),
