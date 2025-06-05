@@ -387,6 +387,18 @@ export const useSalidaMercanciaApi = () => {
     return result;
   };
 
+  const deleteSalidaMercancia = async (id: number): Promise<boolean> => {
+    const response = await fetch(`${BASE_URL}/feetmercancia-salida/salidamercancia/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      }
+    });
+    const result = await response.json();
+    return result === true;
+  };
+
   return {
     loading,
     error,
@@ -400,5 +412,6 @@ export const useSalidaMercanciaApi = () => {
     completarSalida,
     validateSalidaCSV,
     exportSalidaExcel,
+    deleteSalidaMercancia,
   };
 }; 

@@ -18,6 +18,7 @@ export interface TransferenciaBodega {
   es_masiva: string | null;
   bodega_origen: boolean | string;
   bodega_destino: string;
+  fecha: string;
 }
 
 export interface Source {

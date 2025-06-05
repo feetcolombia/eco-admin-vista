@@ -11,6 +11,7 @@ export interface TransferSource {
   estado: 'c' | 'n' | 'f';
   creador: number;
   tipo: string;
+  es_masiva: string;
   // otros campos...
 }
 

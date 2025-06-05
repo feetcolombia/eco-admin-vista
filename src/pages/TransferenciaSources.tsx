@@ -5,7 +5,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Edit, Trash } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { transferSourcesApi, TransferSource } from '@/api/transferSourcesApi';
 import { useToast } from '@/components/ui/use-toast';
@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/pagination';
 import { useExportWorksheet } from '@/hooks/useExportWorksheet';
 import { toast } from 'sonner';
+import { format } from "date-fns";
 
 const estadoLabel = { c: 'Procesando', n: 'Nuevo', f: 'Completado' };
 
@@ -161,12 +162,13 @@ const TransferenciaSources = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Consecutivo</TableHead>
+              <TableHead>Código</TableHead>
+              <TableHead>Fecha</TableHead>
+              <TableHead>Responsable</TableHead>   
               <TableHead>Origen</TableHead>
               <TableHead>Destino</TableHead>
-              <TableHead>Descripción</TableHead>
-              <TableHead>Responsable</TableHead>
-              <TableHead>Fecha</TableHead>
+              <TableHead>Descripción</TableHead>   
+              <TableHead>Es másiva</TableHead>                        
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
               <TableHead>Exportar</TableHead>
@@ -176,11 +178,12 @@ const TransferenciaSources = () => {
             {paginated.map(src => (
               <TableRow key={src.transferencia_source_id}>
                 <TableCell>{src.consecutivo}</TableCell>
+                <TableCell>{format(new Date(src.fecha), "dd/MM/yyyy")}</TableCell>
+                <TableCell>{src.nombre_responsable}</TableCell>       
                 <TableCell>{src.source_origen}</TableCell>
                 <TableCell>{src.source_destino}</TableCell>
                 <TableCell>{src.descripcion}</TableCell>
-                <TableCell>{src.nombre_responsable}</TableCell>
-                <TableCell>{src.fecha}</TableCell>
+                <TableCell>{src.es_masiva == 'n' || src.es_masiva == null || src.es_masiva == 'no' ? 'No' : 'Si'}</TableCell>                                           
                 <TableCell><div
                         className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
                           src.estado === "n"
@@ -216,7 +219,7 @@ const TransferenciaSources = () => {
                       : () => handleDelete(src.transferencia_source_id)
                   }
                 >
-                  <Trash
+                  <Trash2
                     className="h-4 w-4 text-red-500"
                     style={{
                       opacity: src.tipo === 'pf' && src.estado === 'f' ? 0.5 : 1

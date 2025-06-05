@@ -288,34 +288,10 @@ const NovaTransferenciaBodega = () => {
             </Select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Fecha<span className="text-red-500">*</span>
-            </label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={(date) => date && setDate(date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          
+          <div className="space-y-2"> 
+            <label htmlFor="fecha" className="text-sm font-medium"> Fecha<span className="text-red-500">*</span>
+            </label> <Input id="fecha" type="text" value={format(new Date(), "dd/MM/yyyy")} disabled /> 
+            </div>          
           <div className="mt-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Usuario responsable<span className="text-red-500">*</span>

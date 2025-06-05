@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit } from 'lucide-react';
+import { Plus, Edit,Trash2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -40,7 +40,7 @@ const IngresoMercancia = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-  const { loading, getIngresoMercancia, getSources, exportIngresoExcel } = useIngresoMercanciaApi();
+  const { loading, getIngresoMercancia, getSources, exportIngresoExcel,deleteIngresoMercancia } = useIngresoMercanciaApi();
   const [ingresos, setIngresos] = useState<any[]>([]);
   const [allIngresos, setAllIngresos] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -239,11 +239,12 @@ const IngresoMercancia = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Consecutivo</TableHead>
-                <TableHead>Origen</TableHead>
+                <TableHead>Código</TableHead>
+                <TableHead>Fecha</TableHead>                
                 <TableHead>Responsable</TableHead>
+                <TableHead>Origen</TableHead>
                 <TableHead>Descripción</TableHead>
-                <TableHead>Fecha</TableHead>
+                <TableHead>Es másiva</TableHead>               
                 <TableHead>Estado</TableHead>
                 <TableHead>Acciones</TableHead>
                 <TableHead>Exportar</TableHead>
@@ -257,10 +258,11 @@ const IngresoMercancia = () => {
                     className="hover:bg-gray-50"
                   >
                     <TableCell>{ingreso.consecutivo}</TableCell>
-                    <TableCell>{getSourceName(ingreso.source)}</TableCell>
-                    <TableCell>{ingreso.nombre_responsable}</TableCell>
-                    <TableCell>{ingreso.descripcion || "-"}</TableCell>
                     <TableCell>{format(new Date(ingreso.fecha), "dd/MM/yyyy")}</TableCell>
+                    <TableCell>{ingreso.nombre_responsable}</TableCell>
+                    <TableCell>{getSourceName(ingreso.source)}</TableCell>                    
+                    <TableCell>{ingreso.descripcion || "-"}</TableCell> 
+                    <TableCell>{ingreso.es_masiva == 'n' || ingreso.es_masiva == null || ingreso.es_masiva == 'no' ? 'No' : 'Si'}</TableCell>                    
                     <TableCell>
                       <div
                         className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
@@ -279,17 +281,51 @@ const IngresoMercancia = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost" 
-                        size="sm"
-                        title="Ver registro"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/dashboard/ingreso-mercancia/${ingreso.ingresomercancia_id}`);
-                        }}
-                      >
-                       <Edit className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="Ver registro"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/dashboard/ingreso-mercancia/${ingreso.ingresomercancia_id}`);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="Eliminar ingreso"
+                          disabled={!(ingreso.estado === "n" || ingreso.estado === "p")}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm("¿Está seguro de eliminar este ingreso?")) {
+                              deleteIngresoMercancia(ingreso.ingresomercancia_id)
+                                .then((success) => {
+                                  if (success) {
+                                    toast.success("Ingreso eliminado exitosamente");
+                                    fetchIngresos();
+                                    fetchAllIngresos();
+                                  } else {
+                                    toast.error("Error al eliminar ingreso");
+                                  }
+                                })
+                                .catch((error) => {
+                                  console.error("Error al eliminar ingreso:", error);
+                                  toast.error("Error al eliminar ingreso");
+                                });
+                            }
+                          }}
+                        >
+                          <Trash2
+                            className="h-4 w-4 text-red-500"
+                            style={{
+                              opacity: !(ingreso.estado === "p" || ingreso.estado === "n") ? 0.5 : 1
+                            }}
+                          />
+                        </Button>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Button
@@ -297,7 +333,9 @@ const IngresoMercancia = () => {
                         size="sm"
                         disabled={!(ingreso.estado === "c" || ingreso.estado === "p")}
                         className={`flex items-center gap-1 text-green-600 hover:text-green-800 ${
-                          !(ingreso.estado === "c" || ingreso.estado === "p") ? "cursor-not-allowed opacity-50" : ""
+                          !(ingreso.estado === "c" || ingreso.estado === "p")
+                            ? "cursor-not-allowed opacity-50"
+                            : ""
                         }`}
                         onClick={(e) => {
                           e.stopPropagation();

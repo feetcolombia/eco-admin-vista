@@ -530,6 +530,18 @@ export const useIngresoMercanciaApi = () => {
     }
   };
 
+  const deleteIngresoMercancia = async (id: number): Promise<boolean> => {
+    const response = await fetch(`${BASE_URL}/feetmercancia-ingreso/ingresomercancia/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    const result = await response.json();
+    return result === true;
+  };
+
   return {
     loading,
     getSources,
@@ -546,5 +558,6 @@ export const useIngresoMercanciaApi = () => {
     validateCsv,
     exportIngresoExcel,
     getBarcodeSourceData,
+    deleteIngresoMercancia,
   };
 }; 

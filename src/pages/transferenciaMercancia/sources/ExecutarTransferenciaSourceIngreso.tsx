@@ -13,16 +13,17 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-  } from "@/components/ui/select";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { transferSourcesApi } from '@/api/transferSourcesApi';
 import { Trash2, Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
 import { useIngresoMercanciaApi } from "@/hooks/useIngresoMercanciaApi";
 
 interface TransferenciaDetalle {
@@ -47,13 +48,13 @@ interface TransferenciaDetalle {
 }
 
 interface Bodega {
-    bodega_id: number;
-    bodega_source: string;
-    bodega_nombre: string;
-    bodega_altura: number;
-    bodega_largo: number;
-    bodega_profundidad: number;
-    bodega_limite: number;
+  bodega_id: number;
+  bodega_source: string;
+  bodega_nombre: string;
+  bodega_altura: number;
+  bodega_largo: number;
+  bodega_profundidad: number;
+  bodega_limite: number;
 }
 
 interface Produto {
@@ -83,74 +84,72 @@ const ExecutarTransferenciaSourceIngreso = () => {
   const [bodegas, setBodegas] = useState<Bodega[]>([]);
   const [selectedBodega, setSelectedBodega] = useState<string>("");
   const [posiciones, setPosiciones] = useState<{ id: number; name: string }[]>([]);
-
-   const { getBodegas} = useIngresoMercanciaApi();
+  const [skuFilter, setSkuFilter] = useState<string>('');
+  const { getBodegas } = useIngresoMercanciaApi();
 
   useEffect(() => {
     fetchTransferencia();
   }, [id]);
 
+  useEffect(() => {
+    if (transferencia?.source_origen) {
+      fetchBodegas();
+    }
+    if (transferencia?.source_destino) {
+      (async () => {
+        const list = await getBodegas(transferencia.source_destino);
+        setPosiciones([{ id: 0, name: "Ninguna" }, ...list.map(bodega => ({ id: bodega.bodega_id, name: bodega.bodega_nombre }))]);
+      })();
+    }
+  }, [transferencia?.source_origen, transferencia?.source_destino]);
 
-    useEffect(() => {
-      if (transferencia?.source_origen) {
-        fetchBodegas();
-      }
+  useEffect(() => {
+    if (bodegas.length && produtos.length) {
+      setProdutos(ps =>
+        ps.map(p => ({ ...p, bodega_id: p.bodega_id || bodegas[0].bodega_id }))
+      );
+    }
+  }, [bodegas]);
 
-     if (transferencia?.source_destino) {
-        (async () => {
-          const list = await getBodegas(transferencia.source_destino);
-          setPosiciones([{ id: 0, name: "Ninguna" }, ...list.map(bodega => ({ id: bodega.bodega_id, name: bodega.bodega_nombre }))]);
-        })();
-      }
-    }, [transferencia?.source_origen, transferencia?.source_destino]);
-
-    useEffect(() => {
-      if (bodegas.length && produtos.length) {
-        setProdutos(ps =>
-          ps.map(p => ({ ...p, bodega_id: p.bodega_id || bodegas[0].bodega_id }))
-        );
-      }
-    }, [bodegas]);
-
-    const handleBodegaChange = (idx: number, bodegaId: number) => {
-      setProdutos(prev => {
-        const arr = [...prev];
-        arr[idx].bodega_id = bodegaId;
-        return arr;
-      });
-    };
+  const handleBodegaChange = (idx: number, bodegaId: number) => {
+    setProdutos(prev => {
+      const arr = [...prev];
+      arr[idx].bodega_id = bodegaId;
+      return arr;
+    });
+  };
 
   const fetchTransferencia = async () => {
     try {
-        const data = await transferSourcesApi.getTransferencia(id!);
-        let productosMostrar: string[] = []; 
-        if (data) {
-          setTransferencia(data);
-          //valida si data.tipo = 'if' o 'cs'
-          if (data.tipo === 'if') {
-            productosMostrar = data.productos_ingreso;
-          } else if (data.tipo === 'sc' || data.tipo === 'sf') {
-            productosMostrar = data.productos_salida;
-          }
-          if (productosMostrar?.length) {
-                    const produtosExistentes = productosMostrar.flatMap((raw: string) => {
-                        const p = JSON.parse(raw);
-                        const available = parseInt(p.cantidad, 10);
-                        return Array.from({ length: available }, () => ({
-                          id: p.producto,
-                          sku: p.sku,
-                          quantidade: 1,
-                          quantidadeDisponivel: parseInt(p.cantidad, 10),
-                          observacion: p.observacion || '',
-                          posicion: p.bodega_id || 0,
-                          bodega_id: p.bodega_id || 0
-                        }));
-                      });
-            setProdutos(produtosExistentes);
-           // si quieres total de unidades escaneadas:
-           setTotalEscaneado(produtosExistentes.reduce((sum, x) => sum + x.quantidade, 0));
-          }
+      const data = await transferSourcesApi.getTransferencia(id!);
+      let productosMostrar: string[] = []; 
+      if (data) {
+        setTransferencia(data);
+        // Valida si data.tipo = 'if' o 'cs'
+        if (data.tipo === 'if') {
+          productosMostrar = data.productos_ingreso;
+        } else if (data.tipo === 'sc' || data.tipo === 'sf') {
+          productosMostrar = data.productos_salida;
         }
+        if (productosMostrar?.length) {
+          const produtosExistentes = productosMostrar.flatMap((raw: string) => {
+            const p = JSON.parse(raw);
+            const available = parseInt(p.cantidad, 10);
+            return Array.from({ length: available }, () => ({
+              id: p.producto,
+              sku: p.sku,
+              quantidade: 1,
+              quantidadeDisponivel: parseInt(p.cantidad, 10),
+              observacion: p.observacion || '',
+              // Se asigna el valor numérico del bodega_id; si no existe, se asigna 0.
+              posicion: (p.bodega_id !== null && p.bodega_id !== undefined) ? Number(p.bodega_id) : 0,
+              bodega_id: (p.bodega_id !== null && p.bodega_id !== undefined) ? Number(p.bodega_id) : 0
+            }));
+          });
+          setProdutos(produtosExistentes);
+          setTotalEscaneado(produtosExistentes.reduce((sum, x) => sum + x.quantidade, 0));
+        }
+      }
     } catch (error) {
       toast({
         variant: "destructive",
@@ -162,13 +161,13 @@ const ExecutarTransferenciaSourceIngreso = () => {
     }
   };
 
-   const handlePosicionChange = (idx: number, posId: number) => {
-       setProdutos(prev => {
-         const copy = [...prev];
-         copy[idx] = { ...copy[idx], posicion: posId };
-         return copy;
-       });
-     };
+  const handlePosicionChange = (idx: number, posId: number) => {
+    setProdutos(prev => {
+      const copy = [...prev];
+      copy[idx] = { ...copy[idx], posicion: posId };
+      return copy;
+    });
+  };
 
   const fetchBodegas = async () => {
     if (transferencia?.source_origen) {
@@ -189,73 +188,73 @@ const ExecutarTransferenciaSourceIngreso = () => {
   };
 
   const handleBarcodeSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!barcode.trim()) return;
-    
-        try {
-          // obtener id de bodega seleccionado
-          const bodegaId = bodegas.find(b => b.bodega_nombre === selectedBodega)?.bodega_id;
-          if (!bodegaId) {
-            setError('Selecciona una bodega');
-            return;
-          }
-    
-          const items = await transferSourcesApi.lookupBarcode(
-            barcode,
-            transferencia.source_origen,
-            bodegaId,
-            false
-          );
-    
-          if (items.length === 0 || (items[0].errors?.length ?? 0) > 0) {
-            setError('Producto no encontrado o con errores');
-          } else {
-            const item = items[0];
-            const qtyAvailable = parseInt(item.cantidad, 10);
-    
-            setProdutos(prev => {
-              const exists = prev.find(p => p.id === item.product_id);
-              if (exists) {
-                return prev.map(p =>
-                  p.id === item.product_id
-                    ? { 
-                        ...p, 
-                        quantidade: Math.min(p.quantidade + 1, qtyAvailable),
-                        quantidadeDisponivel: qtyAvailable 
-                      }
-                    : p
-                );
-              } else {
-                return [
-                  ...prev,
-                  {
-                    id: item.product_id,
-                    sku: item.product_sku,
-                    quantidade: 1,
-                    quantidadeDisponivel: qtyAvailable,
-                    observacion: '',
-                    posicion: bodegaId,
-                    bodega_id: bodegaId
+    e.preventDefault();
+    if (!barcode.trim()) return;
+
+    try {
+      // Obtener id de bodega seleccionado
+      const bodegaId = bodegas.find(b => b.bodega_nombre === selectedBodega)?.bodega_id;
+      if (!bodegaId) {
+        setError('Selecciona una bodega');
+        return;
+      }
+
+      const items = await transferSourcesApi.lookupBarcode(
+        barcode,
+        transferencia.source_origen,
+        bodegaId,
+        false
+      );
+
+      if (items.length === 0 || (items[0].errors?.length ?? 0) > 0) {
+        setError('Producto no encontrado o con errores');
+      } else {
+        const item = items[0];
+        const qtyAvailable = parseInt(item.cantidad, 10);
+
+        setProdutos(prev => {
+          const exists = prev.find(p => p.id === item.product_id);
+          if (exists) {
+            return prev.map(p =>
+              p.id === item.product_id
+                ? { 
+                    ...p, 
+                    quantidade: Math.min(p.quantidade + 1, qtyAvailable),
+                    quantidadeDisponivel: qtyAvailable 
                   }
-                ];
+                : p
+            );
+          } else {
+            return [
+              ...prev,
+              {
+                id: item.product_id,
+                sku: item.product_sku,
+                quantidade: 1,
+                quantidadeDisponivel: qtyAvailable,
+                observacion: '',
+                posicion: bodegaId,
+                bodega_id: bodegaId
               }
-            });
-    
-            setError('');
-            setBarcode('');
-            setTotalEscaneado(prev => prev + 1);
+            ];
           }
-        } catch (err) {
-          console.error('Error lookupBarcode:', err);
-          setError('Error al validar producto');
-        }
+        });
+
+        setError('');
+        setBarcode('');
+        setTotalEscaneado(prev => prev + 1);
+      }
+    } catch (err) {
+      console.error('Error lookupBarcode:', err);
+      setError('Error al validar producto');
+    }
   };
 
   const handleSave = async () => {
     if (!transferencia) return;
     // Validar que ningún campo editable de la tabla esté vacío
     const invalid = produtos.some(p =>
-      p.posicion === 0 || p.quantidade < 1
+       p.quantidade < 1
     );
     if (invalid) {
       alert('Completa todos los campos de cada fila antes de guardar.');
@@ -263,32 +262,32 @@ const ExecutarTransferenciaSourceIngreso = () => {
     }
 
     setSaving(true);
-  
-    try {      
-      // construir payload para salida-products
+
+    try {
+      // Construir payload para salida-products
       const payload = {
-          data: {
-            estado: 'c',
-            tipo: 'cs',
-            salida_source_productos: produtos.map(p => ({
-              transferencia_source_id: transferencia.transferencia_source_id,
-              sku: p.sku,
-              cantidad: p.quantidade,
-              bodega_id: p.posicion,
-              observacion: p.observacion
-            }))
-          }
-        };
-  
-      // llamar al endpoint salida-products
+        data: {
+          estado: 'c',
+          tipo: 'cs',
+          salida_source_productos: produtos.map(p => ({
+            transferencia_source_id: transferencia.transferencia_source_id,
+            sku: p.sku,
+            cantidad: p.quantidade,
+            // Si p.posicion no es un número válido, se asigna 0 por defecto.
+            bodega_id: (typeof p.posicion === 'number' ? p.posicion : 0),
+            observacion: p.observacion
+          }))
+        }
+      };
+
+      // Llamar al endpoint salida-products
       const success = await transferSourcesApi.salidaProductos(payload);
       if (!success) throw new Error('Error al registrar salida de productos');
-  
+
       toast({
         title: "Éxito",
         description: "Salida de productos registrada correctamente"
       });
-      //navigate('/dashboard/transferencia-mercancia');
     } catch (error) {
       console.error('Error al guardar salida:', error);
       toast({
@@ -301,42 +300,42 @@ const ExecutarTransferenciaSourceIngreso = () => {
     }
   };
 
- const handleCompletar = async () => {
-       if (!transferencia) return;
-       if (!window.confirm("¿Está seguro de completar el proceso de ingreso al source?")) return;
-       setSaving(true);
-       try {
-          const payload = {
-            data: {
-              estado: 'f',
-              tipo: 'cs',
-              salida_source_productos: produtos.map(p => ({
-                transferencia_source_id: transferencia.transferencia_source_id,
-                sku: p.sku,
-                cantidad: p.quantidade,
-                bodega_id: p.posicion,
-                observacion: p.observacion
-              }))
-            }
-          };
-         const success = await transferSourcesApi.salidaProductos(payload);
-         if (!success) throw new Error('Error al completar transferencia');
-         toast({
-           title: "Completado",
-           description: "Salida de productos completada exitosamente"
-         });
-         navigate('/transferenciaMercancia/sources/confirm-transferencia-source/'+ transferencia.transferencia_source_id);
-       } catch (error) {
-         console.error('Error al completar transferencia:', error);
-         toast({
-           variant: "destructive",
-           title: "Error",
-           description: "No se pudo completar la transferencia"
-         });
-       } finally {
-         setSaving(false);
-       }
-     };
+  const handleCompletar = async () => {
+    if (!transferencia) return;
+    if (!window.confirm("¿Está seguro de completar el proceso de ingreso al source?")) return;
+    setSaving(true);
+    try {
+      const payload = {
+        data: {
+          estado: 'f',
+          tipo: 'cs',
+          salida_source_productos: produtos.map(p => ({
+            transferencia_source_id: transferencia.transferencia_source_id,
+            sku: p.sku,
+            cantidad: p.quantidade,
+            bodega_id: p.posicion,
+            observacion: p.observacion
+          }))
+        }
+      };
+      const success = await transferSourcesApi.salidaProductos(payload);
+      if (!success) throw new Error('Error al completar transferencia');
+      toast({
+        title: "Completado",
+        description: "Salida de productos completada exitosamente"
+      });
+      navigate('/transferenciaMercancia/sources/confirm-transferencia-source/' + transferencia.transferencia_source_id);
+    } catch (error) {
+      console.error('Error al completar transferencia:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo completar la transferencia"
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const incrementarQuantidade = (id: string) => {
     setProdutos(prev => prev.map(produto => {
@@ -364,11 +363,15 @@ const ExecutarTransferenciaSourceIngreso = () => {
     return <div>Carregando...</div>;
   }
 
+  const filteredProdutos = produtos.filter(produto =>
+    produto.sku.toLowerCase().includes(skuFilter.toLowerCase())
+  );
+
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Ejecutar Transferencia</h1>
-        <span className="text-sm text-gray-500">(Ingreso de productos Source):<strong>{transferencia.source_destino_name}</strong> </span>
+        <span className="text-sm text-gray-500">(Ingreso de productos Source):<strong>{transferencia.source_destino_name}</strong></span>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -390,7 +393,7 @@ const ExecutarTransferenciaSourceIngreso = () => {
               'Guardar'
             )}
           </Button>
-          <Button          
+          <Button
             className="bg-ecommerce-500 hover:bg-ecommerce-600"
             onClick={handleCompletar}
           >
@@ -428,13 +431,13 @@ const ExecutarTransferenciaSourceIngreso = () => {
               <Label className="text-sm text-gray-500">Estado</Label>
               <div className="font-medium">
                 <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                {transferencia.estado === 'n' ? 'Nuevo' : transferencia.estado === 'c' ? 'Contando' : 'Completado'}
+                  {transferencia.estado === 'n' ? 'Nuevo' : transferencia.estado === 'c' ? 'Contando' : 'Completado'}
                 </span>
               </div>
             </div>
             <div className="mb-4">
               <Label className="text-sm text-gray-500">Fecha</Label>
-              <div className="font-medium">{transferencia.fecha}</div>
+              <div className="font-medium">{transferencia.fecha ? format(new Date(transferencia.fecha), "dd/MM/yyyy") : 'N/A'}</div>
             </div>
           </div>
         </div>
@@ -450,20 +453,6 @@ const ExecutarTransferenciaSourceIngreso = () => {
           />
           <Label htmlFor="sonido">Sonido</Label>
         </div>
-        {/* <div className="w-48">
-                <Select value={selectedBodega} onValueChange={setSelectedBodega}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a posição" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {bodegas.map((bodega) => (
-                      <SelectItem key={bodega.bodega_id} value={bodega.bodega_nombre}>
-                        {bodega.bodega_nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div> */}
         <div className="text-sm text-gray-500">
           Total Escaneado: <span className="font-bold">{totalEscaneado}</span>
         </div>
@@ -471,6 +460,15 @@ const ExecutarTransferenciaSourceIngreso = () => {
 
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">Transferencia de productos</h2>
+        <div className="mb-4">
+          <Input
+            type="text"
+            placeholder="Buscar por SKU"
+            value={skuFilter}
+            onChange={(e) => setSkuFilter(e.target.value)}
+            className="w-64"
+          />
+        </div>
         <form onSubmit={handleBarcodeSubmit} className="mb-6 hidden">
           <div className="flex gap-4 items-center max-w-xl">
             <Input
@@ -481,16 +479,14 @@ const ExecutarTransferenciaSourceIngreso = () => {
               className="flex-1"
               autoFocus
             />
-            <Button type="submit" variant="secondary" className="hidden"> 
+            <Button type="submit" variant="secondary" className="hidden">
               Adicionar
             </Button>
           </div>
         </form>
 
         {error && (
-          <div className="text-red-500 mb-4">
-            {error}
-          </div>
+          <div className="text-red-500 mb-4">{error}</div>
         )}
 
         <Table>
@@ -506,42 +502,30 @@ const ExecutarTransferenciaSourceIngreso = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-             {produtos.map((produto, idx) => (
-                 <TableRow key={idx}>
+            {filteredProdutos.map((produto, idx) => (
+              <TableRow key={idx}>
                 <TableCell>{produto.id}</TableCell>
                 <TableCell>{produto.sku}</TableCell>
                 <TableCell>
-                <Select
-                 value={produto.posicion.toString()}
-                 onValueChange={(v) => handlePosicionChange(idx, Number(v))}
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {posiciones.map(pos => (
-                     <SelectItem key={pos.id} value={pos.id.toString()}>
-                        {pos.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <Select
+                    value={produto.posicion.toString()}
+                    onValueChange={(v) => handlePosicionChange(idx, Number(v))}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {posiciones.map(pos => (
+                        <SelectItem key={pos.id} value={pos.id.toString()}>
+                          {pos.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </TableCell>
                 <TableCell>{produto.quantidadeDisponivel}</TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => decrementarQuantidade(produto.id)}
-                    >-</Button>
-                    <span>{produto.quantidade}</span>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => incrementarQuantidade(produto.id)}
-                    >+</Button>
-                  </div>
+                  <span>{produto.quantidade}</span>
                 </TableCell>
                 <TableCell>
                   <Input
@@ -570,4 +554,4 @@ const ExecutarTransferenciaSourceIngreso = () => {
   );
 };
 
-export default ExecutarTransferenciaSourceIngreso; 
+export default ExecutarTransferenciaSourceIngreso;
