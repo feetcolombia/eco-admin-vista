@@ -15,6 +15,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Trash2} from 'lucide-react';
 
 interface SalidaMercancia {
   salidamercancia_id: number;
@@ -475,7 +476,7 @@ const SalidaMercanciaDetalle = () => {
                     </td>
                     <td className="py-2">
                       <Button
-                        variant="destructive"
+                        variant="ghost" 
                         size="sm"
                         onClick={() => {
                           const updatedProducts = products.filter((_, i) => i !== index);
@@ -484,7 +485,7 @@ const SalidaMercanciaDetalle = () => {
                         }}
                         disabled={salida?.estado === 'c'}
                       >
-                        Remover
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </td>
                   </tr>

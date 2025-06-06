@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
+import { useExportWorksheet } from "@/hooks/useExportWorksheet";
+import { toast } from "sonner";
 import { transferBodegasApi, Source } from '@/api/transferBodegasApi';
 
 interface Produto {
@@ -27,6 +29,8 @@ const ConfirmarTransferencia = () => {
   const [loading, setLoading] = useState(true);
   const [transferencia, setTransferencia] = useState<any>(null);
   const [sections, setSections] = useState<Produto[][]>([]);
+  const { exportWorksheet } = useExportWorksheet();
+  const [catalogProducts, setCatalogProducts] = useState<any[]>([]);
 
   useEffect(() => {
     fetchTransferencia();
@@ -110,10 +114,63 @@ const ConfirmarTransferencia = () => {
     }
   };
 
-  const handleExportarExcel = () => {
-    // Implementar exportação para Excel
+  const handleExportarExcel = async () => {
+    try {
+      // Obtenemos el ID de la transferencia desde el estado
+      const transferenciaId = transferencia.transferencia_bodega_id;
+      const result = await transferBodegasApi.exportTransferenciaExcel(transferenciaId);
+      if (result && result.length > 0) {
+        const data = result[0];
+        const transformedTable = data.table.map((row: any) => {
+          const product = catalogProducts.find(
+            (p: any) => Number(p.entity_id) === Number(row.id_producto)
+          );
+          return {
+            SKU: row.sku,
+            "Cantidad Transferir": row.cantidad_transferir,
+            "Cantidad Disponible": row.cantidad_disponible,
+            Observación: row.observacion,
+            "Bodega Origen": row.bodega_origen_nombre,
+            "Bodega Destino": row.bodega_destino_nombre,
+          };
+        });
+  
+        const worksheetData = {
+          header: {
+            "Source": data.header.soruce,
+            "Codigo": data.header.codigo,
+            "Responsable": data.header.nombre_responsable,
+            "Es másiva": data.es_masiva === 's' ? 'Sí' : 'No',
+            "Descripción": data.header.descripcion || "",
+          },
+          table: transformedTable
+        };
+  
+        exportWorksheet(
+          worksheetData,
+          `TransferenciaBodega_${data.header.codigo}.xlsx`,
+          ["SKU", "Cantidad Transferir", "Cantidad Disponible", "Observación", "Bodega Origen", "Bodega Destino"]
+        );
+        toast({
+          title: "Exportación exitosa"
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Error al exportar, no se encontraron datos.",
+        });
+      }
+    } catch (error) {
+      console.error("Error al exportar:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Error al exportar, no se encontraron datos.",
+      });
+    }
   };
-
+  
   if (loading || !transferencia) {
     return <div>Carregando...</div>;
   }
@@ -126,7 +183,7 @@ const ConfirmarTransferencia = () => {
           <Button variant="outline" onClick={() => navigate(-1)}>
             Regresar
           </Button>
-          {/* <Button
+          <Button
             variant="outline"
             onClick={handleExportarExcel}
             className="flex items-center gap-2"
@@ -137,7 +194,7 @@ const ConfirmarTransferencia = () => {
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
             Exportar a Excel
-          </Button> */}
+          </Button>
           <Button
             onClick={() => {
               const ok = window.confirm('Esta acción finalizará el proceso y no podrá ser revertida.');

@@ -576,7 +576,7 @@ const ExecutarTransferencia = () => {
                                     <TableHead>Cantidad Disponible</TableHead>
                                     <TableHead>Cantidad a Transferir</TableHead>
                                     <TableHead>Observación</TableHead>
-                                    <TableHead>Actions</TableHead>
+                                    <TableHead>Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -704,7 +704,7 @@ const ExecutarTransferencia = () => {
                                             <TableHead>Cantidad Disponible</TableHead>
                                             <TableHead>Cantidad a Transferir</TableHead>
                                             <TableHead>Observación</TableHead>
-                                            <TableHead>Actions</TableHead>
+                                            <TableHead>Acciones</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>

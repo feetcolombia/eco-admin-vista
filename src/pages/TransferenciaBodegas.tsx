@@ -396,9 +396,9 @@ const TransferenciaBodegas = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        disabled={!(transferencia.estado === "p" || transferencia.estado === "f")}
+                        disabled={!(transferencia.estado === "p" || transferencia.estado === "c" || transferencia.estado === "f")}
                         className={`flex items-center gap-1 text-green-600 hover:text-green-800 ${
-                          !(transferencia.estado === "p" || transferencia.estado === "f") ? "cursor-not-allowed opacity-50" : ""
+                          !(transferencia.estado === "p" || transferencia.estado === "c" || transferencia.estado === "f") ? "cursor-not-allowed opacity-50" : ""
                         }`}
                         onClick={(e) => {
                           e.stopPropagation();
