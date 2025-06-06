@@ -126,7 +126,7 @@ const ConfirmarTransferencia = () => {
           <Button variant="outline" onClick={() => navigate(-1)}>
             Regresar
           </Button>
-          <Button
+          {/* <Button
             variant="outline"
             onClick={handleExportarExcel}
             className="flex items-center gap-2"
@@ -137,7 +137,7 @@ const ConfirmarTransferencia = () => {
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
             Exportar a Excel
-          </Button>
+          </Button> */}
           <Button
             onClick={() => {
               const ok = window.confirm('Esta acción finalizará el proceso y no podrá ser revertida.');
