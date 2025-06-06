@@ -125,7 +125,7 @@ const ExecutarTransferenciaSourceIngreso = () => {
       let productosMostrar: string[] = []; 
       if (data) {
         setTransferencia(data);
-        // Valida si data.tipo = 'if' o 'cs'
+        // Si el tipo es "if", se utilizarán productos_ingreso; de lo contrario, productos_salida.
         if (data.tipo === 'if') {
           productosMostrar = data.productos_ingreso;
         } else if (data.tipo === 'sc' || data.tipo === 'sf') {
@@ -141,9 +141,9 @@ const ExecutarTransferenciaSourceIngreso = () => {
               quantidade: 1,
               quantidadeDisponivel: parseInt(p.cantidad, 10),
               observacion: p.observacion || '',
-              // Se asigna el valor numérico del bodega_id; si no existe, se asigna 0.
-              posicion: (p.bodega_id !== null && p.bodega_id !== undefined) ? Number(p.bodega_id) : 0,
-              bodega_id: (p.bodega_id !== null && p.bodega_id !== undefined) ? Number(p.bodega_id) : 0
+              // Si el tipo es "if" (productos_ingreso), se asigna 0 a bodega_id y posición.
+              posicion: data.tipo === 'if' ? "" : (p.bodega_id !== null && p.bodega_id !== undefined ? Number(p.bodega_id) : ""),
+              bodega_id: data.tipo === 'if' ? "" : (p.bodega_id !== null && p.bodega_id !== undefined ? Number(p.bodega_id) : "")
             }));
           });
           setProdutos(produtosExistentes);
@@ -253,37 +253,40 @@ const ExecutarTransferenciaSourceIngreso = () => {
   const handleSave = async () => {
     if (!transferencia) return;
     // Validar que ningún campo editable de la tabla esté vacío
-    const invalid = produtos.some(p =>
-       p.quantidade < 1
-    );
+    const invalid = produtos.some(p => p.quantidade < 1);
     if (invalid) {
       alert('Completa todos los campos de cada fila antes de guardar.');
       return;
     }
-
+  
     setSaving(true);
-
+  
     try {
-      // Construir payload para salida-products
+      // Construir payload para salida-products e imprimir cada objeto p
       const payload = {
         data: {
           estado: 'c',
           tipo: 'cs',
-          salida_source_productos: produtos.map(p => ({
-            transferencia_source_id: transferencia.transferencia_source_id,
-            sku: p.sku,
-            cantidad: p.quantidade,
-            // Si p.posicion no es un número válido, se asigna 0 por defecto.
-            bodega_id: (typeof p.posicion === 'number' ? p.posicion : 0),
-            observacion: p.observacion
-          }))
+          salida_source_productos: produtos.map(p => {
+            console.log("Producto:", p.posicion);
+            return {
+              transferencia_source_id: transferencia.transferencia_source_id,
+              sku: p.sku,
+              cantidad: p.quantidade,
+              // Si p.posicion es null, undefined o vacía, se asigna 0
+              bodega_id:
+                (p.posicion === null || p.posicion === undefined || p.posicion === "")
+                  ? 0
+                  : Number(p.posicion),
+              observacion: p.observacion
+            };
+          })
         }
       };
-
-      // Llamar al endpoint salida-products
+  
       const success = await transferSourcesApi.salidaProductos(payload);
       if (!success) throw new Error('Error al registrar salida de productos');
-
+  
       toast({
         title: "Éxito",
         description: "Salida de productos registrada correctamente"

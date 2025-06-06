@@ -119,7 +119,7 @@ const ConfirmarTransferenciaSource = () => {
           >
             Regresar
           </Button>
-          <Button
+          {/* <Button
             variant="outline"
             onClick={handleExportarExcel}
             className="flex items-center gap-2"
@@ -130,7 +130,7 @@ const ConfirmarTransferenciaSource = () => {
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
             Exportar a Excel
-          </Button>
+          </Button> */}
           {transferencia.estado !== 'f' && (
            <Button
              onClick={handleConfirmar}
