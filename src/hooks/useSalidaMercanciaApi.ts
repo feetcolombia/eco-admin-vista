@@ -256,16 +256,16 @@ export const useSalidaMercanciaApi = () => {
       // Se transferencia_quantity for 0, significa que o produto não está na posição
       if (data.transferencia_quantity === 0) {
         toast({
-          title: "Atenção",
-          description: `Produto não encontrado na posição ${data.bodega_nombre}`,
+          title: "Atención",
+          description: `Producto no encontrado en la posición ${data.bodega_nombre}`,
           variant: "destructive",
         });
-        throw new Error('Produto não encontrado na posição');
+        throw new Error('Producto no encontrado en la posición');
       }
       
       return data;
     } catch (err) {
-      if (err.message === 'Produto não encontrado na posição') {
+      if (err.message === 'Producto no encontrado en la posición') {
         throw err;
       }
       toast({
