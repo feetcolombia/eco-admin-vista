@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { inventorySourcesApi, InventorySource,transferSourcesApi } from '@/api/transferSourcesApi';
+import { inventorySourcesApi, InventorySource, transferSourcesApi } from '@/api/transferSourcesApi';
 import { toast } from "sonner";
 import { format } from 'date-fns';
 
@@ -14,6 +14,7 @@ const NuevaTransferencia = () => {
       source_origen: '',
       source_destino: '',
       fecha: today,
+      responsable: '',  // <-- campo Responsable agregado
       descripcion: '',
       cargaMasiva: 'no',
       archivo: null,
@@ -28,105 +29,112 @@ const NuevaTransferencia = () => {
     })();
   }, []);
 
-   // valida un campo
- const validateField = (name: string, value: string, f: typeof form) => {
-   let error = '';
-   switch (name) {
-     case 'source_origen':
-       if (!value) error = 'Origen es obligatorio.';
-       else if (value === f.source_destino) error = 'Origen y destino no pueden ser iguales.';
-       break;
-     case 'source_destino':
-       if (!value) error = 'Destino es obligatorio.';
-       else if (value === f.source_origen) error = 'Origen y destino no pueden ser iguales.';
-       break;
-     case 'fecha':
-       if (!value) error = 'Fecha es obligatoria.';
-       break;
-     case 'descripcion':
-       if (!value) error = 'Descripción es obligatoria.';
-       break;
-   }
-   return error;
- };
- const [loading, setLoading] = useState(false);
- const [csvValidationErrors, setCsvValidationErrors] = useState<{ sku: string; error: string }[] | null>(null);
+  // valida un campo
+  const validateField = (name: string, value: string, f: typeof form) => {
+    let error = '';
+    switch (name) {
+      case 'source_origen':
+        if (!value) error = 'Origen es obligatorio.';
+        else if (value === f.source_destino) error = 'Origen y destino no pueden ser iguales.';
+        break;
+      case 'source_destino':
+        if (!value) error = 'Destino es obligatorio.';
+        else if (value === f.source_origen) error = 'Origen y destino no pueden ser iguales.';
+        break;
+      case 'fecha':
+        if (!value) error = 'Fecha es obligatoria.';
+        break;
+      case 'responsable':   // validación para campo Responsable
+        if (!value) error = 'Responsable es obligatorio.';
+        break;
+      case 'descripcion':
+        if (!value) error = 'Descripción es obligatoria.';
+        break;
+    }
+    return error;
+  };
+
+  const [loading, setLoading] = useState(false);
+  const [csvValidationErrors, setCsvValidationErrors] = useState<{ sku: string; error: string }[] | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement|HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm(f => {
-             const newForm = { ...f, [name]: value };
-             // validar solo el campo modificado
-             const fieldError = validateField(name, value, newForm);
-             setErrors(prev => ({ ...prev, [name]: fieldError }));
-             // si cambió uno de los dos selects, re-valida el otro para la regla de no iguales
-             if (name === 'source_origen') {
-               setErrors(prev => ({
-                 ...prev,
-                 source_destino: validateField('source_destino', newForm.source_destino, newForm)
-               }));
-             }
-             if (name === 'source_destino') {
-               setErrors(prev => ({
-                 ...prev,
-                 source_origen: validateField('source_origen', newForm.source_origen, newForm)
-               }));
-             }
-             return newForm;
-           });
-          };
-    const isValid =
-      form.source_origen &&
-      form.source_destino &&
-      form.fecha &&
-      form.descripcion &&
-      form.cargaMasiva &&
-      (form.cargaMasiva === 'si' ? form.archivo : true) &&
-      Object.values(errors).every(msg => !msg);
+      const newForm = { ...f, [name]: value };
+      // validar solo el campo modificado
+      const fieldError = validateField(name, value, newForm);
+      setErrors(prev => ({ ...prev, [name]: fieldError }));
+      // si cambió uno de los dos selects, re-valida el otro para la regla de no iguales
+      if (name === 'source_origen') {
+        setErrors(prev => ({
+          ...prev,
+          source_destino: validateField('source_destino', newForm.source_destino, newForm)
+        }));
+      }
+      if (name === 'source_destino') {
+        setErrors(prev => ({
+          ...prev,
+          source_origen: validateField('source_origen', newForm.source_origen, newForm)
+        }));
+      }
+      return newForm;
+    });
+  };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+  const isValid =
+    form.source_origen &&
+    form.source_destino &&
+    form.fecha &&
+    form.responsable &&    // se valida el campo responsable
+    form.descripcion &&
+    form.cargaMasiva &&
+    (form.cargaMasiva === 'si' ? form.archivo : true) &&
+    Object.values(errors).every(msg => !msg);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (
-        !form.source_origen ||
-        !form.source_destino ||
-        !form.fecha ||
-        !form.descripcion ||
-        !form.cargaMasiva
-      ) {
-        toast.error("Completar todos los campos obligatorios.");
+      !form.source_origen ||
+      !form.source_destino ||
+      !form.fecha ||
+      !form.responsable ||    // se valida que responsable no esté vacío
+      !form.descripcion ||
+      !form.cargaMasiva
+    ) {
+      toast.error("Completar todos los campos obligatorios.");
+      return;
+    }
+    
+    // Si carga masiva es "si", validar que se haya subido un archivo .csv
+    if (form.cargaMasiva === "si") {
+      if (!form.archivo) {
+        toast.error("Debe cargar un archivo CSV para carga masiva.");
         return;
       }
-    
-      // Si carga masiva es "si", validar que se haya subido un archivo .csv
-      if (form.cargaMasiva === "si") {
-        if (!form.archivo) {
-          toast.error("Debe cargar un archivo CSV para carga masiva.");
-          return;
-        }
-        if (form.archivo.type !== "text/csv") {
-          toast.error("El archivo debe ser un CSV válido.");
-          return;
-        }
+      if (form.archivo.type !== "text/csv") {
+        toast.error("El archivo debe ser un CSV válido.");
+        return;
       }
-   navigate(-1);
-   try {
-     const payload = {
-             source_origen: form.source_origen,
-             source_destino: form.source_destino,
-             descripcion: form.descripcion,
-             creador: 1,
-             tipo: 'n',
-             fecha: form.fecha,
-             nombre_responsable: form.descripcion,
-             estado: 'n' as "n"
-     };
-     const result = await transferSourcesApi.createMercancia(payload);
-     // tras crear, ir a ejecutar la transferencia
-     navigate(`/transferenciaMercancia/sources/execute-transferencia-source/${result.transferencia_source_id}`);
-   } catch (error) {
-     console.error(error);
-     toast.error('Error al guardar ingreso de mercancía');
-   }
+    }
+    navigate(-1);
+    try {
+      const payload = {
+        source_origen: form.source_origen,
+        source_destino: form.source_destino,
+        descripcion: form.descripcion,
+        creador: 1,
+        tipo: 'n',
+        fecha: form.fecha,
+        nombre_responsable: form.responsable,
+        estado: 'n' as "n"
+      };
+      const result = await transferSourcesApi.createMercancia(payload);
+      // tras crear, ir a ejecutar la transferencia
+      navigate(`/transferenciaMercancia/sources/execute-transferencia-source/${result.transferencia_source_id}`);
+    } catch (error) {
+      console.error(error);
+      toast.error('Error al guardar ingreso de mercancía');
+    }
   };
 
   const handleValidarGuardar = async () => {
@@ -152,7 +160,8 @@ const NuevaTransferencia = () => {
         };
         try {
           const result = await transferSourcesApi.importCsv(payload);
-          console.log("Resultado de importación CSV:", result);          if (result.length > 0 && !result[0].error) {
+          console.log("Resultado de importación CSV:", result);
+          if (result.length > 0 && !result[0].error) {
             toast.success(result[0].message);
             setCsvValidationErrors(null);
             navigate(`/transferenciaMercancia/sources/execute-transferencia-source/${result[0].transferencia_source_id}`);
@@ -179,50 +188,63 @@ const NuevaTransferencia = () => {
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-bold mb-4">Nueva Transferencia</h1>
       <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded shadow">
-      <div>
-    <label className="block mb-1">Origen<span className="text-red-500">*</span></label>
-    <select
-      name="source_origen"
-      value={form.source_origen}
-      onChange={handleChange}
-      className="w-full border rounded p-2"
-      required
-    >
-      <option value="">Seleccione origen</option>
-      {sources.map(s => (
-        <option key={s.source_code} value={s.source_code}>
-          {s.name}
-        </option>
-      ))}
-    </select>
-    {errors.source_origen && <p className="text-red-500 text-sm mt-1">{errors.source_origen}</p>}
-  </div>
-  <div>
-    <label className="block mb-1">Destino<span className="text-red-500">*</span></label>
-    <select
-      name="source_destino"
-      value={form.source_destino}
-      onChange={handleChange}
-      className="w-full border rounded p-2"
-      required
-    >
-      <option value="">Seleccione destino</option>
-      {sources.map(s => (
-        <option
-          key={s.source_code}
-          value={s.source_code}
-          disabled={s.source_code === form.source_origen}  // ← no permitir repetir
-        >
-          {s.name}
-        </option>
-      ))}
-    </select>
-    {errors.source_destino && <p className="text-red-500 text-sm mt-1">{errors.source_destino}</p>}
-    </div>
-    <div className="space-y-2"> 
-      <label htmlFor="fecha" className="text-sm font-medium">Fecha<span className="text-red-500">*</span></label>
-      <Input id="fecha" type="text" value={form.fecha} disabled />
-    </div>
+        <div>
+          <label className="block mb-1">Origen<span className="text-red-500">*</span></label>
+          <select
+            name="source_origen"
+            value={form.source_origen}
+            onChange={handleChange}
+            className="w-full border rounded p-2"
+            required
+          >
+            <option value="">Seleccione origen</option>
+            {sources.map(s => (
+              <option key={s.source_code} value={s.source_code}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          {errors.source_origen && <p className="text-red-500 text-sm mt-1">{errors.source_origen}</p>}
+        </div>
+        <div>
+          <label className="block mb-1">Destino<span className="text-red-500">*</span></label>
+          <select
+            name="source_destino"
+            value={form.source_destino}
+            onChange={handleChange}
+            className="w-full border rounded p-2"
+            required
+          >
+            <option value="">Seleccione destino</option>
+            {sources.map(s => (
+              <option
+                key={s.source_code}
+                value={s.source_code}
+                disabled={s.source_code === form.source_origen}
+              >
+                {s.name}
+              </option>
+            ))}
+          </select>
+          {errors.source_destino && <p className="text-red-500 text-sm mt-1">{errors.source_destino}</p>}
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="fecha" className="text-sm font-medium">Fecha<span className="text-red-500">*</span></label>
+          <Input id="fecha" type="text" value={form.fecha} disabled />
+        </div>
+        <div>
+          <label className="block mb-1">Usuario responsable<span className="text-red-500">*</span></label>
+          <Input
+            type="text"
+            name="responsable"
+            value={form.responsable}
+            onChange={handleChange}
+            placeholder="Ingrese responsable"
+            required
+            className="w-full border rounded p-2"
+          />
+          {errors.responsable && <p className="text-red-500 text-sm mt-1">{errors.responsable}</p>}
+        </div>
         <div>
           <label className="block mb-1">Descripción<span className="text-red-500">*</span></label>
           <Input
@@ -263,18 +285,18 @@ const NuevaTransferencia = () => {
                   }
                   required
                 />
-                 <Button 
-                    variant="outline"
-                    onClick={() => {
-                      const link = document.createElement("a");
-                      link.href = "/downloads/transferenciaSource/ingreso_source_prueba.csv";
-                      link.download = "transferenciaSources_plantilla.csv";
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                    }}
-                  >
-                    Descargar Plantilla CSV
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    const link = document.createElement("a");
+                    link.href = "/downloads/transferenciaSource/ingreso_source_prueba.csv";
+                    link.download = "transferenciaSources_plantilla.csv";
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                >
+                  Descargar Plantilla CSV
                 </Button>
               </div>
             </div>
@@ -306,13 +328,13 @@ const NuevaTransferencia = () => {
             )}
           </>
         )}
-          <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={() => navigate(-1)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={!isValid}>
-              Guardar
-            </Button>
+        <div className="flex justify-end space-x-2">
+          <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={!isValid}>
+            Guardar
+          </Button>
         </div>
       </form>
     </div>

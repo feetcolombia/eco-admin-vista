@@ -15,6 +15,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Trash2} from 'lucide-react';
 import { transferSourcesApi } from '@/api/transferSourcesApi';
 
 interface IngresoMercanciaProducto {
@@ -422,7 +423,7 @@ const IngresoMercanciaDetalle = () => {
                   <th className="text-left py-2">SKU</th>
                   <th className="text-left py-2">Position</th>
                   <th className="text-left py-2">Cantidad a transferir</th>
-                  <th className="text-left py-2">Actions</th>
+                  <th className="text-left py-2">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -465,12 +466,12 @@ const IngresoMercanciaDetalle = () => {
                     </td>
                     <td className="py-2">
                       <Button
-                        variant="destructive"
+                        variant="ghost" 
                         size="sm"
                         onClick={() => handleRemoveItem(item.sku, item.position)}
                         disabled={ingreso.estado === 'c'}
                       >
-                        Remover
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </td>
                   </tr>
