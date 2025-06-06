@@ -96,6 +96,11 @@ const SalidaMercanciaDetalle = () => {
     }
   }, [salida?.source]);
 
+  const recalcTotalScanned = (items: ProductItem[]) => {
+    const total = items.reduce((sum, prod) => sum + prod.quantity, 0);
+    setTotalScanned(total);
+  };
+
   const fetchSalida = async () => {
     if (!id || isNaN(Number(id))) return;
     const data = await getSalidaById(Number(id));
@@ -115,12 +120,14 @@ const SalidaMercanciaDetalle = () => {
           barcode: product.sku,
           sku: product.sku,
           bodega_nombre: product.bodega_nombre,
+          // Se carga cantidad a transferir según la cantidad original
           transferencia_quantity: parseInt(product.cantidad),
-          quantity: parseInt(product.cantidad),
-          cantidad_disponible: product.cantidad_disponible
+          // Se carga la cantidad_disponible desde el producto transformado
+          cantidad_disponible: product.cantidad_disponible,
+          quantity: parseInt(product.cantidad)
         }));
         setProducts(existingProducts);
-        setTotalScanned(existingProducts.length);
+        recalcTotalScanned(existingProducts);
       }
     }
   };
@@ -156,23 +163,15 @@ const SalidaMercanciaDetalle = () => {
 
   const playBeep = (success: boolean) => {
     if (!soundEnabled) return;
-    
     try {
-      // Criar um contexto de áudio
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-      
-      // Configurar o som
       oscillator.type = success ? 'sine' : 'square';
       oscillator.frequency.setValueAtTime(success ? 800 : 400, audioContext.currentTime);
       gainNode.gain.setValueAtTime(0.8, audioContext.currentTime);
-      
-      // Conectar os nós
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      
-      // Tocar o som
       oscillator.start();
       oscillator.stop(audioContext.currentTime + 0.1);
     } catch (error) {
@@ -183,54 +182,51 @@ const SalidaMercanciaDetalle = () => {
   const handleBarcodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!barcode.trim() || !selectedBodegaId) return;
-
     try {
       const response = await getProductQuantity(barcode, selectedBodegaId, salida?.source || 'default');
-      
-      // Verificar se o produto já existe com o mesmo SKU e mesma bodega
+      // Usar response.transferencia_quantity como cantidad disponible
+      const availableQuantity = response.transferencia_quantity;
       const existingProductIndex = products.findIndex(
         p => p.sku === response.sku && p.bodega_nombre === response.bodega_nombre
       );
-
       if (existingProductIndex !== -1) {
-        // Se o produto já existe, apenas incrementa a quantidade
         const existingProduct = products[existingProductIndex];
-        const newQuantity = Math.min(
-          existingProduct.quantity + 1,
-          response.transferencia_quantity
-        );
-
-        setProducts(prev => prev.map((product, index) => {
+        const newQuantity = Math.min(existingProduct.quantity + 1, availableQuantity);
+        const updatedProducts = products.map((product, index) => {
           if (index === existingProductIndex) {
-            return { ...product, transferencia_quantity: response.transferencia_quantity, quantity: newQuantity };
+            return {
+              ...product,
+              transferencia_quantity: availableQuantity,
+              cantidad_disponible: availableQuantity,
+              quantity: newQuantity,
+            };
           }
           return product;
-        }));
-
-        if (newQuantity === response.transferencia_quantity && existingProduct.quantity < response.transferencia_quantity) {
-          playBeep(false); // Atingiu o limite
+        });
+        setProducts(updatedProducts);
+        recalcTotalScanned(updatedProducts);
+        if (newQuantity === availableQuantity && existingProduct.quantity < availableQuantity) {
+          playBeep(false);
         } else {
-          playBeep(true); // Incremento bem-sucedido
+          playBeep(true);
         }
       } else {
-        // Se o produto não existe, adiciona como novo
         const newProduct: ProductItem = {
           barcode: response.barcode,
           sku: response.sku,
           bodega_nombre: response.bodega_nombre,
-          transferencia_quantity: response.transferencia_quantity,
-          quantity: 1
+          transferencia_quantity: availableQuantity,
+          quantity: 1,
+          cantidad_disponible: availableQuantity,
         };
-        setProducts(prev => [...prev, newProduct]);
-        setTotalScanned(prev => prev + 1);
-
+        const updatedProducts = [...products, newProduct];
+        setProducts(updatedProducts);
+        recalcTotalScanned(updatedProducts);
         playBeep(true);
       }
-      
       setBarcode('');
     } catch (error) {
       playBeep(false);
-      // O toast de erro já é mostrado no hook
     }
   };
 
@@ -239,38 +235,7 @@ const SalidaMercanciaDetalle = () => {
       toast.error('Agregue productos antes de salvar');
       return;
     }
-
     try {
-    const payload = {
-        salidaMercanciaProductos: products.map(product => {
-          const bodegaMatch = bodegas.find(b => b.bodega_nombre === product.bodega_nombre);
-          return {
-            salida_mercancia_id: Number(id),
-            sku: product.sku,
-            cantidad: product.quantity,
-            bodega_id: bodegaMatch ? bodegaMatch.bodega_id : selectedBodegaId
-          };
-        })
-      };
-
-      await saveProducts(payload);
-      // Limpa a lista de productos y recarga los datos de salida
-      setProducts([]);
-      setTotalScanned(0);
-      await fetchSalida();
-      toast.success("Productos guardados y datos actualizados");
-    } catch (error) {
-      // O toast de erro já é mostrado no hook
-    }
-  };
-
-  const handleCompletarSalida = async () => {
-    if (!id || products.length === 0) {
-      toast.error('Agregue productos antes de completar');
-      return;
-    }
-    try {
-      // Primero salvamos los productos con bodega_id de cada registro
       const payload = {
         salidaMercanciaProductos: products.map(product => {
           const bodegaMatch = bodegas.find(b => b.bodega_nombre === product.bodega_nombre);
@@ -282,13 +247,34 @@ const SalidaMercanciaDetalle = () => {
           };
         })
       };
-
       await saveProducts(payload);
-      // Después de guardar con éxito, navegamos a la página de confirmación
-      navigate(`/dashboard/salida-mercancia/${id}/confirmar`);
-    } catch (error) {
-      // El toast de error ya es mostrado en el hook
+      setProducts([]);
+      setTotalScanned(0);
+      await fetchSalida();
+      toast.success("Productos guardados y datos actualizados");
+    } catch (error) {}
+  };
+
+  const handleCompletarSalida = async () => {
+    if (!id || products.length === 0) {
+      toast.error('Agregue productos antes de completar');
+      return;
     }
+    try {
+      const payload = {
+        salidaMercanciaProductos: products.map(product => {
+          const bodegaMatch = bodegas.find(b => b.bodega_nombre === product.bodega_nombre);
+          return {
+            salida_mercancia_id: Number(id),
+            sku: product.sku,
+            cantidad: product.quantity,
+            bodega_id: bodegaMatch ? bodegaMatch.bodega_id : selectedBodegaId
+          };
+        })
+      };
+      await saveProducts(payload);
+      navigate(`/dashboard/salida-mercancia/${id}/confirmar`);
+    } catch (error) {}
   };
 
   if (loading || !salida) {
@@ -305,7 +291,7 @@ const SalidaMercanciaDetalle = () => {
         <div>
           <h1 className="text-2xl font-bold">Ejecutar Proceso de Salida</h1>
         </div>
-              <div className="flex gap-2">
+        <div className="flex gap-2">
           <Button variant="outline" className="bg-gray-100" onClick={() => navigate('/dashboard/salida-mercancia')}>
             Volver
           </Button>
@@ -328,15 +314,11 @@ const SalidaMercanciaDetalle = () => {
               </Button>
             </>
           )}
-      </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-6 mb-6">
         <div className="space-y-4">
-          {/* <div className="flex justify-between">
-            <span className="text-gray-600">ID</span>
-            <span className="font-medium">{salida.salidamercancia_id}</span>
-          </div> */}
           <div className="flex justify-between">
             <span className="text-gray-600">Origen</span>
             <span className="font-medium">{getSourceName(salida.source)}</span>
@@ -440,48 +422,53 @@ const SalidaMercanciaDetalle = () => {
                           size="sm"
                           onClick={() => {
                             const newQuantity = Math.max(1, product.quantity - 1);
-                            setProducts(prev => prev.map((p, i) => 
+                            const updatedProducts = products.map((p, i) =>
                               i === index ? { ...p, quantity: newQuantity } : p
-                            ));
+                            );
+                            setProducts(updatedProducts);
+                            recalcTotalScanned(updatedProducts);
                           }}
                           disabled={product.quantity <= 1 || salida?.estado === 'c'}
                         >
                           -
                         </Button>
                         <Input
-                            type="number"
-                            value={product.quantity}
-                            onChange={(e) => {
-                              const newQuantity = Math.min(
-                                Math.max(1, parseInt(e.target.value) || 0),
-                                product.cantidad_disponible
-                              );
-                              setProducts(prev =>
-                                prev.map((p, i) => (i === index ? { ...p, quantity: newQuantity } : p))
-                              );
-                            }}
-                            className="w-20 text-center"
-                            min={1}
-                            max={product.cantidad_disponible}
-                            disabled={salida?.estado === 'c'}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const newQuantity = Math.min(product.cantidad_disponible, product.quantity + 1);
-                              setProducts(prev =>
-                                prev.map((p, i) => (i === index ? { ...p, quantity: newQuantity } : p))
-                              );
-                              if (newQuantity === product.cantidad_disponible && product.quantity < newQuantity) {
-                                playBeep(false);
-                              } else {
-                                playBeep(true);
-                              }
-                            }}
-                            disabled={product.quantity >= product.cantidad_disponible || salida?.estado === 'c'}
-                                                  >
+                          type="number"
+                          value={product.quantity}
+                          onChange={(e) => {
+                            const newQuantity = Math.min(
+                              Math.max(1, parseInt(e.target.value) || 0),
+                              product.cantidad_disponible
+                            );
+                            const updatedProducts = products.map((p, i) =>
+                              i === index ? { ...p, quantity: newQuantity } : p
+                            );
+                            setProducts(updatedProducts);
+                            recalcTotalScanned(updatedProducts);
+                          }}
+                          className="w-20 text-center"
+                          min={1}
+                          max={product.cantidad_disponible}
+                          disabled={salida?.estado === 'c'}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const newQuantity = Math.min(product.cantidad_disponible, product.quantity + 1);
+                            const oldQuantity = product.quantity;
+                            const updatedProducts = products.map((p, i) =>
+                              i === index ? { ...p, quantity: newQuantity } : p
+                            );
+                            setProducts(updatedProducts);
+                            recalcTotalScanned(updatedProducts);
+                            if (newQuantity === product.cantidad_disponible && oldQuantity < product.cantidad_disponible) {
+                              playBeep(false);
+                            }
+                          }}
+                          disabled={product.quantity >= product.cantidad_disponible || salida?.estado === 'c'}
+                        >
                           +
                         </Button>
                       </div>
@@ -491,8 +478,9 @@ const SalidaMercanciaDetalle = () => {
                         variant="destructive"
                         size="sm"
                         onClick={() => {
-                          setProducts(prev => prev.filter((_, i) => i !== index));
-                          setTotalScanned(prev => prev - 1);
+                          const updatedProducts = products.filter((_, i) => i !== index);
+                          setProducts(updatedProducts);
+                          recalcTotalScanned(updatedProducts);
                         }}
                         disabled={salida?.estado === 'c'}
                       >
@@ -510,4 +498,4 @@ const SalidaMercanciaDetalle = () => {
   );
 };
 
-export default SalidaMercanciaDetalle; 
+export default SalidaMercanciaDetalle;
