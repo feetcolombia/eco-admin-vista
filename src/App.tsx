@@ -33,6 +33,7 @@ import CriarBodega from "@/pages/Bodegas/Criar";
 import NotFound from "./pages/NotFound";
 import SalidaMercanciaForm from './pages/SalidaMercanciaForm';
 import ConfirmarTransferenciaSource from "./pages/transferenciaMercancia/sources/ConfirmarTransferenciaSources";
+import InventarioProductos from "./pages/inventario/InventarioProductos";
 
 
 const queryClient = new QueryClient();
@@ -75,6 +76,7 @@ const App = () => (
                 <Route path="/transferenciaMercancia/sources/execute-transferencia-source/:id" element={<ExecutarTransferenciaSource />} />
                 <Route path="/transferenciaMercancia/sources/execute-transferencia-source-ingreso/:id" element={<ExecutarTransferenciaSourceIngreso />} />
                 <Route path="/transferenciaMercancia/sources/confirm-transferencia-source/:id" element={<ConfirmarTransferenciaSource />} />
+                <Route path="/dashboard/inventario-productos" element={<InventarioProductos />} />
                 
                 {/* Bodegas routes */}
                 <Route path="/dashboard/bodegas/listar" element={<ListarBodegas />} />

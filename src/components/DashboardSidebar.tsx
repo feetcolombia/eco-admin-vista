@@ -133,6 +133,13 @@ const DashboardSidebar = () => {
             label="Transferencia entre Sources"
             isCollapsed={isCollapsed}
           />
+           {/* Nueva opción para Inventario Productos */}
+           <SidebarLink
+            to="/dashboard/inventario-productos"
+            icon={<FileText size={18} />}
+            label="Inventario Productos"
+            isCollapsed={isCollapsed}
+          />
         </nav>
       </div>
 
