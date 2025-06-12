@@ -41,7 +41,9 @@ const Login = () => {
           <img src="logo-feet.png" alt="Logo Feet" className="" />
             
           </div>
-          
+          <div className="mb-4 rounded-md bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-2 text-center text-sm font-semibold">
+            ⚠️ Ambiente de <strong>STAGING</strong> – Solo para pruebas
+          </div>
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="text-2xl">Iniciar Sesión</CardTitle>
