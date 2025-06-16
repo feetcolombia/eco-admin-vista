@@ -24,14 +24,14 @@ interface Source {
 }
 
 const typeOptions = [
+  { label: 'Todos', value: '' },
   { label: 'Femenino', value: 'F' },
   { label: 'Masculino', value: 'M' },
-  { label: 'Recien Nacido (RC)', value: 'RC' },
-  { label: 'Bebe (BB)', value: 'BB' },
-  { label: 'Infantil Grande (TE)', value: 'TE' },
+  { label: 'Infantil', value: 'I' },
 ];
 
 const brandOptions = [
+  { label: 'Todos', value: '' },
   { label: 'Actvitta', value: '125' },
   { label: 'Beira Rio', value: '126' },
   { label: 'Modare', value: '127' },
@@ -47,7 +47,6 @@ const formatPrice = (price: string) => {
   const num = Number(price);
   return `$ ${num.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
-
 
 const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[], allowedSizes: string[] }) => {
   const styles = StyleSheet.create({
@@ -84,13 +83,9 @@ const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[], al
       <Page style={styles.page}>
         <View style={styles.header}>
           <Text style={styles.title}>Inventário Feet Colombia</Text>
-          <Image
-            style={styles.logo}
-            src="/favicon.jpg"
-          />
+          <Image style={styles.logo} src="/favicon.jpg" />
         </View>
         <View style={styles.table}>
-          {/* Encabezado de tabla */}
           <View style={styles.tableRow}>
             <View style={[styles.tableCol, { width: '40%' }]}><Text>SKU</Text></View>
             <View style={[styles.tableCol, { width: '15.5%' }]}><Text>Cantidad</Text></View>
@@ -102,7 +97,7 @@ const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[], al
             const cantidad = parseInt(data.salable_quantity, 10);
             const precio = formatPrice(data.price);
             const precioEspecial = data.special_price ? formatPrice(data.special_price) : '-';
-            const tallas = Object.entries(data.sizes)
+            const tallas = Object.entries(data.sizes || {})
               .filter(([size]) => allowedSizes.includes(size))
               .map(([size, qty]) => `${size}: ${qty}`)
               .join(', ');
@@ -126,21 +121,48 @@ const InventarioProductos = () => {
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
-  const [selectedType, setSelectedType] = useState<string>('F');
-  const [selectedBrand, setSelectedBrand] = useState<string>('');
+  const [selectedSource, setSelectedSource] = useState<string>('default'); // Valor por defecto "default"
+  const [selectedType, setSelectedType] = useState<string>(''); // "Todos"
+  const [selectedBrand, setSelectedBrand] = useState<string>(''); // "Todos"
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [page, setPage] = useState<number>(1);
-  const [sourceName, setSourceName] = useState<string>('');
+  const [sourceName, setSourceName] = useState<string>(''); // Para mostrar el nombre del default source
+  const [sources, setSources] = useState<Source[]>([]);
   const perPage = 10;
-  const allowedSizes = ['18','19','20','21','22','23','24','25','26','27','28','29','30','31','32','33','34', '35', '36', '37', '38', '39', '40', '41','42','43','44'];
+  const allowedSizes = [
+    '18','19','20','21','22','23','24','25','26','27','28','29','30','31','32','33',
+    '34','35','36','37','38','39','40','41','42','43','44'
+  ];
 
   const { getSources } = useIngresoMercanciaApi();
+  
+  useEffect(() => {
+    const loadSources = async () => {
+      try {
+        const sourcesList: Source[] = await getSources();
+        setSources(sourcesList);
+        // Asignar fuente default si existe
+        const defaultSrc = sourcesList.find(src => src.source_code === 'default');
+        if (defaultSrc) {
+          setSelectedSource(defaultSrc.source_code);
+          setSourceName(defaultSrc.name);
+        }
+      } catch (err) {
+        console.error('Error al cargar las fuentes:', err);
+      }
+    };
+  
+    loadSources();
+  }, []); // Ejecuta el efecto una sola vez
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const result = await inventarioProductosApi.getCustomProducts(selectedType, selectedBrand);
-        const resObj = Array.isArray(result) && result.length > 0 ? result[0] : result;
-        const productsArray: ProductItem[] = Object.keys(resObj).map((sku) => ({
+        // Se envía también el selectedSource
+        const result = await inventarioProductosApi.getCustomProducts(selectedType, selectedBrand, selectedSource);
+        // Se evita el error convirtiendo null/undefined a objeto vacío
+        const resObj = result ? (Array.isArray(result) && result.length > 0 ? result[0] : result) : {};
+        const productsArray: ProductItem[] = Object.keys(resObj).map(sku => ({
           sku,
           data: resObj[sku]
         }));
@@ -153,30 +175,15 @@ const InventarioProductos = () => {
       }
     };
   
-    const loadDefaultSource = async () => {
-      try {
-        const sources: Source[] = await getSources();
-        const defaultSource = sources.find(src => src.source_code === 'default');
-        if (defaultSource) {
-          setSourceName(defaultSource.name);
-        }
-      } catch (err) {
-        console.error('Error al cargar el source:', err);
-      }
-    };
-  
-    setLoading(true);
     fetchProducts();
-    loadDefaultSource();
-  }, [selectedType, selectedBrand]); 
-
+  }, [selectedType, selectedBrand, selectedSource]);
+  
   const filteredProducts = products.filter(product =>
     product.sku.toLowerCase().includes(searchTerm.toLowerCase())
   );
   const paginatedProducts = filteredProducts.slice((page - 1) * perPage, page * perPage);
   const totalPages = Math.ceil(filteredProducts.length / perPage);
 
-  // Exportar a CSV
   const exportToCSV = () => {
     if(filteredProducts.length === 0) return;
     const header = ['SKU', 'Cantidad', 'Precio', 'Precio Especial', 'Tallas'];
@@ -184,10 +191,10 @@ const InventarioProductos = () => {
       const cantidad = parseInt(data.salable_quantity, 10);
       const precio = formatPrice(data.price);
       const precioEspecial = data.special_price ? formatPrice(data.special_price) : '-';
-      const tallas = Object.entries(data.sizes)
+      const tallas = Object.entries(data.sizes || {})
         .filter(([size]) => allowedSizes.includes(size))
         .map(([size, qty]) => `${size}: ${qty}`)
-        .join(' - '); // Separador modificado a guion
+        .join(' - ');
       return [sku, cantidad, precio, precioEspecial, tallas];
     });
     const csvContent = [header, ...rows].map(row => row.join(",")).join("\n");
@@ -201,7 +208,6 @@ const InventarioProductos = () => {
     document.body.removeChild(link);
   };
 
-  // Exportar a Excel
   const exportToExcel = () => {
     if (filteredProducts.length === 0) return;
     import("xlsx").then((XLSX) => {
@@ -209,14 +215,13 @@ const InventarioProductos = () => {
         const cantidad = parseInt(data.salable_quantity, 10);
         const precio = formatPrice(data.price);
         const precioEspecial = data.special_price ? formatPrice(data.special_price) : '-';
-        const tallas = Object.entries(data.sizes)
+        const tallas = Object.entries(data.sizes || {})
           .filter(([size]) => allowedSizes.includes(size))
           .map(([size, qty]) => `${size}: ${qty}`)
           .join(', ');
         return { SKU: sku, Cantidad: cantidad, Precio: precio, "Precio Especial": precioEspecial, Tallas: tallas };
       });
       const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-      // Ajuste automático de columnas: calcular el ancho máximo de cada columna
       const keys = Object.keys(dataToExport[0]);
       const cols = keys.map(key => {
         const maxLength = Math.max(...dataToExport.map(row => (row[key] ? row[key].toString().length : 0)));
@@ -232,11 +237,31 @@ const InventarioProductos = () => {
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-bold mb-4">
-        Inventario de Productos {sourceName && `- ${sourceName}`}
+        Inventario de Productos {`${sourceName}`}
       </h1>
       {/* Filtros y Buscador */}
       <div className="mb-4 flex flex-col gap-4">
         <div className="flex gap-4">
+          {/* Nuevo select Source */}
+          <div>
+            <label className="mr-2">Source:</label>
+            <select
+              value={selectedSource}
+              onChange={(e) => {
+                const newSource = e.target.value;
+                setSelectedSource(newSource);
+                const foundSource = sources.find(src => src.source_code === newSource);
+                setSourceName(foundSource ? foundSource.name : '');
+              }}
+              className="border rounded p-1"
+            >
+              {sources.map(src => (
+                <option key={src.source_code} value={src.source_code}>
+                  {src.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <div>
             <label className="mr-2">Tipo:</label>
             <select
@@ -333,18 +358,15 @@ const InventarioProductos = () => {
             </tr>
           ) : (
             paginatedProducts.map(({ sku, data }) => {
-              const tallas = Object.entries(data.sizes)
+              // Se usa data.sizes || {} para evitar que Object.entries falle
+              const tallas = Object.entries(data.sizes || {})
                 .filter(([size]) => allowedSizes.includes(size))
                 .map(([size, qty]) => `${size}: ${qty}`)
                 .join(', ');
               return (
                 <tr key={sku}>
                   <td className="border p-2">
-                    <img
-                      src={`${UrlImagen}${data.image_url}`}
-                      alt={sku}
-                      className="h-12 w-12 object-contain"
-                    />
+                    <img src={`${UrlImagen}${data.image_url}`} alt={sku} className="h-12 w-12 object-contain" />
                   </td>
                   <td className="border p-2">{sku}</td>
                   <td className="border p-2">{parseInt(data.salable_quantity, 10)}</td>
@@ -361,21 +383,13 @@ const InventarioProductos = () => {
       </table>
       {totalPages > 1 && !loading && (
         <div className="mt-4 flex items-center gap-4">
-          <button
-            onClick={() => setPage(prev => Math.max(prev - 1, 1))}
-            disabled={page === 1}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
+          <button onClick={() => setPage(prev => Math.max(prev - 1, 1))} disabled={page === 1} className="px-3 py-1 border rounded disabled:opacity-50">
             Anterior
           </button>
           <span>
             Página {page} de {totalPages}
           </span>
-          <button
-            onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
-            disabled={page === totalPages}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
+          <button onClick={() => setPage(prev => Math.min(prev + 1, totalPages))} disabled={page === totalPages} className="px-3 py-1 border rounded disabled:opacity-50">
             Siguiente
           </button>
         </div>
