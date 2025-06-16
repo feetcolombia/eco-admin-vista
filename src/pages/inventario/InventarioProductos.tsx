@@ -45,39 +45,42 @@ const brandOptions = [
 
 const formatPrice = (price: string) => {
   const num = Number(price);
-  return `$ ${num.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `$ ${num.toLocaleString('de-DE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 };
 
-const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[], allowedSizes: string[] }) => {
+const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[]; allowedSizes: string[] }) => {
   const styles = StyleSheet.create({
     page: { padding: 24, fontSize: 10 },
-    header: { 
-      flexDirection: 'row', 
-      justifyContent: 'space-between', 
-      alignItems: 'center', 
-      marginBottom: 10 
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 10,
     },
     title: { fontSize: 18, textAlign: 'center' },
     logo: { width: 50, height: 50 },
-    table: { 
-      display: 'table', 
-      width: 'auto', 
-      borderStyle: 'solid', 
-      borderWidth: 1, 
-      borderRightWidth: 0, 
-      borderBottomWidth: 0 
+    table: {
+      display: 'table',
+      width: 'auto',
+      borderStyle: 'solid',
+      borderWidth: 1,
+      borderRightWidth: 0,
+      borderBottomWidth: 0,
     },
     tableRow: { flexDirection: 'row' },
-    tableCol: { 
-      borderStyle: 'solid', 
-      borderWidth: 1, 
-      borderLeftWidth: 0, 
-      borderTopWidth: 0, 
-      padding: 4 
+    tableCol: {
+      borderStyle: 'solid',
+      borderWidth: 1,
+      borderLeftWidth: 0,
+      borderTopWidth: 0,
+      padding: 4,
     },
-    tableCell: {}
-  });    
-  
+    tableCell: {},
+  });
+
   return (
     <Document>
       <Page style={styles.page}>
@@ -121,27 +124,26 @@ const InventarioProductos = () => {
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
-  const [selectedSource, setSelectedSource] = useState<string>('default'); // Valor por defecto "default"
-  const [selectedType, setSelectedType] = useState<string>(''); // "Todos"
-  const [selectedBrand, setSelectedBrand] = useState<string>(''); // "Todos"
+  const [selectedSource, setSelectedSource] = useState<string>('default');
+  const [selectedType, setSelectedType] = useState<string>('');
+  const [selectedBrand, setSelectedBrand] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [page, setPage] = useState<number>(1);
-  const [sourceName, setSourceName] = useState<string>(''); // Para mostrar el nombre del default source
+  const [sourceName, setSourceName] = useState<string>('');
   const [sources, setSources] = useState<Source[]>([]);
-  const perPage = 10;
+  const perPage = 20;
   const allowedSizes = [
     '18','19','20','21','22','23','24','25','26','27','28','29','30','31','32','33',
     '34','35','36','37','38','39','40','41','42','43','44'
   ];
 
   const { getSources } = useIngresoMercanciaApi();
-  
+
   useEffect(() => {
     const loadSources = async () => {
       try {
         const sourcesList: Source[] = await getSources();
         setSources(sourcesList);
-        // Asignar fuente default si existe
         const defaultSrc = sourcesList.find(src => src.source_code === 'default');
         if (defaultSrc) {
           setSelectedSource(defaultSrc.source_code);
@@ -151,20 +153,17 @@ const InventarioProductos = () => {
         console.error('Error al cargar las fuentes:', err);
       }
     };
-  
     loadSources();
-  }, []); // Ejecuta el efecto una sola vez
+  }, []);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        // Se envía también el selectedSource
         const result = await inventarioProductosApi.getCustomProducts(selectedType, selectedBrand, selectedSource);
-        // Se evita el error convirtiendo null/undefined a objeto vacío
         const resObj = result ? (Array.isArray(result) && result.length > 0 ? result[0] : result) : {};
         const productsArray: ProductItem[] = Object.keys(resObj).map(sku => ({
           sku,
-          data: resObj[sku]
+          data: resObj[sku],
         }));
         setProducts(productsArray);
         setPage(1);
@@ -174,10 +173,9 @@ const InventarioProductos = () => {
         setLoading(false);
       }
     };
-  
     fetchProducts();
   }, [selectedType, selectedBrand, selectedSource]);
-  
+
   const filteredProducts = products.filter(product =>
     product.sku.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -236,13 +234,55 @@ const InventarioProductos = () => {
 
   return (
     <div className="container mx-auto py-6">
-      <h1 className="text-2xl font-bold mb-4">
-        Inventario de Productos {`${sourceName}`}
-      </h1>
+      {/* Header con título y exportación en la parte superior derecha */}
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h1 className="text-2xl font-bold">
+            Inventario de Productos {`${sourceName}`}
+          </h1>
+          <p className="text-muted-foreground">
+            Gestione el inventario de productos en el sistema
+          </p>
+        </div>
+        {filteredProducts.length > 0 && (
+          <div className="flex gap-4">
+            <button onClick={exportToExcel} className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded flex items-center">
+              <FileX className="mr-2" size={16} />
+              Exportar a Excel
+            </button>
+            <button onClick={exportToCSV} className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded flex items-center">
+              <FileIcon className="mr-2" size={16} />
+              Exportar a CSV
+            </button>
+            <PDFDownloadLink
+              document={<MyPdfDocument prodData={filteredProducts} allowedSizes={allowedSizes} />}
+              fileName="inventario_productos.pdf"
+              className="flex"
+            >
+              <button className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded flex items-center">
+                <FileText className="mr-2" size={16} />
+                Exportar a PDF
+              </button>
+            </PDFDownloadLink>
+          </div>
+        )}
+      </div>
       {/* Filtros y Buscador */}
       <div className="mb-4 flex flex-col gap-4">
-        <div className="flex gap-4">
-          {/* Nuevo select Source */}
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <label className="mr-2">Buscar por SKU:</label>
+            <input
+              type="text"
+              placeholder="SKU..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
+              className="border rounded p-1"
+            />
+          </div>
           <div>
             <label className="mr-2">Source:</label>
             <select
@@ -293,103 +333,77 @@ const InventarioProductos = () => {
             </select>
           </div>
         </div>
-        <div>
-          <label className="mr-2">Buscar por SKU:</label>
-          <input
-            type="text"
-            placeholder="SKU..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setPage(1);
-            }}
-            className="border rounded p-1"
-          />
-        </div>
       </div>
       {error && <div className="mb-4 text-red-500">{error}</div>}
-      {/* Botones de Exportación */}
-      {filteredProducts.length > 0 && (
-        <div className="mb-4 flex justify-end gap-4">
-          <button onClick={exportToExcel} className="px-3 py-1 border rounded flex items-center">
-            <FileX className="mr-2" size={16} />
-            Exportar a Excel
-          </button>
-          <button onClick={exportToCSV} className="px-3 py-1 border rounded flex items-center">
-            <FileIcon className="mr-2" size={16} />
-            Exportar a CSV
-          </button>
-          <PDFDownloadLink
-            document={<MyPdfDocument prodData={filteredProducts} allowedSizes={allowedSizes} />}
-            fileName="inventario_productos.pdf"
-            className="flex"
-          >
-            <button className="px-3 py-1 border rounded flex items-center">
-              <FileText className="mr-2" size={16} />
-              Exportar a PDF
-            </button>
-          </PDFDownloadLink>
-        </div>
-      )}
-      {/* Tabla */}
-      <table className="min-w-full border-collapse">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-2">Imagen</th>
-            <th className="border p-2">SKU</th>
-            <th className="border p-2">Cantidad</th>
-            <th className="border p-2">Precio</th>
-            <th className="border p-2">Precio Especial</th>
-            <th className="border p-2">Tallas</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loading ? (
+      {/* Card contenedor de la tabla */}
+      <div className="bg-white shadow rounded p-4 mb-4">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
             <tr>
-              <td className="border p-2 text-center" colSpan={6}>
-                Cargando productos...
-              </td>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Imagen</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Especial</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tallas</th>
             </tr>
-          ) : filteredProducts.length === 0 ? (
-            <tr>
-              <td className="border p-2 text-center" colSpan={6}>
-                No hay registros
-              </td>
-            </tr>
-          ) : (
-            paginatedProducts.map(({ sku, data }) => {
-              // Se usa data.sizes || {} para evitar que Object.entries falle
-              const tallas = Object.entries(data.sizes || {})
-                .filter(([size]) => allowedSizes.includes(size))
-                .map(([size, qty]) => `${size}: ${qty}`)
-                .join(', ');
-              return (
-                <tr key={sku}>
-                  <td className="border p-2">
-                    <img src={`${UrlImagen}${data.image_url}`} alt={sku} className="h-12 w-12 object-contain" />
-                  </td>
-                  <td className="border p-2">{sku}</td>
-                  <td className="border p-2">{parseInt(data.salable_quantity, 10)}</td>
-                  <td className="border p-2">{formatPrice(data.price)}</td>
-                  <td className="border p-2">
-                    {data.special_price ? formatPrice(data.special_price) : '-'}
-                  </td>
-                  <td className="border p-2">{tallas}</td>
-                </tr>
-              );
-            })
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {loading ? (
+              <tr>
+                <td className="px-6 py-4 text-center" colSpan={6}>
+                  Cargando productos...
+                </td>
+              </tr>
+            ) : filteredProducts.length === 0 ? (
+              <tr>
+                <td className="px-6 py-4 text-center" colSpan={6}>
+                  No hay registros
+                </td>
+              </tr>
+            ) : (
+              paginatedProducts.map(({ sku, data }) => {
+                const tallas = Object.entries(data.sizes || {})
+                  .filter(([size]) => allowedSizes.includes(size))
+                  .map(([size, qty]) => `${size}: ${qty}`)
+                  .join(', ');
+                return (
+                  <tr key={sku}>
+                    <td className="px-6 py-4">
+                      <img src={`${UrlImagen}${data.image_url}`} alt={sku} className="h-12 w-12 object-contain" />
+                    </td>
+                    <td className="px-6 py-4">{sku}</td>
+                    <td className="px-6 py-4">{parseInt(data.salable_quantity, 10)}</td>
+                    <td className="px-6 py-4">{formatPrice(data.price)}</td>
+                    <td className="px-6 py-4">
+                      {data.special_price ? formatPrice(data.special_price) : '-'}
+                    </td>
+                    <td className="px-6 py-4">{tallas}</td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+      {/* Paginación centrada con estilo neutro */}
       {totalPages > 1 && !loading && (
-        <div className="mt-4 flex items-center gap-4">
-          <button onClick={() => setPage(prev => Math.max(prev - 1, 1))} disabled={page === 1} className="px-3 py-1 border rounded disabled:opacity-50">
+        <div className="mt-4 flex justify-center items-center gap-4">
+          <button
+            onClick={() => setPage(prev => Math.max(prev - 1, 1))}
+            disabled={page === 1}
+            className="border border-gray-300 px-4 py-2 rounded disabled:opacity-50 hover:bg-gray-100"
+          >
             Anterior
           </button>
-          <span>
+          <span className="text-sm">
             Página {page} de {totalPages}
           </span>
-          <button onClick={() => setPage(prev => Math.min(prev + 1, totalPages))} disabled={page === totalPages} className="px-3 py-1 border rounded disabled:opacity-50">
+          <button
+            onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={page === totalPages}
+            className="border border-gray-300 px-4 py-2 rounded disabled:opacity-50 hover:bg-gray-100"
+          >
             Siguiente
           </button>
         </div>
