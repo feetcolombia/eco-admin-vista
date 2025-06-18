@@ -60,7 +60,7 @@ const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[]; al
     const loadImages = async () => {
       const promises = prodData.map(async ({ sku, data }) => {
         // Si data.image_url no contiene "http" se concatena con UrlImagen
-        const imageUrl = data.image_url.startsWith('http')
+        const imageUrl = data.image_url.startsWith('http') || data.image_url.startsWith('https')
           ? data.image_url
           : `${UrlImagen}${data.image_url}`;
         try {
