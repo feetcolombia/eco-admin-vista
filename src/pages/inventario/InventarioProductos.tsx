@@ -54,19 +54,29 @@ const formatPrice = (price: string) => {
 
 const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[]; allowedSizes: string[] }) => {
   const [imageBase64Map, setImageBase64Map] = useState<{ [sku: string]: string }>({});
+  const [imagesLoaded, setImagesLoaded] = useState<boolean>(false);
 
   useEffect(() => {
-    prodData.forEach(({ sku, data }) => {
-      // Si la imagen ya tiene "http", la usamos tal cual; de lo contrario, concatenamos la ruta base UrlImagen.
-      const imageUrl = data.image_url.startsWith('https://') || data.image_url.startsWith('http://')
-        ? data.image_url
-        : `${UrlImagen}${data.image_url}`;
-      getBase64FromUrl(imageUrl)
-        .then((base64) => {
-          setImageBase64Map(prev => ({ ...prev, [sku]: base64 }));
-        })
-        .catch((err) => console.error(`Error converting image for SKU ${sku}:`, err));
-    });
+    const loadImages = async () => {
+      const promises = prodData.map(async ({ sku, data }) => {
+        // Usar la URL completa: si ya contiene http, la usamos. Si no, concatenar con UrlImagen.
+        const imageUrl = data.image_url.startsWith('http')
+          ? data.image_url
+          : `${UrlImagen}${data.image_url}`;
+        try {
+          const base64 = await getBase64FromUrl(imageUrl);
+          return { sku, base64 };
+        } catch (error) {
+          console.error(`Error converting image for SKU ${sku}:`, error);
+          return { sku, base64: '' };
+        }
+      });
+      const results = await Promise.all(promises);
+      const newMap = results.reduce((acc, { sku, base64 }) => ({ ...acc, [sku]: base64 }), {});
+      setImageBase64Map(newMap);
+      setImagesLoaded(true);
+    };
+    loadImages();
   }, [prodData]);
 
   const styles = StyleSheet.create({
@@ -100,6 +110,17 @@ const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[]; al
     productImage: { width: 40, height: 40 },
   });
 
+  // Si aún no se han cargado las imágenes, se puede renderizar un mensaje o un documento vacío.
+  if (!imagesLoaded) {
+    return (
+      <Document>
+        <Page style={styles.page}>
+          <Text>Cargando imágenes...</Text>
+        </Page>
+      </Document>
+    );
+  }
+
   return (
     <Document>
       <Page style={styles.page}>
@@ -130,7 +151,7 @@ const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[]; al
                   {imageBase64Map[sku] ? (
                     <Image style={styles.productImage} src={imageBase64Map[sku]} />
                   ) : (
-                    <Text>No Image</Text>
+                    <Text>No se puede mostrar imagen</Text>
                   )}
                 </View>
                 <View style={[styles.tableCol, { width: '35%' }]}><Text>{sku}</Text></View>
