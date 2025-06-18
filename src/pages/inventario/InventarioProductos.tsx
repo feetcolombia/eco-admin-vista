@@ -3,6 +3,7 @@ import { FileX, File as FileIcon, FileText } from 'lucide-react';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import inventarioProductosApi, { UrlImagen } from '../../components/inventario/inventarioProductosApi';
 import { useIngresoMercanciaApi } from '../../hooks/useIngresoMercanciaApi';
+import { getBase64FromUrl } from '../../utils/getBase64FromUrl';
 
 interface ProductData {
   sizes: { [key: string]: string };
@@ -52,6 +53,22 @@ const formatPrice = (price: string) => {
 };
 
 const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[]; allowedSizes: string[] }) => {
+  const [imageBase64Map, setImageBase64Map] = useState<{ [sku: string]: string }>({});
+
+  useEffect(() => {
+    prodData.forEach(({ sku, data }) => {
+      // Si la imagen ya tiene "http", la usamos tal cual; de lo contrario, concatenamos la ruta base UrlImagen.
+      const imageUrl = data.image_url.startsWith('https://') || data.image_url.startsWith('http://')
+        ? data.image_url
+        : `${UrlImagen}${data.image_url}`;
+      getBase64FromUrl(imageUrl)
+        .then((base64) => {
+          setImageBase64Map(prev => ({ ...prev, [sku]: base64 }));
+        })
+        .catch((err) => console.error(`Error converting image for SKU ${sku}:`, err));
+    });
+  }, [prodData]);
+
   const styles = StyleSheet.create({
     page: { padding: 24, fontSize: 10 },
     header: {
@@ -77,8 +94,10 @@ const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[]; al
       borderLeftWidth: 0,
       borderTopWidth: 0,
       padding: 4,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
-    tableCell: {},
+    productImage: { width: 40, height: 40 },
   });
 
   return (
@@ -90,7 +109,8 @@ const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[]; al
         </View>
         <View style={styles.table}>
           <View style={styles.tableRow}>
-            <View style={[styles.tableCol, { width: '40%' }]}><Text>SKU</Text></View>
+            <View style={[styles.tableCol, { width: '15%' }]}><Text>Imagen</Text></View>
+            <View style={[styles.tableCol, { width: '35%' }]}><Text>SKU</Text></View>
             <View style={[styles.tableCol, { width: '15.5%' }]}><Text>Cantidad</Text></View>
             <View style={[styles.tableCol, { width: '17.5%' }]}><Text>Precio</Text></View>
             <View style={[styles.tableCol, { width: '17.5%' }]}><Text>Precio Especial</Text></View>
@@ -106,7 +126,14 @@ const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[]; al
               .join(', ');
             return (
               <View style={styles.tableRow} key={sku}>
-                <View style={[styles.tableCol, { width: '40%' }]}><Text>{sku}</Text></View>
+                <View style={[styles.tableCol, { width: '15%' }]}>
+                  {imageBase64Map[sku] ? (
+                    <Image style={styles.productImage} src={imageBase64Map[sku]} />
+                  ) : (
+                    <Text>No Image</Text>
+                  )}
+                </View>
+                <View style={[styles.tableCol, { width: '35%' }]}><Text>{sku}</Text></View>
                 <View style={[styles.tableCol, { width: '15.5%' }]}><Text>{cantidad}</Text></View>
                 <View style={[styles.tableCol, { width: '17.5%' }]}><Text>{precio}</Text></View>
                 <View style={[styles.tableCol, { width: '17.5%' }]}><Text>{precioEspecial}</Text></View>
