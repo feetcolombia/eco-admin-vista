@@ -54,16 +54,20 @@ const formatPrice = (price: string) => {
 
 const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[]; allowedSizes: string[] }) => {
   const [imageBase64Map, setImageBase64Map] = useState<{ [sku: string]: string }>({});
-
+  
   useEffect(() => {
     prodData.forEach(({ sku, data }) => {
-      // Si la imagen ya tiene "http", la usamos tal cual; de lo contrario, concatenamos la ruta base UrlImagen.
+      if (!data.image_url) {
+        console.warn(`No se encontró image_url para SKU ${sku}`);
+        return;
+      }
       const imageUrl = data.image_url.startsWith('https://') || data.image_url.startsWith('http://')
         ? data.image_url
         : `${UrlImagen}${data.image_url}`;
+      console.log(imageUrl);
       getBase64FromUrl(imageUrl)
         .then((base64) => {
-          setImageBase64Map(prev => ({ ...prev, [sku]: base64 }));
+          setImageBase64Map((prev) => ({ ...prev, [sku]: base64 }));
         })
         .catch((err) => console.error(`Error converting image for SKU ${sku}:`, err));
     });
