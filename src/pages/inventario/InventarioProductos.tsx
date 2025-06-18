@@ -54,33 +54,19 @@ const formatPrice = (price: string) => {
 
 const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[]; allowedSizes: string[] }) => {
   const [imageBase64Map, setImageBase64Map] = useState<{ [sku: string]: string }>({});
-  const [imagesLoaded, setImagesLoaded] = useState<boolean>(false);
 
   useEffect(() => {
-    const loadImages = async () => {
-      const proxyUrl = 'https://cors-anywhere.herokuapp.com/'; // Proxy CORS temporal
-      const promises = prodData.map(async ({ sku, data }) => {
-        // Si la URL ya tiene http, la usamos y en caso de CORS la pasamos por proxy.
-        const imageUrl = data.image_url.startsWith('http')
-          ? data.image_url
-          : `${UrlImagen}${data.image_url}`;
-        // Usamos el proxy para evitar CORS
-        const finalUrl = proxyUrl + imageUrl;
-        try {
-          const base64 = await getBase64FromUrl(finalUrl);
-          console.log('Base64 para SKU', sku, base64.slice(0, 50));
-          return { sku, base64 };
-        } catch (error) {
-          console.error(`Error converting image for SKU ${sku}:`, error);
-          return { sku, base64: '' };
-        }
-      });
-      const results = await Promise.all(promises);
-      const newMap = results.reduce((acc, { sku, base64 }) => ({ ...acc, [sku]: base64 }), {});
-      setImageBase64Map(newMap);
-      setImagesLoaded(true);
-    };
-    loadImages();
+    prodData.forEach(({ sku, data }) => {
+      // Si la imagen ya tiene "http", la usamos tal cual; de lo contrario, concatenamos la ruta base UrlImagen.
+      const imageUrl = data.image_url.startsWith('https://') || data.image_url.startsWith('http://')
+        ? data.image_url
+        : `${UrlImagen}${data.image_url}`;
+      getBase64FromUrl(imageUrl)
+        .then((base64) => {
+          setImageBase64Map(prev => ({ ...prev, [sku]: base64 }));
+        })
+        .catch((err) => console.error(`Error converting image for SKU ${sku}:`, err));
+    });
   }, [prodData]);
 
   const styles = StyleSheet.create({
@@ -114,16 +100,6 @@ const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[]; al
     productImage: { width: 40, height: 40 },
   });
 
-  if (!imagesLoaded) {
-    return (
-      <Document>
-        <Page style={styles.page}>
-          <Text>Cargando imágenes inventario...</Text>
-        </Page>
-      </Document>
-    );
-  }
-
   return (
     <Document>
       <Page style={styles.page}>
@@ -154,7 +130,7 @@ const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[]; al
                   {imageBase64Map[sku] ? (
                     <Image style={styles.productImage} src={imageBase64Map[sku]} />
                   ) : (
-                    <Text>No se puede mostrar imagen</Text>
+                    <Text>No Image</Text>
                   )}
                 </View>
                 <View style={[styles.tableCol, { width: '35%' }]}><Text>{sku}</Text></View>
@@ -437,7 +413,7 @@ const InventarioProductos = () => {
           </tbody>
         </table>
       </div>
-      {/* Paginación centrada */}
+      {/* Paginación centrada con estilo neutro */}
       {totalPages > 1 && !loading && (
         <div className="mt-4 flex justify-center items-center gap-4">
           <button
