@@ -59,12 +59,13 @@ const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[]; al
   useEffect(() => {
     const loadImages = async () => {
       const promises = prodData.map(async ({ sku, data }) => {
-        // Usar la URL completa: si ya contiene http, la usamos. Si no, concatenar con UrlImagen.
-        const imageUrl = data.image_url.startsWith('https')
+        // Si data.image_url no contiene "http" se concatena con UrlImagen
+        const imageUrl = data.image_url.startsWith('http')
           ? data.image_url
           : `${UrlImagen}${data.image_url}`;
         try {
           const base64 = await getBase64FromUrl(imageUrl);
+          console.log('Base64 para SKU', sku, base64.slice(0, 50));
           return { sku, base64 };
         } catch (error) {
           console.error(`Error converting image for SKU ${sku}:`, error);
@@ -110,12 +111,11 @@ const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[]; al
     productImage: { width: 40, height: 40 },
   });
 
-  // Si aún no se han cargado las imágenes, se puede renderizar un mensaje o un documento vacío.
   if (!imagesLoaded) {
     return (
       <Document>
         <Page style={styles.page}>
-          <Text>Cargando imágenes...</Text>
+          <Text>Cargando imágenes inventario...</Text>
         </Page>
       </Document>
     );
@@ -434,7 +434,7 @@ const InventarioProductos = () => {
           </tbody>
         </table>
       </div>
-      {/* Paginación centrada con estilo neutro */}
+      {/* Paginación centrada */}
       {totalPages > 1 && !loading && (
         <div className="mt-4 flex justify-center items-center gap-4">
           <button
