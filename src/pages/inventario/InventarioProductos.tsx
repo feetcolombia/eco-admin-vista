@@ -58,13 +58,16 @@ const MyPdfDocument = ({ prodData, allowedSizes }: { prodData: ProductItem[]; al
 
   useEffect(() => {
     const loadImages = async () => {
+      const proxyUrl = 'https://cors-anywhere.herokuapp.com/'; // Proxy CORS temporal
       const promises = prodData.map(async ({ sku, data }) => {
-        // Si data.image_url no contiene "http" se concatena con UrlImagen
-        const imageUrl = data.image_url.startsWith('http') || data.image_url.startsWith('https')
+        // Si la URL ya tiene http, la usamos y en caso de CORS la pasamos por proxy.
+        const imageUrl = data.image_url.startsWith('http')
           ? data.image_url
           : `${UrlImagen}${data.image_url}`;
+        // Usamos el proxy para evitar CORS
+        const finalUrl = proxyUrl + imageUrl;
         try {
-          const base64 = await getBase64FromUrl(imageUrl);
+          const base64 = await getBase64FromUrl(finalUrl);
           console.log('Base64 para SKU', sku, base64.slice(0, 50));
           return { sku, base64 };
         } catch (error) {
